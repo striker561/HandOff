@@ -30,7 +30,7 @@ return new class extends Migration {
             $table->timestamp('deleted_at')->nullable();
 
             //relations
-            $table->foreign('project_unique_id')->references('unique_id')->on('projects');
+            $table->foreign('project_unique_id')->references('unique_id')->on('projects')->cascadeOnDelete();
         });
     }
 

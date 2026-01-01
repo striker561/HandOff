@@ -53,4 +53,9 @@ class Project extends BaseModel
     {
         return $this->hasMany(Milestone::class, 'project_unique_id', 'unique_id');
     }
+
+    public function deliverables(): HasMany
+    {
+        return $this->hasMany(Deliverable::class, 'project_unique_id', 'unique_id');
+    }
 }

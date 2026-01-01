@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\MilestoneStatus;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Milestone extends BaseModel
@@ -34,5 +35,10 @@ class Milestone extends BaseModel
     public function project(): HasOne
     {
         return $this->hasOne(Project::class, 'unique_id', 'project_unique_id');
+    }
+
+    public function deliverables(): HasMany
+    {
+        return $this->hasMany(Deliverable::class, 'milestone_unique_id', 'unique_id');
     }
 }
