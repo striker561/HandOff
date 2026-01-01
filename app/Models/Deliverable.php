@@ -69,4 +69,9 @@ class Deliverable extends BaseModel
     {
         return $this->hasMany(Meeting::class, 'deliverable_unique_id', 'unique_id');
     }
+
+    public function notifications(): MorphMany
+    {
+        return $this->morphMany(Notification::class, 'notifiable', 'notifiable_type', 'notifiable_id', 'unique_id');
+    }
 }

@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, MorphTo};
+use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, MorphTo, MorphMany};
 
 class Comment extends BaseModel
 {
@@ -44,5 +44,10 @@ class Comment extends BaseModel
     public function replies(): HasMany
     {
         return $this->hasMany(Comment::class, 'parent_unique_id', 'unique_id');
+    }
+
+    public function notifications(): MorphMany
+    {
+        return $this->morphMany(Notification::class, 'notifiable', 'notifiable_type', 'notifiable_id', 'unique_id');
     }
 }

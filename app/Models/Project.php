@@ -24,12 +24,6 @@ class Project extends BaseModel
         'metadata',
     ];
 
-
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
-
     protected function casts(): array
     {
         return [
@@ -71,5 +65,10 @@ class Project extends BaseModel
     public function credentials(): HasMany
     {
         return $this->hasMany(Credential::class, 'project_unique_id', 'unique_id');
+    }
+
+    public function notifications(): MorphMany
+    {
+        return $this->morphMany(Notification::class, 'notifiable', 'notifiable_type', 'notifiable_id', 'unique_id');
     }
 }

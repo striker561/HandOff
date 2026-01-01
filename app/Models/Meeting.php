@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Enums\MeetingStatus;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\{BelongsTo, MorphMany};
 
 class Meeting extends BaseModel
 {
@@ -44,5 +44,11 @@ class Meeting extends BaseModel
     public function scheduledBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'scheduled_by_unique_id', 'unique_id');
+    }
+
+
+    public function notifications(): MorphMany
+    {
+        return $this->morphMany(Notification::class, 'notifiable', 'notifiable_type', 'notifiable_id', 'unique_id');
     }
 }

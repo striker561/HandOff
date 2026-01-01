@@ -73,4 +73,15 @@ class User extends Authenticatable
     {
         return $this->hasMany(Meeting::class, 'scheduled_by_unique_id', 'unique_id');
     }
+
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(Notification::class, 'user_unique_id', 'unique_id');
+    }
+
+    public function unreadNotifications(): HasMany
+    {
+        return $this->hasMany(Notification::class, 'user_unique_id', 'unique_id')
+            ->whereNull('read_at');
+    }
 }

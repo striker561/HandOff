@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Enums\CredentialType;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\{BelongsTo, MorphMany};
 
 class Credential extends BaseModel
 {
@@ -35,5 +35,10 @@ class Credential extends BaseModel
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class, 'project_unique_id', 'unique_id');
+    }
+
+    public function notifications(): MorphMany
+    {
+        return $this->morphMany(Notification::class, 'notifiable', 'notifiable_type', 'notifiable_id', 'unique_id');
     }
 }
