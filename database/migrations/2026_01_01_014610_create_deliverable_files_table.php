@@ -13,8 +13,8 @@ return new class extends Migration {
         Schema::create('deliverable_files', function (Blueprint $table) {
             $table->id();
             $table->char('unique_id', 36)->unique();
-            $table->char('deliverable_unique_id', 36);
-            $table->char('uploaded_by_unique_id', 36);
+            $table->char('deliverable_unique_id', 36)->index();
+            $table->char('uploaded_by_unique_id', 36)->index();
 
             $table->string('filename', 255);
             $table->string('original_filename', 255);
@@ -23,7 +23,7 @@ return new class extends Migration {
             $table->string('mime_type', 100);
 
             $table->string('version', 50)->default('1.0');
-            $table->boolean('is_latest')->default(true);
+            $table->boolean('is_latest')->default(true)->index();
             $table->integer('download_count')->default(0);
 
             $table->json('metadata')->nullable();
