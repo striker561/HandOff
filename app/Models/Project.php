@@ -3,8 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ProjectStatus;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, MorphMany};
 
 class Project extends BaseModel
 {
@@ -57,5 +56,10 @@ class Project extends BaseModel
     public function deliverables(): HasMany
     {
         return $this->hasMany(Deliverable::class, 'project_unique_id', 'unique_id');
+    }
+
+    public function comments(): MorphMany
+    {
+        return $this->morphMany(Comment::class, 'commentable', 'commentable_type', 'commentable_id', 'unique_id');
     }
 }

@@ -2,10 +2,8 @@
 
 namespace App\Models;
 
-use App\Enums\DeliverableStatus;
-use App\Enums\DeliverableType;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Enums\{DeliverableStatus, DeliverableType};
+use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, MorphMany};
 
 class Deliverable extends BaseModel
 {
@@ -60,5 +58,10 @@ class Deliverable extends BaseModel
     public function files(): HasMany
     {
         return $this->hasMany(DeliverableFile::class, 'deliverable_unique_id', 'unique_id');
+    }
+
+    public function comments(): MorphMany
+    {
+        return $this->morphMany(Comment::class, 'commentable', 'commentable_type', 'commentable_id', 'unique_id');
     }
 }

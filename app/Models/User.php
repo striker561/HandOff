@@ -63,4 +63,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(DeliverableFile::class, 'uploaded_by_unique_id', 'unique_id');
     }
+
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class, 'user_unique_id', 'unique_id');
+    }
 }

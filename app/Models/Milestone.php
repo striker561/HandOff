@@ -3,8 +3,7 @@
 namespace App\Models;
 
 use App\Enums\MilestoneStatus;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, MorphMany};
 
 class Milestone extends BaseModel
 {
@@ -40,5 +39,10 @@ class Milestone extends BaseModel
     public function deliverables(): HasMany
     {
         return $this->hasMany(Deliverable::class, 'milestone_unique_id', 'unique_id');
+    }
+
+    public function comments(): MorphMany
+    {
+        return $this->morphMany(Comment::class, 'commentable', 'commentable_type', 'commentable_id', 'unique_id');
     }
 }
