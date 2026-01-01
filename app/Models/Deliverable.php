@@ -64,4 +64,9 @@ class Deliverable extends BaseModel
     {
         return $this->morphMany(Comment::class, 'commentable', 'commentable_type', 'commentable_id', 'unique_id');
     }
+
+    public function meetings(): HasMany
+    {
+        return $this->hasMany(Meeting::class, 'deliverable_unique_id', 'unique_id');
+    }
 }

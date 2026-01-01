@@ -68,4 +68,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Comment::class, 'user_unique_id', 'unique_id');
     }
+
+    public function scheduledMeetings(): HasMany
+    {
+        return $this->hasMany(Meeting::class, 'scheduled_by_unique_id', 'unique_id');
+    }
 }

@@ -62,4 +62,9 @@ class Project extends BaseModel
     {
         return $this->morphMany(Comment::class, 'commentable', 'commentable_type', 'commentable_id', 'unique_id');
     }
+
+    public function meetings(): HasMany
+    {
+        return $this->hasMany(Meeting::class, 'project_unique_id', 'unique_id');
+    }
 }
