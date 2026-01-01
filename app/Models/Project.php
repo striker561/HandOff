@@ -67,4 +67,9 @@ class Project extends BaseModel
     {
         return $this->hasMany(Meeting::class, 'project_unique_id', 'unique_id');
     }
+
+    public function credentials(): HasMany
+    {
+        return $this->hasMany(Credential::class, 'project_unique_id', 'unique_id');
+    }
 }
