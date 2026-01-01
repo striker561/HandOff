@@ -5,7 +5,7 @@ namespace App\Models;
 use App\Enums\ProjectStatus;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-class Projects extends BaseModel
+class Project extends BaseModel
 {
 
     protected $fillable = [
