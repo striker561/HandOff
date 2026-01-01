@@ -74,4 +74,9 @@ class Deliverable extends BaseModel
     {
         return $this->morphMany(Notification::class, 'notifiable', 'notifiable_type', 'notifiable_id', 'unique_id');
     }
+
+    public function activities(): MorphMany
+    {
+        return $this->morphMany(ActivityLog::class, 'subject', 'subject_type', 'subject_id', 'unique_id');
+    }
 }

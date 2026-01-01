@@ -8,8 +8,8 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\Relations\{HasMany, MorphMany};
 
 class User extends Authenticatable
 {
@@ -83,5 +83,15 @@ class User extends Authenticatable
     {
         return $this->hasMany(Notification::class, 'user_unique_id', 'unique_id')
             ->whereNull('read_at');
+    }
+
+    public function activities(): HasMany
+    {
+        return $this->hasMany(ActivityLog::class, 'user_unique_id', 'unique_id');
+    }
+
+    public function causedActivities(): MorphMany
+    {
+        return $this->morphMany(ActivityLog::class, 'causer', 'causer_type', 'causer_id', 'unique_id');
     }
 }
