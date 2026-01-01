@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use App\Enums\MilestoneStatus;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Milestone extends BaseModel
 {
@@ -32,9 +32,9 @@ class Milestone extends BaseModel
         ];
     }
 
-    public function project(): HasOne
+    public function project(): BelongsTo
     {
-        return $this->hasOne(Project::class, 'unique_id', 'project_unique_id');
+        return $this->belongsTo(Project::class, 'project_unique_id', 'unique_id');
     }
 
     public function deliverables(): HasMany

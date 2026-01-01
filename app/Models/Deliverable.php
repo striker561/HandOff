@@ -4,7 +4,8 @@ namespace App\Models;
 
 use App\Enums\DeliverableStatus;
 use App\Enums\DeliverableType;
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Deliverable extends BaseModel
 {
@@ -36,23 +37,28 @@ class Deliverable extends BaseModel
         ];
     }
 
-    public function project(): HasOne
+    public function project(): BelongsTo
     {
-        return $this->hasOne(Project::class, 'unique_id', 'project_unique_id');
+        return $this->belongsTo(Project::class, 'project_unique_id', 'unique_id');
     }
 
-    public function milestone(): HasOne
+    public function milestone(): BelongsTo
     {
-        return $this->hasOne(Milestone::class, 'unique_id', 'milestone_unique_id');
+        return $this->belongsTo(Milestone::class, 'milestone_unique_id', 'unique_id');
     }
 
-    public function createdBy(): HasOne
+    public function createdBy(): BelongsTo
     {
-        return $this->hasOne(User::class, 'unique_id', 'created_by_unique_id');
+        return $this->belongsTo(User::class, 'created_by_unique_id', 'unique_id');
     }
 
-    public function approved_by(): HasOne
+    public function approvedBy(): BelongsTo
     {
-        return $this->hasOne(User::class, 'unique_id', 'approved_by_unique_id');
+        return $this->belongsTo(User::class, 'approved_by_unique_id', 'unique_id');
+    }
+
+    public function files(): HasMany
+    {
+        return $this->hasMany(DeliverableFile::class, 'deliverable_unique_id', 'unique_id');
     }
 }

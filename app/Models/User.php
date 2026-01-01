@@ -49,8 +49,18 @@ class User extends Authenticatable
         return $this->hasMany(Project::class, 'client_unique_id', 'unique_id');
     }
 
-    public function milestones(): HasMany
+    public function createdDeliverables(): HasMany
     {
         return $this->hasMany(Deliverable::class, 'created_by_unique_id', 'unique_id');
+    }
+
+    public function approvedDeliverables(): HasMany
+    {
+        return $this->hasMany(Deliverable::class, 'approved_by_unique_id', 'unique_id');
+    }
+
+    public function uploadedFiles(): HasMany
+    {
+        return $this->hasMany(DeliverableFile::class, 'uploaded_by_unique_id', 'unique_id');
     }
 }
