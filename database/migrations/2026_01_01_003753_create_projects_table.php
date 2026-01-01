@@ -35,7 +35,7 @@ return new class extends Migration {
             $table->timestamp('deleted_at')->nullable();
 
             //relations
-            $table->foreign('unique_id')->references('unique_id')->on('users')->cascadeOnDelete();
+            $table->foreign('client_unique_id')->references('unique_id')->on('users')->cascadeOnDelete();
         });
     }
 
