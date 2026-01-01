@@ -8,6 +8,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable
@@ -25,12 +26,13 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'deleted_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'role'=> AccountRole::class,
+            'role' => AccountRole::class,
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
@@ -40,5 +42,10 @@ class User extends Authenticatable
     public function uniqueIds(): array
     {
         return ['unique_id'];
+    }
+
+    public function projects(): HasMany
+    {
+        return $this->hasMany(Projects::class, 'client_unique_id', 'unique_id');
     }
 }
