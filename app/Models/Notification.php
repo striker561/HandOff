@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use App\Enums\NotificationType;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, MorphTo};
 
 class Notification extends BaseModel
 {
+    /** @use HasFactory<\Database\Factories\NotificationFactory> */
     public $timestamps = true;
 
     protected $fillable = [

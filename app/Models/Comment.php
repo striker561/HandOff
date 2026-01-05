@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, MorphTo, MorphMany};
 
 class Comment extends BaseModel
 {
+    /** @use HasFactory<\Database\Factories\CommentFactory> */
     protected $fillable = [
         'commentable_type',
         'commentable_id',
