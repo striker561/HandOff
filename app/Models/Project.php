@@ -2,16 +2,18 @@
 
 namespace App\Models;
 
-use App\Enums\ProjectStatus;
+use App\Enums\{ProjectCurrency, ProjectStatus};
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, MorphMany};
 
 class Project extends BaseModel
 {
 
+    /** @use HasFactory<\Database\Factories\ProjectFactory> */
+
     protected $fillable = [
         'client_unique_id',
         'name',
-        'slug',
         'description',
         'status',
         'start_date',
@@ -27,6 +29,7 @@ class Project extends BaseModel
     protected function casts(): array
     {
         return [
+            'currency' => ProjectCurrency::class,
             'status' => ProjectStatus::class,
             'start_date' => 'date',
             'due_date' => 'date',

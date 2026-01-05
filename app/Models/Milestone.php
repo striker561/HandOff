@@ -3,10 +3,14 @@
 namespace App\Models;
 
 use App\Enums\MilestoneStatus;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, MorphMany};
 
 class Milestone extends BaseModel
 {
+
+    /** @use HasFactory<\Database\Factories\MileStoneFactory> */
+
     protected $fillable = [
         'project_unique_id',
         'name',
