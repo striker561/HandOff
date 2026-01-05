@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class DeliverableFile extends BaseModel
 {
+    /** @use HasFactory<\Database\Factories\DeliverableFileFactory> */
     protected $fillable = [
         'deliverable_unique_id',
         'uploaded_by_unique_id',

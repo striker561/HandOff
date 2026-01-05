@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use App\Enums\{DeliverableStatus, DeliverableType};
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, MorphMany};
 
 class Deliverable extends BaseModel
 {
+    /** @use HasFactory<\Database\Factories\DeliverableFactory> */
     protected $fillable = [
         'project_unique_id',
         'milestone_unique_id',

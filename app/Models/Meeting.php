@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use App\Enums\MeetingStatus;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, MorphMany};
 
 class Meeting extends BaseModel
 {
+    /** @use HasFactory<\Database\Factories\MeetingFactory> */
     protected $fillable = [
         'project_unique_id',
         'deliverable_unique_id',
