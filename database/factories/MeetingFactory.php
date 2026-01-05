@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Enums\MeetingStatus;
+use App\Enums\Meeting\MeetingStatus;
 use App\Models\{Project, Deliverable, User};
 use Illuminate\Database\Eloquent\Factories\Factory;
 

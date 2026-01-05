@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use App\Enums\{DeliverableStatus, DeliverableType};
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Enums\Deliverable\{DeliverableStatus, DeliverableType};
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, MorphMany};
 
 class Deliverable extends BaseModel

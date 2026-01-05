@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\NotificationType;
+use App\Enums\Notification\NotificationType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, MorphTo};
 

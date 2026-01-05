@@ -3,8 +3,8 @@
 namespace Database\Factories;
 
 use App\Models\{Project, Milestone, User};
-use App\Enums\{DeliverableStatus, DeliverableType};
 use Illuminate\Database\Eloquent\Factories\Factory;
+use App\Enums\Deliverable\{DeliverableStatus, DeliverableType};
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Deliverable>

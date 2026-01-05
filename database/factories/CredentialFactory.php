@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Project;
-use App\Enums\CredentialType;
+use App\Enums\Credential\CredentialType;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

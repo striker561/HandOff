@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\MeetingStatus;
+use App\Enums\Meeting\MeetingStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, MorphMany};
 

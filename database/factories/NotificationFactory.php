@@ -2,9 +2,9 @@
 
 namespace Database\Factories;
 
-use App\Models\{User, Project, Deliverable, Meeting, Milestone, Credential};
-use App\Enums\NotificationType;
+use App\Enums\Notification\NotificationType;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use App\Models\{User, Project, Deliverable, Meeting, Milestone, Credential};
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Notification>
