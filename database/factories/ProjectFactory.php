@@ -3,8 +3,8 @@
 namespace Database\Factories;
 
 use App\Models\User;
-use App\Enums\{ProjectCurrency, ProjectStatus};
 use Illuminate\Database\Eloquent\Factories\Factory;
+use App\Enums\Project\{ProjectCurrency, ProjectStatus};
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Project>

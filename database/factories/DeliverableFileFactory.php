@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\{Deliverable, User};
+use App\Enums\DeliverableFile\MimeType;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -22,7 +23,7 @@ class DeliverableFileFactory extends Factory
             'original_filename' => $originalFilename,
             'file_path' => 'deliverables/' . $filename,
             'file_size' => fake()->numberBetween(1024, 10485760), // 1KB to 10MB
-            'mime_type' => fake()->randomElement(['application/pdf', 'image/png', 'image/jpeg', 'application/zip', 'text/plain']),
+            'mime_type' => fake()->randomElement(MimeType::cases()),
             'version' => '1.0',
             'is_latest' => true,
             'download_count' => fake()->numberBetween(0, 50),

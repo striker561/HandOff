@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\ActivityLog\LogName;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use App\Models\{User, Project, Milestone, Deliverable, Meeting};
 
@@ -14,7 +15,7 @@ class ActivityLogFactory extends Factory
     {
         return [
             'user_unique_id' => User::factory(),
-            'log_name' => fake()->randomElement(['default', 'auth', 'project', 'deliverable', 'meeting']),
+            'log_name' => fake()->randomElement(LogName::cases()),
             'description' => fake()->sentence(),
             'properties' => [
                 'action' => fake()->randomElement(['created', 'updated', 'deleted', 'viewed']),

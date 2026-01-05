@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use App\Enums\Meeting\MeetingStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Enums\Meeting\{MeetingLocation, MeetingStatus};
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, MorphMany};
 
 class Meeting extends BaseModel
@@ -26,6 +26,7 @@ class Meeting extends BaseModel
     protected function casts(): array
     {
         return [
+            'location' => MeetingLocation::class,
             'status' => MeetingStatus::class,
             'scheduled_at' => 'datetime',
             'duration_minutes' => 'integer',

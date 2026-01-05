@@ -3,7 +3,7 @@
 namespace App\Models;
 
 
-use App\Enums\AccountRole;
+use App\Enums\User\AccountRole;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;

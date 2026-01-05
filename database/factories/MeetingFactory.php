@@ -2,9 +2,9 @@
 
 namespace Database\Factories;
 
-use App\Enums\Meeting\MeetingStatus;
 use App\Models\{Project, Deliverable, User};
 use Illuminate\Database\Eloquent\Factories\Factory;
+use App\Enums\Meeting\{MeetingLocation, MeetingStatus};
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Meeting>
@@ -23,13 +23,7 @@ class MeetingFactory extends Factory
             'description' => fake()->paragraph(),
             'scheduled_at' => $scheduledAt,
             'duration_minutes' => fake()->randomElement([30, 60, 90, 120]),
-            'location' => fake()->randomElement([
-                fake()->url(),
-                'Conference Room A',
-                'Zoom',
-                'Google Meet',
-                'Microsoft Teams',
-            ]),
+            'location' => fake()->randomElement(MeetingLocation::cases()),
             'status' => fake()->randomElement(MeetingStatus::cases()),
             'meeting_notes' => fake()->optional(0.4)->paragraph(),
             'metadata' => [

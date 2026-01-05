@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ActivityLog\LogName;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, MorphTo};
 
@@ -26,6 +27,7 @@ class ActivityLog extends BaseModel
     protected function casts(): array
     {
         return [
+            'log_name' => LogName::class,
             'properties' => 'array',
         ];
     }

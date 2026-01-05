@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\DeliverableFile\MimeType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -25,6 +26,7 @@ class DeliverableFile extends BaseModel
     protected function casts(): array
     {
         return [
+            'mime_type' => MimeType::class,
             'file_size' => 'integer',
             'is_latest' => 'boolean',
             'download_count' => 'integer',
