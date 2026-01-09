@@ -12,9 +12,9 @@ return new class extends Migration {
     {
         Schema::create('deliverable_files', function (Blueprint $table) {
             $table->id();
-            $table->char('unique_id', 36)->unique();
-            $table->char('deliverable_unique_id', 36)->index();
-            $table->char('uploaded_by_unique_id', 36)->index();
+            $table->uuid('unique_id')->unique();
+            $table->uuid('deliverable_unique_id')->index();
+            $table->uuid('uploaded_by_unique_id')->index();
 
             $table->string('filename', 255);
             $table->string('original_filename', 255);

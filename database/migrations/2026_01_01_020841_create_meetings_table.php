@@ -12,10 +12,10 @@ return new class extends Migration {
     {
         Schema::create('meetings', function (Blueprint $table) {
             $table->id();
-            $table->char('unique_id', 36)->unique();
-            $table->char('project_unique_id', 36)->nullable()->index();
-            $table->char('deliverable_unique_id', 36)->nullable()->index();
-            $table->char('scheduled_by_unique_id', 36)->index();
+            $table->uuid('unique_id')->unique();
+            $table->uuid('project_unique_id')->nullable()->index();
+            $table->uuid('deliverable_unique_id')->nullable()->index();
+            $table->uuid('scheduled_by_unique_id')->index();
 
             $table->string('title', 255);
             $table->text('description')->nullable();

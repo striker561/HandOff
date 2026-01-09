@@ -12,8 +12,8 @@ return new class extends Migration {
     {
         Schema::create('projects', function (Blueprint $table) {
             $table->id();
-            $table->char('unique_id', 36)->unique();
-            $table->char('client_unique_id', 36);
+            $table->uuid('unique_id')->unique();
+            $table->uuid('client_unique_id');
 
             $table->string('name', 255);
             $table->text('description')->nullable();
@@ -27,10 +27,10 @@ return new class extends Migration {
             $table->date('start_date')->nullable();
             $table->date('due_date')->nullable();
             $table->timestamp('completed_at')->nullable();
-            
+
             $table->json('metadata')->nullable();
             $table->string('status', 20)->default('active')->index();
-            
+
             $table->timestamps();
             $table->timestamp('deleted_at')->nullable();
 

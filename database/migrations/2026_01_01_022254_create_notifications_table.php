@@ -12,12 +12,12 @@ return new class extends Migration {
     {
         Schema::create('notifications', function (Blueprint $table) {
             $table->id();
-            $table->char('unique_id', 36)->unique();
-            $table->char('user_unique_id', 36)->index();
+            $table->uuid('unique_id')->unique();
+            $table->uuid('user_unique_id')->index();
 
             $table->string('type', 255);
             $table->string('notifiable_type', 255);
-            $table->char('notifiable_id', 36);
+            $table->uuid('notifiable_id');
 
             $table->json('data');
             $table->timestamp('read_at')->nullable()->index();

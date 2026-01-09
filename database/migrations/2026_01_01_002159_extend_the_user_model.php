@@ -4,12 +4,11 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->char('unique_id', 36)->after('id')->unique();
+            $table->uuid('unique_id')->after('id')->unique();
             $table->string('role', 20)->default('client')->after('unique_id');
             $table->string('avatar', 255)->nullable()->after('password');
             $table->timestamp('deleted_at')->nullable();

@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -13,17 +12,17 @@ return new class extends Migration
     {
         Schema::create('activity_logs', function (Blueprint $table) {
             $table->id();
-            $table->char('user_unique_id', 36)->nullable()->index();
-            
+            $table->uuid('user_unique_id')->nullable()->index();
+
             $table->string('log_name', 255)->nullable();
             $table->text('description');
-            
+
             $table->string('subject_type', 255)->nullable();
-            $table->char('subject_id', 36)->nullable();
-            
+            $table->uuid('subject_id')->nullable();
+
             $table->string('causer_type', 255)->nullable();
-            $table->char('causer_id', 36)->nullable();
-            
+            $table->uuid('causer_id')->nullable();
+
             $table->json('properties')->nullable();
             $table->string('ip_address', 45)->nullable();
             $table->text('user_agent')->nullable();

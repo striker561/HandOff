@@ -12,10 +12,10 @@ return new class extends Migration {
     {
         Schema::create('deliverables', function (Blueprint $table) {
             $table->id();
-            $table->char('unique_id', 36)->unique();
-            $table->char('project_unique_id', 36)->index();
-            $table->char('milestone_unique_id', 36)->nullable()->index();
-            $table->char('created_by_unique_id', 36)->index();
+            $table->uuid('unique_id')->unique();
+            $table->uuid('project_unique_id')->index();
+            $table->uuid('milestone_unique_id')->nullable()->index();
+            $table->uuid('created_by_unique_id')->index();
 
             $table->string('name', 255);
             $table->text('description')->nullable();
@@ -28,7 +28,7 @@ return new class extends Migration {
 
             $table->date('due_date')->nullable();
             $table->timestamp('approved_at')->nullable();
-            $table->char('approved_by_unique_id', 36)->nullable();
+            $table->uuid('approved_by_unique_id')->nullable();
 
             $table->json('metadata')->nullable();
 

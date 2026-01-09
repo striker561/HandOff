@@ -12,8 +12,8 @@ return new class extends Migration {
     {
         Schema::create('credentials', function (Blueprint $table) {
             $table->id();
-            $table->char('unique_id', 36)->unique();
-            $table->char('project_unique_id', 36)->index();
+            $table->uuid('unique_id')->unique();
+            $table->uuid('project_unique_id')->index();
 
             $table->string('name', 255);
             $table->string('type', 50)->default('login')->index();
