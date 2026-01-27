@@ -9,11 +9,22 @@ use App\Http\Responses\APIResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Http\Requests\Client\{ResendClientInvitationRequest, StoreClientRequest};
+use Illuminate\Http\Request;
 
 class ClientController extends Controller
 {
     public function __construct(private readonly ClientService $clients)
     {
+    }
+
+    public function index(Request $request): JsonResponse
+    {
+        $clients = $this->clients->getClients();
+
+        return APIResponse::success(
+            'Clients retrieved successfully',
+            UserResource::collection($clients)->resolve()
+        );
     }
 
     public function store(StoreClientRequest $request): JsonResponse

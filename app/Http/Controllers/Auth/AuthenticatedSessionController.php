@@ -7,6 +7,7 @@ use App\Http\Responses\APIResponse;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Resources\UserResource;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -21,7 +22,7 @@ class AuthenticatedSessionController extends Controller
 
         return APIResponse::success(
             'User Data',
-            ['user' => $request->user(),],
+            (new UserResource($request->user()))->resolve(),
         );
     }
 

@@ -14,6 +14,14 @@ class ClientService extends BaseCRUDService
         return User::class;
     }
 
+    public function getClients()
+    {
+        return User::query()
+            ->where('role', AccountRole::CLIENT)
+            ->latest()
+            ->get();
+    }
+
     public function createClient(array $data): User
     {
         $tempPass = Str::random(12);
