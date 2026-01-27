@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use App\Enums\User\AccountRole;
 use App\Http\Responses\APIResponse;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -22,8 +23,7 @@ class EnsureAdmin
             return APIResponse::unauthorized();
         }
 
-        // Option A: boolean flag
-        if ((bool) ($user->is_admin ?? false) !== true) {
+        if ($user->role !== AccountRole::ADMIN) {
             return APIResponse::forbidden();
         }
 

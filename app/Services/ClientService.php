@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Models\User;
 use Illuminate\Support\Str;
 use App\Enums\User\AccountRole;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\{Hash, RateLimiter};
 
 class ClientService extends BaseCRUDService
 {
@@ -35,7 +35,7 @@ class ClientService extends BaseCRUDService
     {
         $tempPass = Str::random(12);
 
-        $user::query()->update([
+        $user->update([
             'password' => Hash::make($tempPass),
         ]);
 
@@ -45,6 +45,13 @@ class ClientService extends BaseCRUDService
 
     private function sendInvitationEmail(User $user, string $tempPass): void
     {
-        // SEND EMAILS 
+        $key = "invite:{$user->id}";
+
+        if (RateLimiter::tooManyAttempts($key, 1)) {
+            $seconds = RateLimiter::availableIn($key);
+            abort(429, "Invitation already sent recently. Try again in {$seconds}s.");
+        }
+
+        RateLimiter::hit($key, 120); // 1 attempt per 120 seconds
     }
 }

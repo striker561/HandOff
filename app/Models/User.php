@@ -18,10 +18,12 @@ class User extends Authenticatable
     use HasFactory, Notifiable, HasUuids, SoftDeletes, HasApiTokens;
 
     protected $fillable = [
+        'unique_id',
         'name',
         'email',
         'password',
         'avatar',
+        'role',
     ];
 
     protected $hidden = [

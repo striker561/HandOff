@@ -7,7 +7,7 @@ use App\Services\ClientService;
 use Illuminate\Http\JsonResponse;
 use App\Http\Responses\APIResponse;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\ClientResource;
+use App\Http\Resources\UserResource;
 use App\Http\Requests\Client\{ResendClientInvitationRequest, StoreClientRequest};
 
 class ClientController extends Controller
@@ -21,8 +21,8 @@ class ClientController extends Controller
         $client = $this->clients->createClient($request->validated());
 
         return APIResponse::created(
-            'Client Created and invitation sent.',
-            (new ClientResource($client))->resolve()
+            'Client Created and invitation sent',
+            (new UserResource($client))->resolve()
         );
     }
 
@@ -32,8 +32,8 @@ class ClientController extends Controller
         $this->clients->resendInvitation($client);
 
         return APIResponse::success(
-            'Client Created and invitation sent.',
-            (new ClientResource($client->fresh()))->resolve()
+            'Invitation sent',
+            (new UserResource($client->fresh()))->resolve()
         );
     }
 }

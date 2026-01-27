@@ -5,7 +5,7 @@ namespace App\Policies;
 use App\Models\User;
 use App\Enums\User\AccountRole;
 
-class ClientPolicy
+class UserPolicy
 {
     public function create(User $user): bool
     {

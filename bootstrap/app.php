@@ -31,7 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
 
         // DEFINING CUSTOM EXCEPTION HANDLING IN API TO ENSURE CONSISTENCY AND AVOID FRAMEWORK DRAMA
-
+    
         // 401 — Unauthenticated
         $exceptions->render(function (AuthenticationException $e, Request $request) {
             if ($request->expectsJson()) {
@@ -87,11 +87,17 @@ return Application::configure(basePath: dirname(__DIR__))
             return null;
         });
 
+
         // 500 — Fallback (don’t leak internals)
-        $exceptions->render(function (Throwable $e, Request $request) {
+        $exceptions->render(function (Throwable $_, Request $request) {
+            if (!app()->environment('production')) {
+                return null;
+            }
+
             if ($request->expectsJson()) {
                 return APIResponse::serverError();
             }
+
             return null;
         });
 
