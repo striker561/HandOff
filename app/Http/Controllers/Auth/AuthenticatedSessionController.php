@@ -21,9 +21,7 @@ class AuthenticatedSessionController extends Controller
 
         return APIResponse::success(
             'User Data',
-            [
-                'user' => $request->user(),
-            ],
+            ['user' => $request->user(),],
         );
     }
 
@@ -38,6 +36,6 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        return APIResponse::noContent('Logged out');
+        return APIResponse::noContent();
     }
 }

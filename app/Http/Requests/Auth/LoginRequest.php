@@ -43,9 +43,7 @@ class LoginRequest extends FormRequest
             RateLimiter::hit($this->throttleKey());
 
             throw new HttpResponseException(
-                APIResponse::validation([
-                    'email' => [__('auth.failed')],
-                ])
+                APIResponse::unauthorized(trans('auth.failed'))
             );
         }
 

@@ -9,25 +9,20 @@ use Illuminate\Support\Facades\Password;
 
 class PasswordResetLinkController extends Controller
 {
-    /**
-     * Handle an incoming password reset link request.
-     */
     public function store(Request $request)
     {
         $request->validate([
             'email' => ['required', 'email'],
         ]);
 
-        $status = Password::sendResetLink(
+        // Would send email if it exists 
+        Password::sendResetLink(
             $request->only('email')
         );
 
-        if ($status != Password::RESET_LINK_SENT) {
-            return APIResponse::validation([
-                'email' => [__($status)],
-            ]);
-        }
-
-        return APIResponse::success(__($status));
+        // Always return 200 anti-enumeration
+        return APIResponse::success(
+            'We will send an email if the user with this email exists.'
+        );
     }
 }

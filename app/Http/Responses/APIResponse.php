@@ -3,6 +3,7 @@
 namespace App\Http\Responses;
 
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Lang;
 
 class APIResponse
@@ -28,12 +29,9 @@ class APIResponse
     }
 
     // No Content (204)
-    public static function noContent(string $msg = 'No Content'): JsonResponse
+    public static function noContent()
     {
-        return response()->json([
-            'msg' => $msg,
-            'data' => null,
-        ], 204);
+        return response(status: 204);
     }
 
     // Generic client error (400)
@@ -66,12 +64,6 @@ class APIResponse
         return self::error($msg, [], 404);
     }
 
-    // Too Many Requests (429)
-    public static function tooManyRequests(string $msg = 'Too many requests'): JsonResponse
-    {
-        return self::error($msg, [], 429);
-    }
-
     // Validation error (422)
     public static function validation(
         array $errors,
@@ -81,6 +73,18 @@ class APIResponse
             'msg' => $msg,
             'errors' => $errors,
         ], 422);
+    }
+
+    // Too Many Requests (429)
+    public static function tooManyRequests(string $msg = 'Too many requests'): JsonResponse
+    {
+        return self::error($msg, [], 429);
+    }
+
+    // Internal Server Error (500)
+    public static function serverError(string $msg = 'Internal server error'): JsonResponse
+    {
+        return self::error($msg, [], 500);
     }
 
     // Translate Laravel language keys if needed

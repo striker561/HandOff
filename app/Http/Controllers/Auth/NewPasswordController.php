@@ -4,11 +4,11 @@ namespace App\Http\Controllers\Auth;
 
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rules;
 use App\Http\Responses\APIResponse;
 use App\Http\Controllers\Controller;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Facades\{Hash, Password};
+use Illuminate\Validation\Rules\Password as RulesPassword;
 
 class NewPasswordController extends Controller
 {
@@ -20,7 +20,7 @@ class NewPasswordController extends Controller
         $request->validate([
             'token' => ['required'],
             'email' => ['required', 'email'],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'password' => ['required', RulesPassword::defaults()],
         ]);
 
         $credentials = $request->only('email', 'password', 'token');
@@ -37,12 +37,15 @@ class NewPasswordController extends Controller
             }
         );
 
+        // WE do not want to expose what went wrong rather we wanna still maintain the enumeration protection
+        // EMAIL DOES NOT EXIST, they don't need to know that
+        // IF THEY DO EVERY THING RIGHT, THEY SHOULD LOGIN
         if ($status != Password::PASSWORD_RESET) {
-            return APIResponse::validation([
-                'email' => [__($status)],
-            ]);
+            return APIResponse::validation(
+                ['token' => ['Unable to reset password. Link invalid or expired.']]
+            );
         }
 
-        return APIResponse::success(__($status));
+        return APIResponse::success(trans($status));
     }
 }
