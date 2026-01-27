@@ -45,6 +45,12 @@ class User extends Authenticatable
         return ['unique_id'];
     }
 
+    public function getRouteKeyName(): string
+    {
+        return 'unique_id';
+    }
+
+
     public function projects(): HasMany
     {
         return $this->hasMany(Project::class, 'client_unique_id', 'unique_id');

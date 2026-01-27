@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
-use App\Enums\User\AccountRole;
 use App\Models\User;
 use Illuminate\Support\Str;
+use App\Enums\User\AccountRole;
 use Illuminate\Support\Facades\Hash;
 
 class ClientService extends BaseCRUDService
@@ -35,7 +35,7 @@ class ClientService extends BaseCRUDService
     {
         $tempPass = Str::random(12);
 
-        $user->update([
+        $user::query()->update([
             'password' => Hash::make($tempPass),
         ]);
 
