@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\User;
+use Illuminate\Http\Request;
 use App\Services\ClientService;
 use Illuminate\Http\JsonResponse;
 use App\Http\Responses\APIResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Http\Requests\Client\{ResendClientInvitationRequest, StoreClientRequest};
-use Illuminate\Http\Request;
 
 class ClientController extends Controller
 {
@@ -23,7 +23,7 @@ class ClientController extends Controller
 
         return APIResponse::success(
             'Clients retrieved successfully',
-            UserResource::collection($clients)->resolve()
+            UserResource::collection($clients)
         );
     }
 
@@ -33,7 +33,7 @@ class ClientController extends Controller
 
         return APIResponse::created(
             'Client Created and invitation sent',
-            (new UserResource($client))->resolve()
+            (new UserResource($client))
         );
     }
 
@@ -44,7 +44,7 @@ class ClientController extends Controller
 
         return APIResponse::success(
             'Invitation sent',
-            (new UserResource($client->fresh()))->resolve()
+            (new UserResource($client->fresh()))
         );
     }
 }

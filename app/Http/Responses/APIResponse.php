@@ -2,28 +2,38 @@
 
 namespace App\Http\Responses;
 
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Lang;
+use JsonSerializable;
 
 class APIResponse
 {
     // Default success response
     public static function success(
         string $msg = 'Success',
-        array $data = [],
+        mixed $data = null,
         int $status = 200
     ): JsonResponse {
+        if ($data instanceof Arrayable) {
+            $data = $data->toArray();
+        }
+
+        if ($data instanceof JsonSerializable) {
+            $data = $data->jsonSerialize();
+        }
+
         return response()->json([
             'msg' => $msg,
-            'data' => $data,
+            'data' => $data ?? [],
         ], $status);
     }
 
     // Created (201)
     public static function created(
         string $msg = 'Resource created',
-        array $data = []
+        mixed $data = []
     ): JsonResponse {
         return self::success($msg, $data, 201);
     }
