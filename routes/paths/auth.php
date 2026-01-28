@@ -1,7 +1,13 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Auth\{AuthenticatedSessionController, NewPasswordController, PasswordResetLinkController};
+use App\Http\Controllers\Auth\{
+    AuthenticatedSessionController,
+    NewPasswordController,
+    PasswordController,
+    PasswordResetLinkController,
+    ProfileController
+};
 
 Route::prefix('/auth')->group(function () {
     Route::post('/login', [AuthenticatedSessionController::class, 'store'])
@@ -20,5 +26,13 @@ Route::prefix('/auth')->group(function () {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
         ->middleware('auth')
         ->name('logout');
+
+    Route::put('/password', [PasswordController::class, 'update'])
+        ->middleware('auth:sanctum')
+        ->name('password.update');
+
+    Route::put('/profile', [ProfileController::class, 'update'])
+        ->middleware('auth:sanctum')
+        ->name('profile.update');
 });
 
