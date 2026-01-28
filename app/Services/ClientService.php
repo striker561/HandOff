@@ -14,12 +14,24 @@ class ClientService extends BaseCRUDService
         return User::class;
     }
 
-    public function getClients()
+    protected function searchableColumns(): array
     {
-        return User::query()
-            ->where('role', AccountRole::CLIENT)
-            ->latest()
-            ->get();
+        return ['name', 'email'];
+    }
+
+    protected function sortableColumns(): array
+    {
+        return ['name', 'email', 'created_at', 'updated_at'];
+    }
+
+    public function getClients(array $filters = [])
+    {
+        // Base Query
+        $query = User::query()->where('role', AccountRole::CLIENT);
+
+        // Pass to query builder
+        $query = $this->applyFilters($query, $filters);
+        return $query->paginate($this->getPerPage($filters));
     }
 
     public function createClient(array $data): User

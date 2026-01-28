@@ -3,13 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\User;
-use Illuminate\Http\Request;
 use App\Services\ClientService;
 use Illuminate\Http\JsonResponse;
 use App\Http\Responses\APIResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
-use App\Http\Requests\Client\{ResendClientInvitationRequest, StoreClientRequest};
+use App\Http\Requests\Client\{IndexClientRequest, ResendClientInvitationRequest, StoreClientRequest};
 
 class ClientController extends Controller
 {
@@ -17,13 +16,21 @@ class ClientController extends Controller
     {
     }
 
-    public function index(Request $request): JsonResponse
+    public function index(IndexClientRequest $request): JsonResponse
     {
-        $clients = $this->clients->getClients();
+        $clients = $this->clients->getClients($request->filters());
 
         return APIResponse::success(
             'Clients retrieved successfully',
-            UserResource::collection($clients)
+            [
+                'data' => UserResource::collection($clients),
+                'pagination' => [
+                    'total' => $clients->total(),
+                    'per_page' => $clients->perPage(),
+                    'current_page' => $clients->currentPage(),
+                    'last_page' => $clients->lastPage(),
+                ]
+            ]
         );
     }
 

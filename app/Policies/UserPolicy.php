@@ -7,6 +7,11 @@ use App\Enums\User\AccountRole;
 
 class UserPolicy
 {
+    public function view(User $user): bool
+    {
+        return $user->role == AccountRole::ADMIN;
+    }
+
     public function create(User $user): bool
     {
         return $user->role == AccountRole::ADMIN;
