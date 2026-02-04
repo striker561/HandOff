@@ -1,12 +1,63 @@
 # Contributing to HandOff
 
-## Service Layer Architecture
+## Architecture Overview
 
 HandOff uses a service-based architecture where **all business logic lives in services**, not controllers. Controllers are thin wrappers that validate input and call service methods.
 
-### Core Principle: KISS (Keep It Simple, Stupid)
+### Core Principles
 
-We favor **one well-designed pattern** over dozens of specialized methods. If `applyFilters()` can handle it, don't write a custom method.
+1. **KISS (Keep It Simple, Stupid)** - One pattern over dozens of methods
+2. **Actor-Required Events** - All user actions require an authenticated actor
+3. **Consolidated Listeners** - One listener per domain, not per action
+
+### Event System (Domain Events + Activity Logs + Notifications)
+
+Every user-triggered action dispatches a domain event that automatically:
+
+- Logs the action in the activity log
+- Sends notifications to relevant users
+
+**Key Rule:** Service methods that dispatch events **must require** `User $performedBy` (never nullable).
+
+```php
+// Correct - actor is required
+public function createClient(array $data, User $performedBy): User
+{
+    $client = $this->create($data);
+    
+    ClientEvent::dispatch($client, ClientAction::CREATED, $performedBy, []);
+    
+    return $client;
+}
+
+// Wrong - nullable actor allows silent audit failures
+public function createClient(array $data, ?User $performedBy = null): User
+{
+    $client = $this->create($data);
+    
+    if ($performedBy) {  // This conditional is NOT allowed
+        ClientEvent::dispatch($client, ClientAction::CREATED, $performedBy, []);
+    }
+    
+    return $client;
+}
+```
+
+**Why:** If actor is optional, events/logs/notifications can be silently skipped. All routes use `auth:sanctum`, so `$request->user()` is always available in controllers.
+
+**Controllers must pass the authenticated user:**
+
+```php
+public function store(StoreClientRequest $request): JsonResponse
+{
+    $client = $this->clients->createClient(
+        $request->validated(),
+        $request->user()  // Always pass authenticated user
+    );
+    
+    return APIResponse::created('Client created', new UserResource($client));
+}
+```
 
 ## Service Pattern Overview
 
@@ -63,12 +114,12 @@ protected function sortableColumns(): array
 - `?status=active&type=client` - filters by exact matches
 - `?sort_by=created_at&sort_direction=desc` - sorts results
 
-### 3. Use Scoped Query Methods (Not Bloated Filters)
+### 3. Use Scoped Query Methods
 
 **Bad - Manual filters everywhere:**
 
 ```php
-public function getAll(?array $filters = []): LengthAwarePaginator
+public function getAll(array $filters = []): LengthAwarePaginator
 {
     $query = $this->model->query();
     
@@ -80,10 +131,6 @@ public function getAll(?array $filters = []): LengthAwarePaginator
         $query->where('status', $filters['status']);
     }
     
-    if (isset($filters['search'])) {
-        $query->where('name', 'like', "%{$filters['search']}%");
-    }
-    
     return $query->paginate($filters['per_page'] ?? 15);
 }
 ```
@@ -91,7 +138,7 @@ public function getAll(?array $filters = []): LengthAwarePaginator
 **Good - Scoped base query + applyFilters():**
 
 ```php
-public function getMilestonesForProject(string $projectId, ?array $filters = []): LengthAwarePaginator
+public function getMilestonesForProject(string $projectId, array $filters = []): LengthAwarePaginator
 {
     $query = $this->model->where('project_id', $projectId);
     $query = $this->applyFilters($query, $filters);
@@ -101,10 +148,9 @@ public function getMilestonesForProject(string $projectId, ?array $filters = [])
 
 **Why this is better:**
 
-- DRY - filtering logic lives in one place (`applyFilters`)
+- DRY - filtering logic lives in one place
 - Consistent - all services behave the same
-- Maintainable - change filter behavior once, affects all services
-- Scoped - base query sets the context, filters refine it
+- Maintainable - change once, affects everywhere
 
 ### 4. The applyFilters() Pattern
 
@@ -119,10 +165,10 @@ You don't write this logic - just define the columns.
 
 ### 5. Pagination Strategy
 
-**Always use `paginateQuery()` for data retrieval:**
+**Always use `paginateQuery()`:**
 
 ```php
-public function getSomething(?array $filters = []): LengthAwarePaginator
+public function getSomething(array $filters = []): LengthAwarePaginator
 {
     $query = $this->model->query();
     $query = $this->applyFilters($query, $filters);
@@ -130,271 +176,211 @@ public function getSomething(?array $filters = []): LengthAwarePaginator
 }
 ```
 
-**Never do this:**
+**Don't do this:**
 
 ```php
-// Returns Collection - doesn't scale, no pagination metadata
-return $query->get();
-
-// Manual pagination - duplicates logic
-return $query->paginate($filters['per_page'] ?? 15);
+return $query->get();  // No pagination
+return $query->paginate(15);  // Duplicates logic
 ```
-
-`paginateQuery()` enforces 1-100 items per page and provides consistent pagination metadata.
 
 ## Real-World Examples
 
-### Example 1: MilestoneService (Clean Scoped Methods)
+### ClientService (Standard CRUD with Events)
 
 ```php
-public function getMilestonesForProject(string $projectId, ?array $filters = []): LengthAwarePaginator
+public function createClient(array $data, User $performedBy): User
 {
-    $query = $this->model->where('project_id', $projectId);
-    $query = $this->applyFilters($query, $filters);
-    return $this->paginateQuery($query, $filters);
-}
-```
-
-**Usage:**
-
-```php
-// Get all milestones for a project
-$milestones = $milestoneService->getMilestonesForProject($projectId);
-
-// With status filter
-$milestones = $milestoneService->getMilestonesForProject($projectId, [
-    'status' => MilestoneStatus::COMPLETED->value
-]);
-
-// With search and sorting
-$milestones = $milestoneService->getMilestonesForProject($projectId, [
-    'search' => 'design',
-    'sort_by' => 'due_date',
-    'sort_direction' => 'asc',
-    'per_page' => 25
-]);
-```
-
-### Example 2: DeliverableService (Nested Scopes)
-
-```php
-public function getDeliverablesForMilestone(string $milestoneId, ?array $filters = []): LengthAwarePaginator
-{
-    $query = $this->model->where('milestone_id', $milestoneId);
-    $query = $this->applyFilters($query, $filters);
-    return $this->paginateQuery($query, $filters);
-}
-```
-
-Supports: Project → Milestone → Deliverable hierarchy
-
-### Example 3: NotificationService (User Context)
-
-```php
-public function getUserNotifications(string $userId, ?array $filters = []): LengthAwarePaginator
-{
-    $query = $this->model->where('user_id', $userId);
-    $query = $this->applyFilters($query, $filters);
-    return $this->paginateQuery($query, $filters);
-}
-```
-
-**Usage:**
-
-```php
-// Unread notifications only
-$notifications = $notificationService->getUserNotifications($userId, [
-    'read_at' => null  // filterableColumns includes read_at
-]);
-```
-
-### Example 4: CommentService (Custom Logic)
-
-Sometimes you need custom behavior. That's fine - just don't duplicate what `applyFilters()` already does:
-
-```php
-public function getCommentsForEntity(string $entityType, string $entityId, bool $includeInternal = false): Collection
-{
-    $query = $this->model
-        ->where('commentable_type', $entityType)
-        ->where('commentable_id', $entityId)
-        ->whereNull('parent_id');  // Top-level only
-    
-    if (!$includeInternal) {
-        $query->where('is_internal', false);
-    }
-    
-    return $query->with('user', 'replies.user')->get();
-}
-```
-
-**When to use Collection vs LengthAwarePaginator:**
-
-- **Collection**: Small datasets (comments on one entity, user's roles)
-- **LengthAwarePaginator**: Tables, lists, potentially large datasets
-
-## Storage Abstraction Pattern
-
-Never use `Storage::disk('s3')` directly. Use `StorageService`:
-
-```php
-use App\Services\Storage\StorageService;
-
-class DeliverableService extends BaseCRUDService
-{
-    public function __construct(protected StorageService $storage)
-    {
-        parent::__construct();
-    }
-    
-    public function uploadFile(string $deliverableId, UploadedFile $file): DeliverableFile
-    {
-        $path = $this->storage->putFileAs(
-            "deliverables/{$deliverableId}",
-            $file,
-            $file->getClientOriginalName()
-        );
-        
-        // Store path in database
-    }
-}
-```
-
-**Why:**
-
-- Swap storage backends via `.env` (local/S3/DigitalOcean Spaces)
-- Consistent interface across all file operations
-- Graceful fallbacks (e.g., `temporaryUrl()` returns null for local)
-
-## Type Safety
-
-Always use type hints. We're on PHP 8.2+:
-
-```php
-public function createMilestone(array $data): Milestone
-{
-    // ...
-}
-
-public function getMilestonesForProject(string $projectId, ?array $filters = []): LengthAwarePaginator
-{
-    // ...
-}
-
-protected function searchableColumns(): array
-{
-    return ['title', 'description'];
-}
-```
-
-## Enums Over Strings
-
-Use enums for status/type fields:
-
-```php
-use App\Enums\Milestone\MilestoneStatus;
-
-public function completeMilestone(string $milestoneId): Milestone
-{
-    return $this->update($milestoneId, [
-        'status' => MilestoneStatus::COMPLETED,
-        'completed_at' => now()
+    $client = $this->create([
+        'name' => $data['name'],
+        'email' => $data['email'],
+        'password' => Hash::make(Str::random(12)),
+        'role' => AccountRole::CLIENT,
     ]);
+    
+    ClientEvent::dispatch($client, ClientAction::CREATED, $performedBy, []);
+    
+    return $client;
+}
+
+public function getClients(array $filters = []): LengthAwarePaginator
+{
+    $query = User::query()->where('role', AccountRole::CLIENT);
+    $query = $this->applyFilters($query, $filters);
+    return $this->paginateQuery($query);
 }
 ```
 
-**Available Enums:**
-
-- `ProjectStatus`, `DeliverableStatus`, `MilestoneStatus`
-- `NotificationType`, `CredentialType`, `MeetingStatus`
-- Check `/app/Enums/` for complete list
-
-## Database Transactions
-
-Wrap multi-step operations in transactions:
+### MilestoneService (Scoped Queries)
 
 ```php
-public function uploadFile(string $deliverableId, UploadedFile $file): DeliverableFile
+public function getMilestonesForProject(string $projectId, array $filters = []): LengthAwarePaginator
 {
-    return DB::transaction(function () use ($deliverableId, $file) {
-        // 1. Store file
-        $path = $this->storage->putFileAs(...);
+    $query = Milestone::where('project_unique_id', $projectId);
+    $query = $this->applyFilters($query, $filters);
+    return $this->paginateQuery($query, $filters);
+}
+
+public function updateStatus(Milestone $milestone, MilestoneStatus $status, User $performedBy): Milestone
+{
+    $milestone->update(['status' => $status]);
+    
+    $action = $status === MilestoneStatus::COMPLETED 
+        ? MilestoneAction::COMPLETED 
+        : MilestoneAction::STATUS_CHANGED;
+    
+    MilestoneEvent::dispatch($milestone, $action, $performedBy, []);
+    
+    return $milestone->fresh();
+}
+```
+
+### DeliverableService (File Operations + Events)
+
+```php
+public function uploadFile(Deliverable $deliverable, UploadedFile $file, User $uploadedBy): DeliverableFile
+{
+    return DB::transaction(function () use ($deliverable, $file, $uploadedBy) {
+        $path = $this->storage->putFileAs("deliverables/{$deliverable->project_unique_id}", $file, $filename);
         
-        // 2. Create database record
         $deliverableFile = DeliverableFile::create([...]);
         
-        // 3. Update deliverable
-        $deliverable->update([...]);
+        DeliverableEvent::dispatch(
+            $deliverable, 
+            DeliverableAction::FILE_UPLOADED, 
+            $uploadedBy,
+            ['file_unique_id' => $deliverableFile->unique_id]
+        );
         
         return $deliverableFile;
     });
 }
 ```
 
-If step 2 or 3 fails, step 1 is rolled back (file is deleted).
+## Storage Abstraction
 
-## Queue Pattern
-
-We use database queues for fast background processing:
+Use `StorageService` instead of `Storage::disk()` directly:
 
 ```php
-use Illuminate\Support\Facades\Queue;
+use App\Services\Storage\StorageService;
 
-public function notifyDeliverableApproved(string $deliverableId): void
+class DeliverableService extends BaseCRUDService
 {
-    Queue::push(function () use ($deliverableId) {
-        // Send email, create notification, log activity
-    });
+    private StorageService $storage;
+
+    public function __construct()
+    {
+        $this->storage = new StorageService('filesystems.deliverables_disk');
+    }
+    
+    public function uploadFile(Deliverable $deliverable, UploadedFile $file, User $uploadedBy): DeliverableFile
+    {
+        $path = $this->storage->putFileAs("deliverables/{$deliverable->project_unique_id}", $file, $filename);
+        // Store path in database...
+    }
 }
 ```
 
-**Config:** `QUEUE_CONNECTION=database` in `.env`
+**Why:** Swap storage backends via `.env` without code changes (local/S3/DigitalOcean Spaces).
+
+## Type Safety & Enums
+
+Always use type hints and enums:
+
+```php
+use App\Enums\Milestone\MilestoneStatus;
+
+public function updateStatus(Milestone $milestone, MilestoneStatus $status, User $performedBy): Milestone
+{
+    $milestone->update(['status' => $status]);
+    return $milestone;
+}
+```
+
+**Available Enums:** Check `/app/Enums/` for complete list (ProjectStatus, DeliverableStatus, MilestoneStatus, etc.).
+
+## Database Transactions
+
+Wrap multi-step operations:
+
+```php
+public function uploadFile(Deliverable $deliverable, UploadedFile $file, User $uploadedBy): DeliverableFile
+{
+    return DB::transaction(function () use ($deliverable, $file, $uploadedBy) {
+        $path = $this->storage->putFileAs(...);
+        $deliverableFile = DeliverableFile::create([...]);
+        $deliverable->update(['version' => $nextVersion]);
+        
+        return $deliverableFile;
+    });
+}
+```
 
 ## Common Pitfalls
 
 ### Don't Create Redundant Methods
 
 ```php
-// Bad - this is what applyFilters() does
+// Bad
 public function getActiveProjects(): Collection
 {
     return $this->model->where('status', 'active')->get();
 }
-
-public function searchProjects(string $keyword): Collection
-{
-    return $this->model->where('name', 'like', "%$keyword%")->get();
-}
 ```
 
 ```php
-// Good - one method, flexible filters
-public function getProjects(?array $filters = []): LengthAwarePaginator
+// Good
+public function getProjects(array $filters = []): LengthAwarePaginator
 {
     $query = $this->model->query();
     $query = $this->applyFilters($query, $filters);
     return $this->paginateQuery($query, $filters);
 }
 
-// Usage:
-$active = $service->getProjects(['status' => 'active']);
-$searched = $service->getProjects(['search' => 'keyword']);
+// Usage: $service->getProjects(['status' => 'active']);
+```
+
+### Don't Use Nullable Actor Parameters
+
+```php
+// Bad - allows silent event/log failures
+public function createProject(array $data, ?User $performedBy = null): Project
+{
+    $project = $this->create($data);
+    
+    if ($performedBy) {
+        ProjectEvent::dispatch($project, ProjectAction::CREATED, $performedBy, []);
+    }
+    
+    return $project;
+}
+```
+
+```php
+// Good - actor is always required
+public function createProject(array $data, User $performedBy): Project
+{
+    $project = $this->create($data);
+    
+    ProjectEvent::dispatch($project, ProjectAction::CREATED, $performedBy, []);
+    
+    return $project;
+}
 ```
 
 ### Don't Duplicate Filter Logic
 
 ```php
-// Bad - manual filtering
+// Bad
 if (isset($filters['status'])) {
     $query->where('status', $filters['status']);
 }
 ```
 
 ```php
-// Good - define once, use everywhere
+// Good - define once
 protected function filterableColumns(): array
 {
-    return ['status', 'type', 'is_active'];
+    return ['status', 'type'];
 }
 ```
 
@@ -407,12 +393,12 @@ public function createProject(array $data): Project
     if (empty($data['name'])) {
         throw new Exception('Name required');
     }
-    // ...
+    return $this->create($data);
 }
 ```
 
 ```php
-// Good - validation in Form Request
+// Good - validation in Form Request, service stays clean
 class CreateProjectRequest extends FormRequest
 {
     public function rules(): array
@@ -421,20 +407,18 @@ class CreateProjectRequest extends FormRequest
     }
 }
 
-// Service stays clean
-public function createProject(array $data): Project
+public function createProject(array $data, User $performedBy): Project
 {
     return $this->create($data);
 }
 ```
 
-## Questions?
+## Reference Files
 
-Read the code. Seriously.
+When in doubt, read the code:
 
-- **Best reference:** `ClientService` - our cleanest implementation
-- **Pagination examples:** `MilestoneService`, `DeliverableService`
-- **Custom logic examples:** `CommentService`, `ActivityLogService`
-- **Storage abstraction:** `DeliverableService` + `StorageService`
-
-If the pattern isn't clear from reading existing services, open an issue.
+- **`ClientService`** - cleanest implementation with events
+- **`MilestoneService`** - scoped queries and status updates
+- **`DeliverableService`** - file operations + transactions
+- **`BaseCRUDService`** - filtering and pagination patterns
+- **`NotifyOnDomainEvent`** - consolidated listener routing
