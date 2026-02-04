@@ -9,7 +9,7 @@ class IndexClientRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('view', User::class);
+        return $this->user()->can('viewAny', User::class);
     }
 
     public function rules(): array

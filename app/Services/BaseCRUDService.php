@@ -13,7 +13,7 @@ abstract class BaseCRUDService
     {
         $query = $this->getModel()::query();
         $query = $this->applyFilters($query, $filters);
-        return $query->paginate($this->getPerPage($filters));
+        return $this->paginateQuery($query, $filters);
     }
 
     public function create(array $data): Model

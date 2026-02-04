@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\MileStone>
  */
-class MileStoneFactory extends Factory
+class MilestoneFactory extends Factory
 {
     public function definition(): array
     {

@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, MorphMany};
 class Milestone extends BaseModel
 {
 
-    /** @use HasFactory<\Database\Factories\MileStoneFactory> */
+    /** @use HasFactory<\Database\Factories\MilestoneFactory> */
 
     protected $fillable = [
         'project_unique_id',
