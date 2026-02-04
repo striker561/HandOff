@@ -92,7 +92,7 @@ class NotificationService extends BaseCRUDService
     ): Notification {
         return $this->createNotification(
             user: $recipient,
-            type: NotificationType::DELIVERABLE_APPROVED,
+            type: NotificationType::DELIVERABLE,
             notifiable: $deliverable,
             data: [
                 'message' => 'Your deliverable has been approved',
@@ -108,7 +108,7 @@ class NotificationService extends BaseCRUDService
     ): Notification {
         return $this->createNotification(
             user: $mentionedUser,
-            type: NotificationType::COMMENT_MENTION,
+            type: NotificationType::COMMENT,
             notifiable: $comment,
             data: [
                 'message' => "{$commenter->name} mentioned you in a comment",
@@ -123,7 +123,7 @@ class NotificationService extends BaseCRUDService
     ): Notification {
         return $this->createNotification(
             user: $recipient,
-            type: NotificationType::MILESTONE_COMPLETED,
+            type: NotificationType::MILESTONE,
             notifiable: $milestone,
             data: [
                 'message' => 'A milestone has been completed',

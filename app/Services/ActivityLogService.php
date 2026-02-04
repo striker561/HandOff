@@ -33,7 +33,7 @@ class ActivityLogService extends BaseCRUDService
     public function logCreated(Model $subject, ?User $causer = null, array $properties = []): ActivityLog
     {
         return $this->log(
-            logName: LogName::DEFAULT ,
+            logName: LogName::CREATED ,
             description: class_basename($subject) . ' created',
             subject: $subject,
             causer: $causer,
@@ -44,7 +44,7 @@ class ActivityLogService extends BaseCRUDService
     public function logUpdated(Model $subject, ?User $causer = null, array $changes = []): ActivityLog
     {
         return $this->log(
-            logName: LogName::DEFAULT ,
+            logName: LogName::UPDATED ,
             description: class_basename($subject) . ' updated',
             subject: $subject,
             causer: $causer,
@@ -55,7 +55,7 @@ class ActivityLogService extends BaseCRUDService
     public function logDeleted(Model $subject, ?User $causer = null): ActivityLog
     {
         return $this->log(
-            logName: LogName::DEFAULT ,
+            logName: LogName::DELETED ,
             description: class_basename($subject) . ' deleted',
             subject: $subject,
             causer: $causer
@@ -69,7 +69,7 @@ class ActivityLogService extends BaseCRUDService
         ?User $causer = null
     ): ActivityLog {
         return $this->log(
-            logName: LogName::DEFAULT ,
+            logName: LogName::UPDATED,
             description: class_basename($subject) . " status changed from {$oldStatus} to {$newStatus}",
             subject: $subject,
             causer: $causer,
