@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\User;
 use Illuminate\Support\Str;
 use App\Enums\User\AccountRole;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\{Hash, RateLimiter};
 
 class ClientService extends BaseCRUDService
@@ -24,14 +25,12 @@ class ClientService extends BaseCRUDService
         return ['name', 'email', 'created_at', 'updated_at'];
     }
 
-    public function getClients(array $filters = [])
+    public function getClients(array $filters = []): LengthAwarePaginator
     {
         // Base Query
         $query = User::query()->where('role', AccountRole::CLIENT);
-
-        // Pass to query builder
         $query = $this->applyFilters($query, $filters);
-        return $query->paginate($this->getPerPage($filters));
+        return $this->paginateQuery($query);
     }
 
     public function createClient(array $data): User

@@ -103,4 +103,15 @@ class User extends Authenticatable
     {
         return $this->morphMany(ActivityLog::class, 'causer', 'causer_type', 'causer_id', 'unique_id');
     }
+
+    // Role helpers
+    public function isAdmin(): bool
+    {
+        return $this->role === AccountRole::ADMIN;
+    }
+
+    public function isClient(): bool
+    {
+        return $this->role === AccountRole::CLIENT;
+    }
 }

@@ -38,10 +38,18 @@ return [
             'report' => false,
         ],
 
+        'private' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private'),
+            'serve' => false,
+            'throw' => true,
+            'report' => true,
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => env('APP_URL').'/storage',
+            'url' => env('APP_URL') . '/storage',
             'visibility' => 'public',
             'throw' => false,
             'report' => false,
@@ -76,5 +84,17 @@ return [
     'links' => [
         public_path('storage') => storage_path('app/public'),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Application-Specific Disks
+    |--------------------------------------------------------------------------
+    |
+    | Configure which disk to use for specific application features.
+    | This makes it easy to swap storage backends without touching code.
+    |
+    */
+
+    'deliverables_disk' => env('DELIVERABLES_DISK', 'private'),
 
 ];

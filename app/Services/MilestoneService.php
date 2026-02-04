@@ -4,12 +4,28 @@ namespace App\Services;
 
 use App\Models\Milestone;
 use App\Enums\Milestone\MilestoneStatus;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class MilestoneService extends BaseCRUDService
 {
     protected function getModel(): string
     {
         return Milestone::class;
+    }
+
+    protected function searchableColumns(): array
+    {
+        return ['name', 'description'];
+    }
+
+    protected function filterableColumns(): array
+    {
+        return ['project_unique_id', 'status', 'is_completed'];
+    }
+
+    protected function sortableColumns(): array
+    {
+        return ['name', 'order', 'due_date', 'created_at', 'updated_at', 'completed_at'];
     }
 
     public function createOrderedMilestone(array $data): Milestone
@@ -25,6 +41,13 @@ class MilestoneService extends BaseCRUDService
         ]);
 
         return $milestone;
+    }
+
+    public function getMilestonesForProject(string $projectUniqueId, array $filters = []): LengthAwarePaginator
+    {
+        $query = Milestone::query()->where('project_unique_id', $projectUniqueId);
+        $query = $this->applyFilters($query, $filters);
+        return $this->paginateQuery($query, $filters);
     }
 
     public function updateStatus(
@@ -43,8 +66,7 @@ class MilestoneService extends BaseCRUDService
     public function reorder(
         string $projectUniqueId,
         array $milestoneUniqueIds
-    ): void
-    {
+    ): void {
         foreach ($milestoneUniqueIds as $index => $uniqueId) {
             Milestone::where('project_unique_id', $projectUniqueId)
                 ->where('unique_id', $uniqueId)

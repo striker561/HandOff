@@ -12,6 +12,21 @@ class ProjectService extends BaseCRUDService
         return Project::class;
     }
 
+    protected function searchableColumns(): array
+    {
+        return ['name', 'description'];
+    }
+
+    protected function filterableColumns(): array
+    {
+        return ['status', 'client_unique_id'];
+    }
+
+    protected function sortableColumns(): array
+    {
+        return ['name', 'status', 'budget', 'due_date', 'created_at', 'updated_at'];
+    }
+
     public function calculateProgress(Project $project): float
     {
         $milestones = $project->milestones;

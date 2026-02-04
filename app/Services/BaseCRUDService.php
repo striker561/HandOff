@@ -74,6 +74,11 @@ abstract class BaseCRUDService
         return min(max($perPage, 1), 100); // Between 1 and 100
     }
 
+    protected function paginateQuery(Builder $query, array $filters = [])
+    {
+        return $query->paginate($this->getPerPage($filters));
+    }
+
     // Override these in child services
     protected function searchableColumns(): array
     {

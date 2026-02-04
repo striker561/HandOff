@@ -9,4 +9,6 @@ enum LogName: string
     case PROJECT = 'project';
     case DELIVERABLE = 'deliverable';
     case MEETING = 'meeting';
+    case FILE = 'files';
+    case COMMENT = 'comment';
 }
