@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\{Credential, User};
 use Illuminate\Support\Facades\Crypt;
+use App\Enums\Credential\CredentialAction;
+use App\Events\Credential\CredentialEvent;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class CredentialService extends BaseCRUDService
@@ -28,7 +30,7 @@ class CredentialService extends BaseCRUDService
         return ['name', 'type', 'created_at', 'updated_at', 'last_accessed_at'];
     }
 
-    public function createCredential(array $data): Credential
+    public function createCredential(array $data, User $performedBy): Credential
     {
         /** @var Credential $credential */
         $credential = $this->create([
@@ -41,10 +43,17 @@ class CredentialService extends BaseCRUDService
             'notes' => $data['notes'] ?? null,
             'metadata' => $data['metadata'] ?? [],
         ]);
+
+        CredentialEvent::dispatch(
+            $credential,
+            CredentialAction::CREATED,
+            $performedBy,
+            []
+        );
         return $credential;
     }
 
-    public function updateCredential(Credential $credential, array $data): Credential
+    public function updateCredential(Credential $credential, array $data, User $performedBy): Credential
     {
         $updateData = [
             'name' => $data['name'] ?? $credential->name,
@@ -62,6 +71,13 @@ class CredentialService extends BaseCRUDService
 
         $credential->update($updateData);
 
+        CredentialEvent::dispatch(
+            $credential,
+            CredentialAction::UPDATED,
+            $performedBy,
+            []
+        );
+
         return $credential->fresh();
     }
 
@@ -76,6 +92,13 @@ class CredentialService extends BaseCRUDService
     {
         // Track access
         $credential->update(['last_accessed_at' => now()]);
+
+        CredentialEvent::dispatch(
+            $credential,
+            CredentialAction::ACCESSED,
+            $user,
+            []
+        );
 
         return [
             'unique_id' => $credential->unique_id,

@@ -7,6 +7,8 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use App\Services\Storage\StorageService;
 use App\Enums\Deliverable\DeliverableStatus;
+use App\Enums\Deliverable\DeliverableAction;
+use App\Events\Deliverable\DeliverableEvent;
 use Illuminate\Pagination\LengthAwarePaginator;
 use App\Models\{Deliverable, DeliverableFile, User};
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -41,7 +43,7 @@ class DeliverableService extends BaseCRUDService
     }
 
 
-    public function createDeliverable(array $data): Deliverable
+    public function createDeliverable(array $data, User $performedBy): Deliverable
     {
         $nextOrder = $this->getNextOrder(
             $data['project_unique_id'],
@@ -62,6 +64,13 @@ class DeliverableService extends BaseCRUDService
             'due_date' => $data['due_date'] ?? null,
             'metadata' => $data['metadata'] ?? [],
         ]);
+
+        DeliverableEvent::dispatch(
+            $deliverable,
+            DeliverableAction::CREATED,
+            $performedBy,
+            []
+        );
 
         return $deliverable;
     }
@@ -117,6 +126,17 @@ class DeliverableService extends BaseCRUDService
             // Update deliverable version
             $deliverable->update(['version' => $nextVersion]);
 
+            DeliverableEvent::dispatch(
+                $deliverable,
+                DeliverableAction::FILE_UPLOADED,
+                $uploadedBy,
+                [
+                    'file_unique_id' => $deliverableFile->unique_id,
+                    'original_filename' => $deliverableFile->original_filename,
+                    'version' => $deliverableFile->version,
+                ]
+            );
+
             return $deliverableFile;
         });
     }
@@ -140,12 +160,32 @@ class DeliverableService extends BaseCRUDService
 
     public function approveDeliverable(Deliverable $deliverable, User $approver): Deliverable
     {
-        return $this->changeStatus($deliverable, DeliverableStatus::APPROVED, $approver);
+        $updated = $this->changeStatus($deliverable, DeliverableStatus::APPROVED, $approver);
+
+        DeliverableEvent::dispatch(
+            $updated,
+            DeliverableAction::APPROVED,
+            $approver,
+            []
+        );
+
+        return $updated;
     }
 
-    public function rejectDeliverable(Deliverable $deliverable): Deliverable
+    public function rejectDeliverable(Deliverable $deliverable, User $rejectedBy, ?string $feedback = null): Deliverable
     {
-        return $this->changeStatus($deliverable, DeliverableStatus::REJECTED);
+        $updated = $this->changeStatus($deliverable, DeliverableStatus::REJECTED);
+
+        DeliverableEvent::dispatch(
+            $updated,
+            DeliverableAction::REJECTED,
+            $rejectedBy,
+            [
+                'feedback' => $feedback,
+            ]
+        );
+
+        return $updated;
     }
 
     public function trackDownload(DeliverableFile $file): void
@@ -169,7 +209,7 @@ class DeliverableService extends BaseCRUDService
     }
 
 
-    public function downloadFile(DeliverableFile $file): ?StreamedResponse
+    public function downloadFile(DeliverableFile $file, User $downloadedBy): ?StreamedResponse
     {
         if (!$this->storage->exists($file->file_path)) {
             return null;
@@ -177,17 +217,47 @@ class DeliverableService extends BaseCRUDService
 
         $this->trackDownload($file);
 
+        $deliverable = $file->deliverable;
+        if ($deliverable) {
+            DeliverableEvent::dispatch(
+                $deliverable,
+                DeliverableAction::FILE_DOWNLOADED,
+                $downloadedBy,
+                [
+                    'file_unique_id' => $file->unique_id,
+                    'download_count' => $file->download_count,
+                ]
+            );
+        }
+
         return $this->storage->download($file->file_path, $file->original_filename);
     }
 
 
-    public function deleteFile(DeliverableFile $file): bool
+    public function deleteFile(DeliverableFile $file, User $deletedBy): bool
     {
         if ($this->storage->exists($file->file_path)) {
             $this->storage->delete($file->file_path);
         }
 
-        return $file->delete();
+        $deleted = $file->delete();
+
+        if ($deleted) {
+            $deliverable = $file->deliverable;
+            if ($deliverable) {
+                DeliverableEvent::dispatch(
+                    $deliverable,
+                    DeliverableAction::FILE_DELETED,
+                    $deletedBy,
+                    [
+                        'file_unique_id' => $file->unique_id,
+                        'original_filename' => $file->original_filename,
+                    ]
+                );
+            }
+        }
+
+        return $deleted;
     }
 
     private function getNextOrder(string $projectUniqueId, ?string $milestoneUniqueId): int

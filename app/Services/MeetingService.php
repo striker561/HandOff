@@ -4,6 +4,8 @@ namespace App\Services;
 
 use Carbon\Carbon;
 use App\Models\{Meeting, User};
+use App\Enums\Meeting\MeetingAction;
+use App\Events\Meeting\MeetingEvent;
 use Illuminate\Pagination\LengthAwarePaginator;
 use App\Enums\Meeting\{MeetingStatus, MeetingLocation};
 
@@ -45,13 +47,21 @@ class MeetingService extends BaseCRUDService
             'metadata' => $data['metadata'] ?? [],
         ]);
 
+        MeetingEvent::dispatch(
+            $meeting,
+            MeetingAction::SCHEDULED,
+            $scheduler,
+            []
+        );
+
         return $meeting;
     }
 
     public function rescheduleMeeting(
         Meeting $meeting,
         Carbon $newScheduledAt,
-        ?int $newDuration = null
+        ?int $newDuration = null,
+        User $performedBy
     ): Meeting {
         $meeting->update([
             'scheduled_at' => $newScheduledAt,
@@ -59,10 +69,17 @@ class MeetingService extends BaseCRUDService
             'status' => MeetingStatus::RESCHEDULED,
         ]);
 
+        MeetingEvent::dispatch(
+            $meeting,
+            MeetingAction::RESCHEDULED,
+            $performedBy,
+            []
+        );
+
         return $meeting->fresh();
     }
 
-    public function completeMeeting(Meeting $meeting, ?string $notes = null): Meeting
+    public function completeMeeting(Meeting $meeting, ?string $notes = null, User $performedBy): Meeting
     {
         $updateData = ['status' => MeetingStatus::COMPLETED];
 
@@ -72,18 +89,41 @@ class MeetingService extends BaseCRUDService
 
         $meeting->update($updateData);
 
+        MeetingEvent::dispatch(
+            $meeting,
+            MeetingAction::COMPLETED,
+            $performedBy,
+            []
+        );
+
         return $meeting->fresh();
     }
 
-    public function cancelMeeting(Meeting $meeting): Meeting
+    public function cancelMeeting(Meeting $meeting, User $performedBy): Meeting
     {
         $meeting->update(['status' => MeetingStatus::CANCELLED]);
+
+        MeetingEvent::dispatch(
+            $meeting,
+            MeetingAction::CANCELLED,
+            $performedBy,
+            []
+        );
+
         return $meeting->fresh();
     }
 
-    public function addMeetingNotes(Meeting $meeting, string $notes): Meeting
+    public function addMeetingNotes(Meeting $meeting, string $notes, User $performedBy): Meeting
     {
         $meeting->update(['meeting_notes' => $notes]);
+
+        MeetingEvent::dispatch(
+            $meeting,
+            MeetingAction::NOTES_ADDED,
+            $performedBy,
+            []
+        );
+
         return $meeting->fresh();
     }
 

@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\{Comment, User};
 use Illuminate\Support\Collection;
+use App\Enums\Comment\CommentAction;
+use App\Events\Comment\CommentEvent;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -47,6 +49,23 @@ class CommentService extends BaseCRUDService
             'parent_unique_id' => $parentUniqueId,
             'mentioned_users' => $mentionedUsers,
         ]);
+
+        CommentEvent::dispatch(
+            $comment,
+            CommentAction::CREATED,
+            $user,
+            []
+        );
+
+        if (!empty($mentionedUsers)) {
+            CommentEvent::dispatch(
+                $comment,
+                CommentAction::MENTIONED_USERS,
+                $user,
+                ['mentioned_users' => $mentionedUsers]
+            );
+        }
+
         return $comment;
     }
 

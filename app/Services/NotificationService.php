@@ -101,6 +101,24 @@ class NotificationService extends BaseCRUDService
         );
     }
 
+    public function notifyDeliverableRejected(
+        Model $deliverable,
+        User $recipient,
+        User $rejectedBy,
+        ?string $feedback = null
+    ): Notification {
+        return $this->createNotification(
+            user: $recipient,
+            type: NotificationType::DELIVERABLE,
+            notifiable: $deliverable,
+            data: [
+                'message' => 'Your deliverable has been rejected',
+                'rejected_by' => $rejectedBy->name,
+                'feedback' => $feedback,
+            ]
+        );
+    }
+
     public function notifyCommentMention(
         Model $comment,
         User $mentionedUser,
@@ -127,6 +145,38 @@ class NotificationService extends BaseCRUDService
             notifiable: $milestone,
             data: [
                 'message' => 'A milestone has been completed',
+            ]
+        );
+    }
+
+    public function notifyMeetingScheduled(
+        Model $meeting,
+        User $recipient,
+        ?User $scheduledBy = null
+    ): Notification {
+        return $this->createNotification(
+            user: $recipient,
+            type: NotificationType::MEETING,
+            notifiable: $meeting,
+            data: [
+                'message' => 'A meeting has been scheduled',
+                'scheduled_by' => $scheduledBy?->name,
+            ]
+        );
+    }
+
+    public function notifyMeetingRescheduled(
+        Model $meeting,
+        User $recipient,
+        ?User $rescheduledBy = null
+    ): Notification {
+        return $this->createNotification(
+            user: $recipient,
+            type: NotificationType::MEETING,
+            notifiable: $meeting,
+            data: [
+                'message' => 'A meeting has been rescheduled',
+                'rescheduled_by' => $rescheduledBy?->name,
             ]
         );
     }

@@ -2,8 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\User;
 use App\Models\Milestone;
 use App\Enums\Milestone\MilestoneStatus;
+use App\Enums\Milestone\MilestoneAction;
+use App\Events\Milestone\MilestoneEvent;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class MilestoneService extends BaseCRUDService
@@ -52,25 +55,56 @@ class MilestoneService extends BaseCRUDService
 
     public function updateStatus(
         Milestone $milestone,
-        MilestoneStatus $status
+        MilestoneStatus $status,
+        User $performedBy
     ): Milestone {
+        $fromStatus = $milestone->status;
         $completedAt = $status === MilestoneStatus::COMPLETED ? now() : null;
         $milestone->update([
             'status' => $status,
             'completed_at' => $completedAt,
         ]);
 
+        $action = $status === MilestoneStatus::COMPLETED
+            ? MilestoneAction::COMPLETED
+            : MilestoneAction::STATUS_CHANGED;
+
+        MilestoneEvent::dispatch(
+            $milestone,
+            $action,
+            $performedBy,
+            [
+                'from_status' => $fromStatus?->value,
+                'to_status' => $status->value,
+            ]
+        );
+
         return $milestone->fresh();
     }
 
     public function reorder(
         string $projectUniqueId,
-        array $milestoneUniqueIds
+        array $milestoneUniqueIds,
+        User $performedBy
     ): void {
         foreach ($milestoneUniqueIds as $index => $uniqueId) {
             Milestone::where('project_unique_id', $projectUniqueId)
                 ->where('unique_id', $uniqueId)
                 ->update(['order' => $index + 1]);
+        }
+
+        $milestone = Milestone::query()
+            ->where('project_unique_id', $projectUniqueId)
+            ->orderBy('order')
+            ->first();
+
+        if ($milestone) {
+            MilestoneEvent::dispatch(
+                $milestone,
+                MilestoneAction::REORDERED,
+                $performedBy,
+                ['milestone_unique_ids' => $milestoneUniqueIds]
+            );
         }
     }
 

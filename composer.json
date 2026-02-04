@@ -1,11 +1,14 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "striker561/handoff",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "description": "An open-source Laravel-based platform for managing project handoffs, deliverables, meetings, and file versioning.",
     "keywords": [
         "laravel",
-        "framework"
+        "handoff",
+        "project-management",
+        "deliverables",
+        "open-source"
     ],
     "license": "MIT",
     "require": {

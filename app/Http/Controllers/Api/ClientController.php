@@ -36,7 +36,10 @@ class ClientController extends Controller
 
     public function store(StoreClientRequest $request): JsonResponse
     {
-        $client = $this->clients->createClient($request->validated());
+        $client = $this->clients->createClient(
+            $request->validated(),
+            $request->user()
+        );
 
         return APIResponse::created(
             'Client Created and invitation sent',
@@ -46,8 +49,7 @@ class ClientController extends Controller
 
     public function resendInvitation(ResendClientInvitationRequest $request, User $client): JsonResponse
     {
-
-        $this->clients->resendInvitation($client);
+        $this->clients->resendInvitation($client, $request->user());
 
         return APIResponse::success(
             'Invitation sent',

@@ -4,6 +4,9 @@ namespace App\Services;
 
 use App\Models\Project;
 use App\Enums\Project\ProjectStatus;
+use App\Enums\Project\ProjectAction;
+use App\Events\Project\ProjectEvent;
+use App\Models\User;
 
 class ProjectService extends BaseCRUDService
 {
@@ -43,11 +46,23 @@ class ProjectService extends BaseCRUDService
         return round(($completedCount / $milestones->count()) * 100, 2);
     }
 
-    public function changeStatus(Project $project, ProjectStatus $status): Project
+    public function changeStatus(Project $project, ProjectStatus $status, User $performedBy): Project
     {
+        $fromStatus = $project->status;
         $project->update(
             ['status' => $status]
         );
+
+        ProjectEvent::dispatch(
+            $project,
+            ProjectAction::STATUS_CHANGED,
+            $performedBy,
+            [
+                'from_status' => $fromStatus?->value,
+                'to_status' => $status->value,
+            ]
+        );
+
         return $project->fresh();
     }
 }

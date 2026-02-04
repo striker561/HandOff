@@ -7,4 +7,6 @@ enum NotificationType: string
     case DELIVERABLE = 'deliverable';
     case COMMENT = 'comment';
     case MILESTONE = 'milestone';
+
+    case MEETING = 'meeting';
 }

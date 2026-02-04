@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\User;
 use Illuminate\Support\Str;
 use App\Enums\User\AccountRole;
+use App\Enums\User\ClientAction;
+use App\Events\User\ClientEvent;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\{Hash, RateLimiter};
 
@@ -33,7 +35,7 @@ class ClientService extends BaseCRUDService
         return $this->paginateQuery($query);
     }
 
-    public function createClient(array $data): User
+    public function createClient(array $data, User $performedBy): User
     {
         $tempPass = Str::random(12);
 
@@ -47,10 +49,17 @@ class ClientService extends BaseCRUDService
 
         $this->sendInvitationEmail($client, $tempPass);
 
+        ClientEvent::dispatch(
+            $client,
+            ClientAction::CREATED,
+            $performedBy,
+            []
+        );
+
         return $client;
     }
 
-    public function resendInvitation(User $user): void
+    public function resendInvitation(User $user, User $performedBy): void
     {
         $tempPass = Str::random(12);
 
@@ -59,6 +68,13 @@ class ClientService extends BaseCRUDService
         ]);
 
         $this->sendInvitationEmail($user, $tempPass);
+
+        ClientEvent::dispatch(
+            $user,
+            ClientAction::INVITATION_SENT,
+            $performedBy,
+            []
+        );
     }
 
 
