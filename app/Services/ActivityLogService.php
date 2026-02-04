@@ -30,84 +30,6 @@ class ActivityLogService extends BaseCRUDService
         return ['created_at', 'updated_at'];
     }
 
-    public function logCreated(Model $subject, ?User $causer = null, array $properties = []): ActivityLog
-    {
-        return $this->log(
-            logName: LogName::CREATED ,
-            description: class_basename($subject) . ' created',
-            subject: $subject,
-            causer: $causer,
-            properties: $properties
-        );
-    }
-
-    public function logUpdated(Model $subject, ?User $causer = null, array $changes = []): ActivityLog
-    {
-        return $this->log(
-            logName: LogName::UPDATED ,
-            description: class_basename($subject) . ' updated',
-            subject: $subject,
-            causer: $causer,
-            properties: ['changes' => $changes]
-        );
-    }
-
-    public function logDeleted(Model $subject, ?User $causer = null): ActivityLog
-    {
-        return $this->log(
-            logName: LogName::DELETED ,
-            description: class_basename($subject) . ' deleted',
-            subject: $subject,
-            causer: $causer
-        );
-    }
-
-    public function logStatusChanged(
-        Model $subject,
-        string $oldStatus,
-        string $newStatus,
-        ?User $causer = null
-    ): ActivityLog {
-        return $this->log(
-            logName: LogName::UPDATED,
-            description: class_basename($subject) . " status changed from {$oldStatus} to {$newStatus}",
-            subject: $subject,
-            causer: $causer,
-            properties: [
-                'old_status' => $oldStatus,
-                'new_status' => $newStatus,
-            ]
-        );
-    }
-
-    public function logFileUploaded(
-        Model $subject,
-        string $filename,
-        ?User $causer = null
-    ): ActivityLog {
-        return $this->log(
-            logName: LogName::FILE,
-            description: "File '{$filename}' uploaded to " . class_basename($subject),
-            subject: $subject,
-            causer: $causer,
-            properties: ['filename' => $filename]
-        );
-    }
-
-    public function logCommentAdded(
-        Model $subject,
-        string $commentBody,
-        ?User $causer = null
-    ): ActivityLog {
-        return $this->log(
-            logName: LogName::COMMENT,
-            description: 'Comment added to ' . class_basename($subject),
-            subject: $subject,
-            causer: $causer,
-            properties: ['comment_preview' => substr($commentBody, 0, 100)]
-        );
-    }
-
     public function getActivitiesForSubject(Model $subject, array $filters = []): LengthAwarePaginator
     {
         $query = ActivityLog::query()
@@ -124,13 +46,22 @@ class ActivityLogService extends BaseCRUDService
         return $this->paginateQuery($query, $filters);
     }
 
-    private function log(
-        LogName $logName,
-        string $description,
+    public function log(
         Model $subject,
+        string $action,
         ?User $causer = null,
         array $properties = []
     ): ActivityLog {
+        $logName = match ($action) {
+            'created', 'scheduled' => LogName::CREATED,
+            'updated' => LogName::UPDATED,
+            'deleted' => LogName::DELETED,
+            'file_uploaded', 'file_downloaded', 'file_deleted' => LogName::FILE,
+            default => LogName::DEFAULT ,
+        };
+
+        $description = class_basename($subject) . ' ' . str_replace('_', ' ', $action);
+
         /** @var ActivityLog $log */
         $log = $this->create([
             'log_name' => $logName,
