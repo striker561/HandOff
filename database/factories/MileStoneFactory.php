@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\Milestone\MilestoneStatus;
-use App\Models\MileStone;
+use App\Models\Milestone;
 use App\Models\Project;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
