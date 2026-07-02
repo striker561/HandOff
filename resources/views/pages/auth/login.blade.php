@@ -6,30 +6,29 @@
 
         <x-passkey-verify />
 
-        <form method="POST" action="{{ route('login') }}" class="flex flex-col gap-6">
+        <form method="POST" action="{{ route('login') }}" class="flex flex-col gap-4">
             @csrf
 
-            <flux:input name="email" :label="__('Email address')" :value="old('email')" type="email" required autofocus
-                autocomplete="email" placeholder="email@example.com" />
+            <x-ui.input name="email" :label="__('Email address')" type="email" :value="old('email')" required
+                autofocus autocomplete="email" placeholder="you@agency.com" />
 
-            <div class="relative">
-                <flux:input name="password" :label="__('Password')" type="password" required
-                    autocomplete="current-password" :placeholder="__('Password')" viewable />
+            <x-ui.input name="password" :label="__('Password')" viewable required autocomplete="current-password"
+                :placeholder="__('Your password')" />
+
+            <div class="flex items-center justify-between gap-4">
+                <x-ui.checkbox name="remember" :label="__('Remember me')" :checked="old('remember')" />
 
                 @if (Route::has('password.request'))
-                    <flux:link class="absolute top-0 text-sm end-0" :href="route('password.request')" wire:navigate>
-                        {{ __('Forgot your password?') }}
-                    </flux:link>
+                    <a class="shrink-0 text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
+                        href="{{ route('password.request') }}" wire:navigate>
+                        {{ __('Forgot password?') }}
+                    </a>
                 @endif
             </div>
 
-            <flux:checkbox name="remember" :label="__('Remember me')" :checked="old('remember')" />
-
-            <div class="flex items-center justify-end">
-                <flux:button variant="primary" type="submit" class="w-full">
-                    {{ __('Log in') }}
-                </flux:button>
-            </div>
+            <x-ui.button type="submit" icon="arrow-right-start-on-rectangle">
+                {{ __('Log in') }}
+            </x-ui.button>
         </form>
     </div>
 </x-layouts::auth>

@@ -8,12 +8,12 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\Actions\DisableTwoFactorAuthentication;
 use Laravel\Fortify\Features;
-use Laravel\Passkeys\Actions\DeletePasskey;
-use Livewire\Attributes\Locked;
+use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
+#[Layout('layouts.workspace')]
 #[Title('Security settings')]
 class Security extends Component
 {
@@ -29,20 +29,6 @@ class Security extends Component
 
     public bool $twoFactorEnabled = false;
 
-    #[Locked]
-    public bool $canManagePasskeys = false;
-
-    #[Locked]
-    public array $passkeys = [];
-
-    public bool $showDeleteModal = false;
-
-    #[Locked]
-    public ?int $deletingPasskeyId = null;
-
-    #[Locked]
-    public string $deletingPasskeyName = '';
-
     public function mount(DisableTwoFactorAuthentication $disableTwoFactorAuthentication): void
     {
         $this->canManageTwoFactor = Features::canManageTwoFactorAuthentication();
@@ -56,28 +42,6 @@ class Security extends Component
 
             $this->twoFactorEnabled = $user->hasEnabledTwoFactorAuthentication();
         }
-
-        $this->canManagePasskeys = Features::canManagePasskeys();
-
-        if ($this->canManagePasskeys) {
-            $this->loadPasskeys();
-        }
-    }
-
-    public function loadPasskeys(): void
-    {
-        $this->passkeys = Auth::user()->passkeys()
-            ->select(['id', 'name', 'credential', 'created_at', 'last_used_at'])
-            ->latest()
-            ->get()
-            ->map(fn ($passkey) => [
-                'id' => $passkey->id,
-                'name' => $passkey->name,
-                'authenticator' => $passkey->authenticator,
-                'created_at_diff' => $passkey->created_at->diffForHumans(),
-                'last_used_at_diff' => $passkey->last_used_at?->diffForHumans(),
-            ])
-            ->toArray();
     }
 
     public function updatePassword(): void
@@ -99,32 +63,6 @@ class Security extends Component
         $this->reset('current_password', 'password', 'password_confirmation');
 
         Flux::toast(variant: 'success', text: __('Password updated.'));
-    }
-
-    public function confirmDelete(int $passkeyId): void
-    {
-        $passkey = Auth::user()->passkeys()->findOrFail($passkeyId);
-        $this->deletingPasskeyId = $passkey->id;
-        $this->deletingPasskeyName = $passkey->name;
-        $this->showDeleteModal = true;
-    }
-
-    public function deletePasskey(DeletePasskey $deletePasskey): void
-    {
-        if (! $this->deletingPasskeyId) {
-            return;
-        }
-        $passkey = Auth::user()->passkeys()->findOrFail($this->deletingPasskeyId);
-        $deletePasskey(Auth::user(), $passkey);
-        $this->closeDeleteModal();
-        $this->loadPasskeys();
-    }
-
-    public function closeDeleteModal(): void
-    {
-        $this->showDeleteModal = false;
-        $this->deletingPasskeyId = null;
-        $this->deletingPasskeyName = '';
     }
 
     #[On('two-factor-enabled')]

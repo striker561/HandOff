@@ -94,7 +94,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 - Execute PHP in app context for debugging and testing code. Do not create models without user approval, prefer tests with factories instead. Prefer existing Artisan commands over custom tinker code.
 - Always use single quotes to prevent shell expansion: `php artisan tinker --execute 'Your::code();'`
-  - Double quotes for PHP strings inside: `php artisan tinker --execute 'User::where("active", true)->count();'`
+    - Double quotes for PHP strings inside: `php artisan tinker --execute 'User::where("active", true)->count();'`
 
 === php rules ===
 
@@ -182,5 +182,34 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - The `{name}` argument should not include the test suite directory. Use `php artisan make:test --pest SomeFeatureTest` instead of `php artisan make:test --pest Feature/SomeFeatureTest`.
 - Run tests: `php artisan test --compact` or filter: `php artisan test --compact --filter=testName`.
 - Do NOT delete tests without approval.
+
+=== ui rules ===
+
+# UI & View Conventions
+
+## Layouts
+
+- **Authenticated app:** `<x-layouts.workspace>` or Livewire `#[Layout('layouts.workspace')]`. Workspace type (agency vs portal) is resolved in `App\View\Components\Layouts\Workspace`.
+- **Guest/auth:** `<x-layouts::auth>` for Fortify pages under `resources/views/pages/auth/`.
+- **Clip-path surfaces:** reserve `handoff-clip-*` for auth, landing hero, and settings card — not scattered in the app shell.
+
+## Components
+
+- **Form primitives:** `x-ui.*` (`button`, `input`, `checkbox`, `divider`, `logo-mark`) — branded HandOff controls.
+- **App chrome:** `x-sidebar.*` for sidebar footer/header pieces.
+- **Shell/nav:** raw `flux:*` (sidebar, header, toast, modal). ponytail: don't rebuild what Flux already ships.
+- **Feature UI:** group under `components/{dashboard,marketing,settings}/` or `livewire/{domain}/` when routes exist.
+
+## Livewire style
+
+- **Volt** (`livewire/settings/profile.blade.php`): simple CRUD pages with little state.
+- **Class-based** (`app/Livewire/Settings/`): modals, `#[Locked]`, Fortify actions, security flows.
+- Avoid anonymous `new class extends Component` in Blade unless the UI is truly throwaway.
+
+## CSS
+
+- Brand tokens live in `@theme` / `:root` in `resources/css/app.css`.
+- Clip corners: `--handoff-clip-path-md` and `--handoff-clip-path-sm` — change once, applies everywhere.
+- `settings-layout__*` uses a separate BEM namespace for settings tabs/panel.
 
 </laravel-boost-guidelines>
