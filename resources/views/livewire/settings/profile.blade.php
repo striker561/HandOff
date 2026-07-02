@@ -42,17 +42,17 @@ new #[Title('Profile settings')] class extends Component {
     <flux:heading class="sr-only">{{ __('Profile settings') }}</flux:heading>
 
     <x-pages::settings.layout :heading="__('Profile')" :subheading="__('Update your name and email address')">
-        <form wire:submit="updateProfileInformation" class="my-6 w-full space-y-6">
-            <flux:input wire:model="name" :label="__('Name')" type="text" required autofocus autocomplete="name" />
+        <form wire:submit="updateProfileInformation" class="my-6 w-full space-y-5">
+            <x-handoff-input wire:model="name" name="name" :label="__('Name')" type="text" required autofocus
+                autocomplete="name" />
 
-            <div>
-                <flux:input wire:model="email" :label="__('Email')" type="email" required autocomplete="email" />
-            </div>
+            <x-handoff-input wire:model="email" name="email" :label="__('Email')" type="email" required
+                autocomplete="email" />
 
-            <div class="flex items-center gap-4">
-                <flux:button variant="primary" type="submit">
-                    {{ __('Save') }}
-                </flux:button>
+            <div class="flex items-center gap-4 pt-2">
+                <x-handoff-button type="submit" icon="check" class="!w-auto">
+                    {{ __('Save changes') }}
+                </x-handoff-button>
             </div>
         </form>
     </x-pages::settings.layout>

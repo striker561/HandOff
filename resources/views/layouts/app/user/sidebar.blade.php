@@ -1,23 +1,31 @@
+@props([
+    'title' => null,
+])
+
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
 <head>
     @include('partials.head')
 </head>
 
-<body class="min-h-screen bg-white dark:bg-zinc-800">
+<body class="handoff-canvas min-h-screen">
     <flux:sidebar sticky collapsible="mobile"
-        class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
+        class="border-e border-brand-200/50 bg-white/95 dark:border-brand-800/40 dark:bg-zinc-900/95">
         <flux:sidebar.header>
             <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate />
             <flux:sidebar.collapse class="lg:hidden" />
         </flux:sidebar.header>
 
         <flux:sidebar.nav>
-            <flux:sidebar.group :heading="__('Main')" class="grid">
+            <flux:sidebar.group :heading="__('Portal')" class="grid">
                 <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')"
                     wire:navigate>
                     {{ __('Dashboard') }}
+                </flux:sidebar.item>
+
+                <flux:sidebar.item icon="folder" :href="route('dashboard')" :current="false" wire:navigate>
+                    {{ __('My projects') }}
                 </flux:sidebar.item>
             </flux:sidebar.group>
         </flux:sidebar.nav>
@@ -25,20 +33,18 @@
         <flux:spacer />
 
         <flux:sidebar.nav>
-            <flux:sidebar.item icon="cog" :href="route('profile.edit')"
-                :current="request()->routeIs('profile.edit') || request()->routeIs('security.edit') || request()->routeIs('appearance.edit')"
-                wire:navigate>
-                {{ __('Settings') }}
-            </flux:sidebar.item>
-            <flux:sidebar.item icon="code-bracket" href="https://github.com/striker561/HandOff" target="_blank">
-                {{ __('Repository') }}
-            </flux:sidebar.item>
+            <flux:sidebar.group :heading="__('Account')" class="grid">
+                <flux:sidebar.item icon="cog" :href="route('profile.edit')"
+                    :current="request()->routeIs('profile.edit') || request()->routeIs('security.edit') || request()->routeIs('appearance.edit')"
+                    wire:navigate>
+                    {{ __('Settings') }}
+                </flux:sidebar.item>
+            </flux:sidebar.group>
         </flux:sidebar.nav>
 
         <x-desktop-user-menu class="hidden lg:block" />
     </flux:sidebar>
 
-    <!-- Mobile User Menu -->
     <flux:header class="lg:hidden">
         <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
 
@@ -82,7 +88,9 @@
         </flux:dropdown>
     </flux:header>
 
-    {{ $slot }}
+    <flux:main class="handoff-canvas">
+        {{ $slot }}
+    </flux:main>
 
     @persist('toast')
     <flux:toast.group>
@@ -92,5 +100,4 @@
 
     @fluxScripts
 </body>
-
 </html>

@@ -4,15 +4,15 @@
 
         <x-auth-session-status class="text-center" :status="session('status')" />
 
-        <form method="POST" action="{{ route('password.confirm') }}" class="flex flex-col gap-6">
+        <form method="POST" action="{{ route('password.confirm') }}" class="flex flex-col gap-4">
             @csrf
 
-            <flux:input name="password" :label="__('Password')" type="password" required autocomplete="current-password"
-                :placeholder="__('Password')" viewable />
+            <x-handoff-input name="password" :label="__('Password')" viewable required autocomplete="current-password"
+                :placeholder="__('Your password')" />
 
-            <flux:button variant="primary" type="submit" class="w-full">
+            <x-handoff-button type="submit" icon="lock-closed">
                 {{ __('Confirm') }}
-            </flux:button>
+            </x-handoff-button>
         </form>
     </div>
 </x-layouts::auth>
