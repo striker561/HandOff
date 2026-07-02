@@ -2,22 +2,24 @@
 
 namespace Database\Factories;
 
+use App\Enums\Project\ProjectCurrency;
+use App\Enums\Project\ProjectStatus;
+use App\Enums\User\AccountRole;
+use App\Models\Project;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use App\Enums\Project\{ProjectCurrency, ProjectStatus};
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Project>
+ * @extends Factory<Project>
  */
 class ProjectFactory extends Factory
 {
-
     public function definition(): array
     {
         $startDate = now()->subDays(rand(0, 30));
 
         return [
-            'client_unique_id' => User::factory(),
+            'client_unique_id' => fn () => User::factory()->create(['role' => AccountRole::CLIENT])->unique_id,
             'name' => fake()->sentence(3),
             'description' => fake()->paragraph(),
             'status' => fake()->randomElement(ProjectStatus::cases()),
@@ -37,7 +39,7 @@ class ProjectFactory extends Factory
 
     public function completed(): static
     {
-        return $this->state(fn() => [
+        return $this->state(fn () => [
             'status' => ProjectStatus::COMPLETED,
             'completed_at' => now(),
             'progress_percentage' => 100,

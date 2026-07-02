@@ -1,35 +1,72 @@
 <?php
 
+use App\Enums\User\AccountRole;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-test('users can authenticate using the login screen', function () {
-    $user = User::factory()->create();
+uses(RefreshDatabase::class);
 
+beforeEach(function () {
+    $this->user = User::factory()->create([
+        'email' => 'test@example.com',
+        'password' => bcrypt('password'),
+        'role' => AccountRole::ADMIN,
+    ]);
+});
+
+it('authenticates users with valid credentials', function () {
     $response = $this->post('/login', [
-        'email' => $user->email,
+        'email' => 'test@example.com',
         'password' => 'password',
     ]);
 
+    $response->assertStatus(302);
+    $response->assertRedirect('/dashboard');
     $this->assertAuthenticated();
-    $response->assertNoContent();
 });
 
-test('users can not authenticate with invalid password', function () {
-    $user = User::factory()->create();
-
-    $this->post('/login', [
-        'email' => $user->email,
+it('prevents login with invalid password', function () {
+    $response = $this->post('/login', [
+        'email' => 'test@example.com',
         'password' => 'wrong-password',
     ]);
 
+    $response->assertStatus(302);
+    $response->assertSessionHasErrors('email');
     $this->assertGuest();
 });
 
-test('users can logout', function () {
-    $user = User::factory()->create();
+it('prevents login for non-existent user', function () {
+    $response = $this->post('/login', [
+        'email' => 'nonexistent@example.com',
+        'password' => 'password',
+    ]);
 
-    $response = $this->actingAs($user)->post('/logout');
-
+    $response->assertStatus(302);
+    $response->assertSessionHasErrors('email');
     $this->assertGuest();
-    $response->assertNoContent();
+});
+
+it('logs out authenticated users', function () {
+    $this->actingAs($this->user);
+
+    $response = $this->post('/logout');
+
+    $response->assertStatus(302);
+    $this->assertGuest();
+});
+
+it('redirects authenticated users to dashboard', function () {
+    $response = $this->actingAs($this->user)->get('/login');
+
+    $response->assertStatus(302);
+    $response->assertRedirect('/dashboard');
+});
+
+it('redirects register to login', function () {
+    $response = $this->get('/register');
+
+    $response->assertStatus(302);
+    $response->assertRedirect('/login');
+    $response->assertSessionHas('info', 'Registration is closed. New accounts are created by invitation only.');
 });

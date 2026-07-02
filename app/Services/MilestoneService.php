@@ -2,11 +2,11 @@
 
 namespace App\Services;
 
-use App\Models\User;
-use App\Models\Milestone;
-use App\Enums\Milestone\MilestoneStatus;
 use App\Enums\Milestone\MilestoneAction;
+use App\Enums\Milestone\MilestoneStatus;
 use App\Events\Milestone\MilestoneEvent;
+use App\Models\Milestone;
+use App\Models\User;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class MilestoneService extends BaseCRUDService
@@ -37,10 +37,9 @@ class MilestoneService extends BaseCRUDService
         $milestone = $this->create([
             'name' => $data['name'],
             'description' => $data['description'] ?? null,
-            'project_id' => $data['project_id'],
+            'project_unique_id' => $data['project_unique_id'],
             'due_date' => $data['due_date'] ?? null,
-            'order' => $this->getNextOrder($data['project_id']),
-            'is_completed' => false,
+            'order' => $this->getNextOrder($data['project_unique_id']),
         ]);
 
         return $milestone;
@@ -50,6 +49,7 @@ class MilestoneService extends BaseCRUDService
     {
         $query = Milestone::query()->where('project_unique_id', $projectUniqueId);
         $query = $this->applyFilters($query, $filters);
+
         return $this->paginateQuery($query, $filters);
     }
 
@@ -74,7 +74,7 @@ class MilestoneService extends BaseCRUDService
             $action,
             $performedBy,
             [
-                'from_status' => $fromStatus?->value,
+                'from_status' => $fromStatus instanceof MilestoneStatus ? $fromStatus->value : $fromStatus,
                 'to_status' => $status->value,
             ]
         );

@@ -3,19 +3,29 @@
 namespace Database\Factories;
 
 use App\Enums\Notification\NotificationType;
+use App\Models\Credential;
+use App\Models\Deliverable;
+use App\Models\Meeting;
+use App\Models\Milestone;
+use App\Models\Notification;
+use App\Models\Project;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use App\Models\{User, Project, Deliverable, Meeting, Milestone, Credential};
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Notification>
+ * @extends Factory<Notification>
  */
 class NotificationFactory extends Factory
 {
     public function definition(): array
     {
+        $project = Project::factory()->create();
+
         return [
-            'user_unique_id' => User::factory(),
+            'user_unique_id' => fn () => User::factory()->create()->unique_id,
             'type' => fake()->randomElement(NotificationType::cases()),
+            'notifiable_type' => Project::class,
+            'notifiable_id' => $project->unique_id,
             'data' => [
                 'title' => fake()->sentence(),
                 'message' => fake()->paragraph(),
@@ -67,14 +77,14 @@ class NotificationFactory extends Factory
 
     public function unread(): static
     {
-        return $this->state(fn() => [
+        return $this->state(fn () => [
             'read_at' => null,
         ]);
     }
 
     public function read(): static
     {
-        return $this->state(fn() => [
+        return $this->state(fn () => [
             'read_at' => fake()->dateTimeBetween('-1 week', 'now'),
         ]);
     }

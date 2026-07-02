@@ -2,12 +2,16 @@
 
 namespace App\Models;
 
+use Database\Factories\CommentFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, MorphTo, MorphMany};
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Comment extends BaseModel
 {
-    /** @use HasFactory<\Database\Factories\CommentFactory> */
+    /** @use HasFactory<CommentFactory> */
     protected $fillable = [
         'commentable_type',
         'commentable_id',
@@ -30,7 +34,7 @@ class Comment extends BaseModel
 
     public function commentable(): MorphTo
     {
-        return $this->morphTo();
+        return $this->morphTo('commentable', 'commentable_type', 'commentable_id', 'unique_id');
     }
 
     public function user(): BelongsTo

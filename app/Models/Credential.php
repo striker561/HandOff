@@ -3,12 +3,17 @@
 namespace App\Models;
 
 use App\Enums\Credential\CredentialType;
+use Database\Factories\CredentialFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\{BelongsTo, MorphMany};
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
+/**
+ * @property-read Project|null $project
+ */
 class Credential extends BaseModel
 {
-    /** @use HasFactory<\Database\Factories\CredentialFactory> */
+    /** @use HasFactory<CredentialFactory> */
     protected $fillable = [
         'project_unique_id',
         'name',

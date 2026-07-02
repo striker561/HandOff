@@ -2,13 +2,20 @@
 
 namespace App\Models;
 
+use App\Enums\Meeting\MeetingLocation;
+use App\Enums\Meeting\MeetingStatus;
+use Database\Factories\MeetingFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Enums\Meeting\{MeetingLocation, MeetingStatus};
-use Illuminate\Database\Eloquent\Relations\{BelongsTo, MorphMany};
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
+/**
+ * @property-read Project|null $project
+ * @property-read Deliverable|null $deliverable
+ */
 class Meeting extends BaseModel
 {
-    /** @use HasFactory<\Database\Factories\MeetingFactory> */
+    /** @use HasFactory<MeetingFactory> */
     protected $fillable = [
         'project_unique_id',
         'deliverable_unique_id',
@@ -48,7 +55,6 @@ class Meeting extends BaseModel
     {
         return $this->belongsTo(User::class, 'scheduled_by_unique_id', 'unique_id');
     }
-
 
     public function notifications(): MorphMany
     {

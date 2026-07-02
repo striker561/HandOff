@@ -2,23 +2,25 @@
 
 namespace Database\Factories;
 
-use App\Models\Project;
 use App\Enums\Credential\CredentialType;
+use App\Models\Credential;
+use App\Models\Project;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\Crypt;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Credential>
+ * @extends Factory<Credential>
  */
 class CredentialFactory extends Factory
 {
     public function definition(): array
     {
         return [
-            'project_unique_id' => Project::factory(),
+            'project_unique_id' => fn () => Project::factory()->create()->unique_id,
             'name' => fake()->words(3, true),
             'type' => fake()->randomElement(CredentialType::cases()),
             'username' => fake()->userName(),
-            'password' => fake()->password(),
+            'password' => Crypt::encryptString(fake()->password()),
             'url' => fake()->url(),
             'notes' => fake()->optional()->paragraph(),
             'metadata' => [

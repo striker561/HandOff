@@ -2,13 +2,21 @@
 
 namespace App\Models;
 
+use App\Enums\Deliverable\DeliverableStatus;
+use App\Enums\Deliverable\DeliverableType;
+use Database\Factories\DeliverableFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Enums\Deliverable\{DeliverableStatus, DeliverableType};
-use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, MorphMany};
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
+/**
+ * @property-read Project|null $project
+ * @property-read Milestone|null $milestone
+ */
 class Deliverable extends BaseModel
 {
-    /** @use HasFactory<\Database\Factories\DeliverableFactory> */
+    /** @use HasFactory<DeliverableFactory> */
     protected $fillable = [
         'project_unique_id',
         'milestone_unique_id',

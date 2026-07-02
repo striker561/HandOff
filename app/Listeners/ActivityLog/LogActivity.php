@@ -2,22 +2,21 @@
 
 namespace App\Listeners\ActivityLog;
 
-use App\Events\User\ClientEvent;
-use App\Events\Meeting\MeetingEvent;
 use App\Events\Comment\CommentEvent;
-use App\Events\Project\ProjectEvent;
-use App\Services\ActivityLogService;
-use App\Events\Milestone\MilestoneEvent;
 use App\Events\Credential\CredentialEvent;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use App\Events\Deliverable\DeliverableEvent;
+use App\Events\Meeting\MeetingEvent;
+use App\Events\Milestone\MilestoneEvent;
+use App\Events\Project\ProjectEvent;
+use App\Events\User\ClientEvent;
+use App\Services\ActivityLogService;
+use Illuminate\Contracts\Queue\ShouldQueue;
 
 class LogActivity implements ShouldQueue
 {
     public function __construct(
         protected ActivityLogService $activityLog
-    ) {
-    }
+    ) {}
 
     public function handle(
         ProjectEvent|MilestoneEvent|DeliverableEvent|MeetingEvent|CredentialEvent|CommentEvent|ClientEvent $event

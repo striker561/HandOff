@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\Actions\DisableTwoFactorAuthentication;
 use Laravel\Fortify\Features;
+use Laravel\Passkeys\Actions\DeletePasskey;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
@@ -19,10 +20,13 @@ class Security extends Component
     use PasswordValidationRules;
 
     public string $current_password = '';
+
     public string $password = '';
+
     public string $password_confirmation = '';
 
     public bool $canManageTwoFactor = false;
+
     public bool $twoFactorEnabled = false;
 
     #[Locked]
@@ -32,8 +36,10 @@ class Security extends Component
     public array $passkeys = [];
 
     public bool $showDeleteModal = false;
+
     #[Locked]
     public ?int $deletingPasskeyId = null;
+
     #[Locked]
     public string $deletingPasskeyName = '';
 
@@ -64,7 +70,7 @@ class Security extends Component
             ->select(['id', 'name', 'credential', 'created_at', 'last_used_at'])
             ->latest()
             ->get()
-            ->map(fn($passkey) => [
+            ->map(fn ($passkey) => [
                 'id' => $passkey->id,
                 'name' => $passkey->name,
                 'authenticator' => $passkey->authenticator,
@@ -103,10 +109,11 @@ class Security extends Component
         $this->showDeleteModal = true;
     }
 
-    public function deletePasskey(\Laravel\Passkeys\Actions\DeletePasskey $deletePasskey): void
+    public function deletePasskey(DeletePasskey $deletePasskey): void
     {
-        if (!$this->deletingPasskeyId)
+        if (! $this->deletingPasskeyId) {
             return;
+        }
         $passkey = Auth::user()->passkeys()->findOrFail($this->deletingPasskeyId);
         $deletePasskey(Auth::user(), $passkey);
         $this->closeDeleteModal();
@@ -137,4 +144,3 @@ class Security extends Component
         return view('livewire.settings.security');
     }
 }
-

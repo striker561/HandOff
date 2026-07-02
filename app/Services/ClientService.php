@@ -2,13 +2,14 @@
 
 namespace App\Services;
 
-use App\Models\User;
-use Illuminate\Support\Str;
 use App\Enums\User\AccountRole;
 use App\Enums\User\ClientAction;
 use App\Events\User\ClientEvent;
+use App\Models\User;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\{Hash, RateLimiter};
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 
 class ClientService extends BaseCRUDService
 {
@@ -32,6 +33,7 @@ class ClientService extends BaseCRUDService
         // Base Query
         $query = User::query()->where('role', AccountRole::CLIENT);
         $query = $this->applyFilters($query, $filters);
+
         return $this->paginateQuery($query);
     }
 
@@ -76,7 +78,6 @@ class ClientService extends BaseCRUDService
             []
         );
     }
-
 
     private function sendInvitationEmail(User $user, string $tempPass): void
     {

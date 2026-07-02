@@ -2,9 +2,9 @@
 
 namespace App\Services\Storage;
 
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Filesystem\FilesystemAdapter;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class StorageService
@@ -22,24 +22,20 @@ class StorageService
         return $this->disk->putFileAs($directory, $file, $filename);
     }
 
-
     public function download(string $path, string $downloadName): StreamedResponse
     {
         return $this->disk->download($path, $downloadName);
     }
-
 
     public function stream(string $path): StreamedResponse
     {
         return $this->disk->response($path);
     }
 
-
     public function exists(string $path): bool
     {
         return $this->disk->exists($path);
     }
-
 
     public function delete(string $path): bool
     {
@@ -72,9 +68,5 @@ class StorageService
     }
 
     // for front end upload and steaming
-    public function createPresignedUploadUrl()
-    {
-
-    }
-
+    public function createPresignedUploadUrl() {}
 }

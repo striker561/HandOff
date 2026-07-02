@@ -3,13 +3,23 @@
 namespace App\Models;
 
 use App\Enums\ActivityLog\LogName;
+use Database\Factories\ActivityLogFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\{BelongsTo, MorphTo};
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class ActivityLog extends BaseModel
 {
-    /** @use HasFactory<\Database\Factories\ActivityLogFactory> */
+    /** @use HasFactory<ActivityLogFactory> */
     public $timestamps = true;
+
+    /**
+     * ActivityLog table doesn't have a unique_id column.
+     */
+    public function uniqueIds(): array
+    {
+        return [];
+    }
 
     protected $fillable = [
         'user_unique_id',
@@ -34,12 +44,12 @@ class ActivityLog extends BaseModel
 
     public function subject(): MorphTo
     {
-        return $this->morphTo();
+        return $this->morphTo('subject', 'subject_type', 'subject_id', 'unique_id');
     }
 
     public function causer(): MorphTo
     {
-        return $this->morphTo();
+        return $this->morphTo('causer', 'causer_type', 'causer_id', 'unique_id');
     }
 
     public function user(): BelongsTo

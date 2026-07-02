@@ -4,7 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      */
@@ -35,7 +36,7 @@ return new class extends Migration {
             $table->timestamps();
             $table->timestamp('deleted_at')->nullable();
 
-            //relations
+            // relations
             $table->foreign('project_unique_id')->references('unique_id')->on('projects')->cascadeOnDelete();
             $table->foreign('milestone_unique_id')->references('unique_id')->on('milestones')->nullOnDelete();
             $table->foreign('created_by_unique_id')->references('unique_id')->on('users')->cascadeOnDelete();

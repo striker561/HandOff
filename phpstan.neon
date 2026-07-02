@@ -1,0 +1,17 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+
+    level: 5
+
+    paths:
+        - app/
+
+    excludePaths:
+        - app/Providers/VoltServiceProvider.php
+
+    treatPhpDocTypesAsCertain: false
+
+    ignoreErrors:
+        - '/Access to an undefined property.*unique_id/'

@@ -2,11 +2,15 @@
 
 namespace Database\Factories;
 
+use App\Models\Comment;
+use App\Models\Deliverable;
+use App\Models\Milestone;
+use App\Models\Project;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use App\Models\{User, Project, Milestone, Deliverable};
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Comment>
+ * @extends Factory<Comment>
  */
 class CommentFactory extends Factory
 {
@@ -14,7 +18,7 @@ class CommentFactory extends Factory
     {
         return [
             'parent_unique_id' => null,
-            'user_unique_id' => User::factory(),
+            'user_unique_id' => fn () => User::factory()->create()->unique_id,
             'body' => fake()->paragraph(),
             'is_internal' => fake()->boolean(30),
             'mentioned_users' => [],
@@ -48,35 +52,35 @@ class CommentFactory extends Factory
 
     public function internal(): static
     {
-        return $this->state(fn() => [
+        return $this->state(fn () => [
             'is_internal' => true,
         ]);
     }
 
     public function external(): static
     {
-        return $this->state(fn() => [
+        return $this->state(fn () => [
             'is_internal' => false,
         ]);
     }
 
     public function unread(): static
     {
-        return $this->state(fn() => [
+        return $this->state(fn () => [
             'read_at' => null,
         ]);
     }
 
     public function read(): static
     {
-        return $this->state(fn() => [
+        return $this->state(fn () => [
             'read_at' => fake()->dateTimeBetween('-1 week', 'now'),
         ]);
     }
 
     public function replyTo($comment): static
     {
-        return $this->state(fn() => [
+        return $this->state(fn () => [
             'parent_unique_id' => is_object($comment) ? $comment->unique_id : $comment,
         ]);
     }

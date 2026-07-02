@@ -2,19 +2,19 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Client\IndexClientRequest;
+use App\Http\Requests\Client\ResendClientInvitationRequest;
+use App\Http\Requests\Client\StoreClientRequest;
+use App\Http\Resources\UserResource;
+use App\Http\Responses\APIResponse;
 use App\Models\User;
 use App\Services\ClientService;
 use Illuminate\Http\JsonResponse;
-use App\Http\Responses\APIResponse;
-use App\Http\Controllers\Controller;
-use App\Http\Resources\UserResource;
-use App\Http\Requests\Client\{IndexClientRequest, ResendClientInvitationRequest, StoreClientRequest};
 
 class ClientController extends Controller
 {
-    public function __construct(private readonly ClientService $clients)
-    {
-    }
+    public function __construct(private readonly ClientService $clients) {}
 
     public function index(IndexClientRequest $request): JsonResponse
     {
@@ -29,7 +29,7 @@ class ClientController extends Controller
                     'per_page' => $clients->perPage(),
                     'current_page' => $clients->currentPage(),
                     'last_page' => $clients->lastPage(),
-                ]
+                ],
             ]
         );
     }

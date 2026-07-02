@@ -3,11 +3,16 @@
 namespace Database\Factories;
 
 use App\Enums\ActivityLog\LogName;
+use App\Models\ActivityLog;
+use App\Models\Deliverable;
+use App\Models\Meeting;
+use App\Models\Milestone;
+use App\Models\Project;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use App\Models\{User, Project, Milestone, Deliverable, Meeting};
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\ActivityLog>
+ * @extends Factory<ActivityLog>
  */
 class ActivityLogFactory extends Factory
 {
@@ -30,7 +35,6 @@ class ActivityLogFactory extends Factory
     {
         return $this->for($subject, 'subject');
     }
-
 
     public function forProject($project = null): static
     {
@@ -67,7 +71,7 @@ class ActivityLogFactory extends Factory
 
     public function created(): static
     {
-        return $this->state(fn() => [
+        return $this->state(fn () => [
             'log_name' => 'default',
             'description' => 'Created new resource',
             'properties' => [
@@ -79,7 +83,7 @@ class ActivityLogFactory extends Factory
 
     public function updated(): static
     {
-        return $this->state(fn() => [
+        return $this->state(fn () => [
             'log_name' => 'default',
             'description' => 'Updated resource',
             'properties' => [
@@ -93,7 +97,7 @@ class ActivityLogFactory extends Factory
 
     public function deleted(): static
     {
-        return $this->state(fn() => [
+        return $this->state(fn () => [
             'log_name' => 'default',
             'description' => 'Deleted resource',
             'properties' => [

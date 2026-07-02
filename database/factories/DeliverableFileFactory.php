@@ -2,26 +2,28 @@
 
 namespace Database\Factories;
 
-use App\Models\{Deliverable, User};
 use App\Enums\DeliverableFile\MimeType;
+use App\Models\Deliverable;
+use App\Models\DeliverableFile;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\DeliverableFile>
+ * @extends Factory<DeliverableFile>
  */
 class DeliverableFileFactory extends Factory
 {
     public function definition(): array
     {
-        $filename = fake()->uuid() . '.pdf';
-        $originalFilename = fake()->word() . '_' . fake()->word() . '.pdf';
+        $filename = fake()->uuid().'.pdf';
+        $originalFilename = fake()->word().'_'.fake()->word().'.pdf';
 
         return [
-            'deliverable_unique_id' => Deliverable::factory(),
-            'uploaded_by_unique_id' => User::factory(),
+            'deliverable_unique_id' => fn () => Deliverable::factory()->create()->unique_id,
+            'uploaded_by_unique_id' => fn () => User::factory()->create()->unique_id,
             'filename' => $filename,
             'original_filename' => $originalFilename,
-            'file_path' => 'deliverables/' . $filename,
+            'file_path' => 'deliverables/'.$filename,
             'file_size' => fake()->numberBetween(1024, 10485760), // 1KB to 10MB
             'mime_type' => fake()->randomElement(MimeType::cases()),
             'version' => '1.0',
@@ -36,7 +38,7 @@ class DeliverableFileFactory extends Factory
 
     public function oldVersion(): static
     {
-        return $this->state(fn() => [
+        return $this->state(fn () => [
             'is_latest' => false,
             'version' => fake()->randomElement(['0.1', '0.5', '0.9']),
         ]);

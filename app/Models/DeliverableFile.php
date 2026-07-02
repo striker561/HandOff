@@ -3,12 +3,17 @@
 namespace App\Models;
 
 use App\Enums\DeliverableFile\MimeType;
+use Database\Factories\DeliverableFileFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property-read Deliverable|null $deliverable
+ * @property-read User|null $uploadedBy
+ */
 class DeliverableFile extends BaseModel
 {
-    /** @use HasFactory<\Database\Factories\DeliverableFileFactory> */
+    /** @use HasFactory<DeliverableFileFactory> */
     protected $fillable = [
         'deliverable_unique_id',
         'uploaded_by_unique_id',

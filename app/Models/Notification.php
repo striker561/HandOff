@@ -3,12 +3,14 @@
 namespace App\Models;
 
 use App\Enums\Notification\NotificationType;
+use Database\Factories\NotificationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\{BelongsTo, MorphTo};
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Notification extends BaseModel
 {
-    /** @use HasFactory<\Database\Factories\NotificationFactory> */
+    /** @use HasFactory<NotificationFactory> */
     public $timestamps = true;
 
     protected $fillable = [
@@ -31,7 +33,7 @@ class Notification extends BaseModel
 
     public function notifiable(): MorphTo
     {
-        return $this->morphTo();
+        return $this->morphTo('notifiable', 'notifiable_type', 'notifiable_id', 'unique_id');
     }
 
     public function user(): BelongsTo

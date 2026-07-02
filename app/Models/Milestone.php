@@ -3,14 +3,18 @@
 namespace App\Models;
 
 use App\Enums\Milestone\MilestoneStatus;
+use Database\Factories\MilestoneFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, MorphMany};
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
+/**
+ * @property-read Project|null $project
+ */
 class Milestone extends BaseModel
 {
-
-    /** @use HasFactory<\Database\Factories\MilestoneFactory> */
-
+    /** @use HasFactory<MilestoneFactory> */
     protected $fillable = [
         'project_unique_id',
         'name',
@@ -38,6 +42,11 @@ class Milestone extends BaseModel
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class, 'project_unique_id', 'unique_id');
+    }
+
+    public function getIsCompletedAttribute(): bool
+    {
+        return $this->status === MilestoneStatus::COMPLETED;
     }
 
     public function deliverables(): HasMany

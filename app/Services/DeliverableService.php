@@ -2,15 +2,17 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Str;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\DB;
-use App\Services\Storage\StorageService;
-use App\Enums\Deliverable\DeliverableStatus;
 use App\Enums\Deliverable\DeliverableAction;
+use App\Enums\Deliverable\DeliverableStatus;
 use App\Events\Deliverable\DeliverableEvent;
+use App\Models\Deliverable;
+use App\Models\DeliverableFile;
+use App\Models\User;
+use App\Services\Storage\StorageService;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator;
-use App\Models\{Deliverable, DeliverableFile, User};
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DeliverableService extends BaseCRUDService
@@ -41,7 +43,6 @@ class DeliverableService extends BaseCRUDService
     {
         return ['name', 'status', 'type', 'order', 'version', 'due_date', 'created_at', 'updated_at', 'approved_at'];
     }
-
 
     public function createDeliverable(array $data, User $performedBy): Deliverable
     {
@@ -79,6 +80,7 @@ class DeliverableService extends BaseCRUDService
     {
         $query = Deliverable::query()->where('project_unique_id', $projectUniqueId);
         $query = $this->applyFilters($query, $filters);
+
         return $this->paginateQuery($query, $filters);
     }
 
@@ -86,6 +88,7 @@ class DeliverableService extends BaseCRUDService
     {
         $query = Deliverable::query()->where('milestone_unique_id', $milestoneUniqueId);
         $query = $this->applyFilters($query, $filters);
+
         return $this->paginateQuery($query, $filters);
     }
 
@@ -100,7 +103,7 @@ class DeliverableService extends BaseCRUDService
                 ->update(['is_latest' => false]);
 
             // Generate unique filename
-            $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+            $filename = Str::uuid().'.'.$file->getClientOriginalExtension();
             $directory = "deliverables/{$deliverable->project_unique_id}";
 
             // Store file using configured disk
@@ -208,15 +211,15 @@ class DeliverableService extends BaseCRUDService
             ->toArray();
     }
 
-
     public function downloadFile(DeliverableFile $file, User $downloadedBy): ?StreamedResponse
     {
-        if (!$this->storage->exists($file->file_path)) {
+        if (! $this->storage->exists($file->file_path)) {
             return null;
         }
 
         $this->trackDownload($file);
 
+        /** @var Deliverable|null $deliverable */
         $deliverable = $file->deliverable;
         if ($deliverable) {
             DeliverableEvent::dispatch(
@@ -233,7 +236,6 @@ class DeliverableService extends BaseCRUDService
         return $this->storage->download($file->file_path, $file->original_filename);
     }
 
-
     public function deleteFile(DeliverableFile $file, User $deletedBy): bool
     {
         if ($this->storage->exists($file->file_path)) {
@@ -243,6 +245,7 @@ class DeliverableService extends BaseCRUDService
         $deleted = $file->delete();
 
         if ($deleted) {
+            /** @var Deliverable|null $deliverable */
             $deliverable = $file->deliverable;
             if ($deliverable) {
                 DeliverableEvent::dispatch(

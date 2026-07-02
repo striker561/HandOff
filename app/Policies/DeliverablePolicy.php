@@ -2,10 +2,10 @@
 
 namespace App\Policies;
 
-use App\Models\User;
-use App\Models\Project;
 use App\Models\Deliverable;
 use App\Models\DeliverableFile;
+use App\Models\Project;
+use App\Models\User;
 
 class DeliverablePolicy
 {

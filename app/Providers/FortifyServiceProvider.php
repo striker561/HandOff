@@ -44,12 +44,12 @@ class FortifyServiceProvider extends ServiceProvider
      */
     private function configureViews(): void
     {
-        Fortify::loginView(fn() => view('pages.auth.login'));
-        Fortify::requestPasswordResetLinkView(fn() => view('pages.auth.forgot-password'));
-        Fortify::resetPasswordView(fn(Request $request) => view('pages.auth.reset-password', ['request' => $request]));
-        Fortify::confirmPasswordView(fn() => view('pages.auth.confirm-password'));
-        Fortify::twoFactorChallengeView(fn() => view('pages.auth.two-factor-challenge'));
-        Fortify::verifyEmailView(fn() => view('pages.auth.verify-email'));
+        Fortify::loginView(fn () => view('pages.auth.login'));
+        Fortify::requestPasswordResetLinkView(fn () => view('pages.auth.forgot-password'));
+        Fortify::resetPasswordView(fn (Request $request) => view('pages.auth.reset-password', ['request' => $request]));
+        Fortify::confirmPasswordView(fn () => view('pages.auth.confirm-password'));
+        Fortify::twoFactorChallengeView(fn () => view('pages.auth.two-factor-challenge'));
+        Fortify::verifyEmailView(fn () => view('pages.auth.verify-email'));
     }
 
     /**
@@ -58,7 +58,7 @@ class FortifyServiceProvider extends ServiceProvider
     private function configureRateLimiting(): void
     {
         RateLimiter::for('login', function (Request $request) {
-            $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())) . '|' . $request->ip());
+            $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());
 
             return Limit::perMinute(5)->by($throttleKey);
         });
@@ -71,7 +71,7 @@ class FortifyServiceProvider extends ServiceProvider
             $credentialId = $request->input('credential.id');
 
             return Limit::perMinute(10)->by(
-                ($credentialId ?: $request->session()->getId()) . '|' . $request->ip()
+                ($credentialId ?: $request->session()->getId()).'|'.$request->ip()
             );
         });
     }

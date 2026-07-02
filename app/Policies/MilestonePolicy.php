@@ -2,9 +2,9 @@
 
 namespace App\Policies;
 
-use App\Models\User;
-use App\Models\Project;
 use App\Models\Milestone;
+use App\Models\Project;
+use App\Models\User;
 
 class MilestonePolicy
 {

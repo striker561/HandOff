@@ -2,12 +2,14 @@
 
 namespace App\Services;
 
-use Carbon\Carbon;
-use App\Models\{Meeting, User};
 use App\Enums\Meeting\MeetingAction;
+use App\Enums\Meeting\MeetingLocation;
+use App\Enums\Meeting\MeetingStatus;
 use App\Events\Meeting\MeetingEvent;
+use App\Models\Meeting;
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
-use App\Enums\Meeting\{MeetingStatus, MeetingLocation};
 
 class MeetingService extends BaseCRUDService
 {
@@ -60,8 +62,8 @@ class MeetingService extends BaseCRUDService
     public function rescheduleMeeting(
         Meeting $meeting,
         Carbon $newScheduledAt,
+        User $performedBy,
         ?int $newDuration = null,
-        User $performedBy
     ): Meeting {
         $meeting->update([
             'scheduled_at' => $newScheduledAt,
@@ -79,7 +81,7 @@ class MeetingService extends BaseCRUDService
         return $meeting->fresh();
     }
 
-    public function completeMeeting(Meeting $meeting, ?string $notes = null, User $performedBy): Meeting
+    public function completeMeeting(Meeting $meeting, User $performedBy, ?string $notes = null): Meeting
     {
         $updateData = ['status' => MeetingStatus::COMPLETED];
 
@@ -131,6 +133,7 @@ class MeetingService extends BaseCRUDService
     {
         $query = Meeting::query()->where('project_unique_id', $projectUniqueId);
         $query = $this->applyFilters($query, $filters);
+
         return $this->paginateQuery($query, $filters);
     }
 
@@ -138,6 +141,7 @@ class MeetingService extends BaseCRUDService
     {
         $query = Meeting::query()->where('deliverable_unique_id', $deliverableUniqueId);
         $query = $this->applyFilters($query, $filters);
+
         return $this->paginateQuery($query, $filters);
     }
 
@@ -145,17 +149,21 @@ class MeetingService extends BaseCRUDService
     {
         $query = Meeting::query()->where('scheduled_by_unique_id', $user->unique_id);
         $query = $this->applyFilters($query, $filters);
+
         return $this->paginateQuery($query, $filters);
     }
 
     public function isMeetingUpcoming(Meeting $meeting): bool
     {
-        return $meeting->scheduled_at->isFuture()
+        return $meeting->scheduled_at instanceof Carbon
+            && $meeting->scheduled_at->isFuture()
             && $meeting->status === MeetingStatus::SCHEDULED;
     }
 
-    public function getMeetingEndTime(Meeting $meeting): Carbon
+    public function getMeetingEndTime(Meeting $meeting): ?Carbon
     {
-        return $meeting->scheduled_at->copy()->addMinutes($meeting->duration_minutes);
+        return $meeting->scheduled_at instanceof Carbon
+            ? $meeting->scheduled_at->copy()->addMinutes($meeting->duration_minutes)
+            : null;
     }
 }

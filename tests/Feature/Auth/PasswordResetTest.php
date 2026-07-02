@@ -1,38 +1,100 @@
 <?php
 
+use App\Enums\User\AccountRole;
 use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 
-test('reset password link can be requested', function () {
-    Notification::fake();
+uses(RefreshDatabase::class);
 
-    $user = User::factory()->create();
-
-    $this->post('/forgot-password', ['email' => $user->email]);
-
-    Notification::assertSentTo($user, ResetPassword::class);
+beforeEach(function () {
+    $this->user = User::factory()->create([
+        'email' => 'test@example.com',
+        'password' => bcrypt('password'),
+        'role' => AccountRole::ADMIN,
+    ]);
 });
 
-test('password can be reset with valid token', function () {
+it('sends a password reset link', function () {
     Notification::fake();
 
-    $user = User::factory()->create();
+    $this->post('/forgot-password', [
+        'email' => 'test@example.com',
+    ]);
 
-    $this->post('/forgot-password', ['email' => $user->email]);
+    Notification::assertSentTo($this->user, ResetPassword::class);
+});
 
-    Notification::assertSentTo($user, ResetPassword::class, function (object $notification) use ($user) {
+it('does not send a reset link for unknown email', function () {
+    Notification::fake();
+
+    $response = $this->post('/forgot-password', [
+        'email' => 'unknown@example.com',
+    ]);
+
+    $response->assertSessionHasErrors('email');
+    Notification::assertNothingSent();
+});
+
+it('allows password reset with valid token', function () {
+    Notification::fake();
+
+    $this->post('/forgot-password', [
+        'email' => 'test@example.com',
+    ]);
+
+    Notification::assertSentTo($this->user, ResetPassword::class, function (object $notification) {
         $response = $this->post('/reset-password', [
             'token' => $notification->token,
-            'email' => $user->email,
-            'password' => 'password',
-            'password_confirmation' => 'password',
+            'email' => 'test@example.com',
+            'password' => 'new-password',
+            'password_confirmation' => 'new-password',
         ]);
 
-        $response
-            ->assertSessionHasNoErrors()
-            ->assertStatus(200);
+        $response->assertStatus(302);
+        $response->assertSessionHas('status', __('passwords.reset'));
+
+        $this->assertTrue(
+            Hash::check('new-password', $this->user->fresh()->password),
+            'The password should have been updated to the new value.'
+        );
 
         return true;
     });
+});
+
+it('rejects password reset with mismatched confirmation', function () {
+    Notification::fake();
+
+    $this->post('/forgot-password', [
+        'email' => 'test@example.com',
+    ]);
+
+    Notification::assertSentTo($this->user, ResetPassword::class, function (object $notification) {
+        $response = $this->post('/reset-password', [
+            'token' => $notification->token,
+            'email' => 'test@example.com',
+            'password' => 'new-password',
+            'password_confirmation' => 'wrong-confirmation',
+        ]);
+
+        $response->assertStatus(302);
+        $response->assertSessionHasErrors('password');
+
+        return true;
+    });
+});
+
+it('rejects password reset with invalid token', function () {
+    $response = $this->post('/reset-password', [
+        'token' => 'invalid-token',
+        'email' => 'test@example.com',
+        'password' => 'new-password',
+        'password_confirmation' => 'new-password',
+    ]);
+
+    $response->assertStatus(302);
+    $response->assertSessionHasErrors('email');
 });

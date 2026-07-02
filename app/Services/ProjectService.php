@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
-use App\Models\Project;
-use App\Enums\Project\ProjectStatus;
 use App\Enums\Project\ProjectAction;
+use App\Enums\Project\ProjectStatus;
 use App\Events\Project\ProjectEvent;
+use App\Models\Project;
 use App\Models\User;
 
 class ProjectService extends BaseCRUDService
@@ -58,7 +58,7 @@ class ProjectService extends BaseCRUDService
             ProjectAction::STATUS_CHANGED,
             $performedBy,
             [
-                'from_status' => $fromStatus?->value,
+                'from_status' => $fromStatus instanceof ProjectStatus ? $fromStatus->value : $fromStatus,
                 'to_status' => $status->value,
             ]
         );
