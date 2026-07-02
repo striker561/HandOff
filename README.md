@@ -46,16 +46,13 @@ php artisan db:seed
 composer dev
 ```
 
-THIS IS THE API & ADMIN API; MONO REPO SETUP FOR THE USER INTERFACE IS COMING SHORTLY
-
 ## Tech Stack
 
 - Laravel 12.x
 - PHP 8.2+
 - TailwindCSS 4.x
 - PostgreSQL
-- Next.JS (Client Dashboard)
-- Livewire (Admin Dashboard)
+- Livewire
 
 ## Contributing
 
