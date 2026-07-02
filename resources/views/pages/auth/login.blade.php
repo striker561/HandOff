@@ -4,6 +4,8 @@
 
         <x-auth-session-status class="text-center" :status="session('status')" />
 
+        <x-passkey-verify />
+
         <form method="POST" action="{{ route('login') }}" class="flex flex-col gap-6">
             @csrf
 

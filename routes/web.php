@@ -14,5 +14,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 Route::middleware(['auth'])->group(function () {
-    Route::view('profile', 'profile')->name('profile.edit');
+    Route::redirect('profile', 'settings/profile');
 });
+
+require __DIR__ . '/settings.php';
