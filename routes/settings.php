@@ -9,8 +9,11 @@ Route::middleware(['auth'])->group(function () {
 
     Route::livewire('settings/profile', 'settings.profile')->name('profile.edit');
     Route::redirect('settings/appearance', 'settings/profile')->name('appearance.edit');
-    Route::livewire('settings/security', Security::class)->name('security.edit');
-    Route::livewire('settings/passkeys', Passkeys::class)->name('passkeys.edit');
+
+    Route::middleware(['password.confirm'])->group(function () {
+        Route::livewire('settings/security', Security::class)->name('security.edit');
+        Route::livewire('settings/passkeys', Passkeys::class)->name('passkeys.edit');
+    });
 });
 
 Route::get('.well-known/passkey-endpoints', function () {

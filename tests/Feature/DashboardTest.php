@@ -6,12 +6,22 @@ use App\Models\User;
 it('loads the dashboard for admin users with the workspace shell', function () {
     $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
 
-    $this->actingAs($admin)
+    $response = $this->actingAs($admin)
         ->get(route('dashboard'))
         ->assertSuccessful()
         ->assertSee(__('Hey :name', ['name' => strtok($admin->name, ' ')]))
         ->assertSee(__('Dashboard'))
         ->assertSee(__('Clients'));
+
+    preg_match_all('/<a[^>]*data-flux-sidebar-item[^>]*>/', $response->getContent(), $items);
+
+    $activeItems = array_filter(
+        $items[0],
+        fn(string $item): bool => (bool) preg_match('/\sdata-current="/', $item),
+    );
+
+    expect($activeItems)->toHaveCount(1)
+        ->and($activeItems[array_key_first($activeItems)])->toContain(route('dashboard', absolute: false));
 });
 
 it('loads the dashboard for client users with the portal shell', function () {
@@ -35,10 +45,29 @@ it('loads the profile settings page inside the workspace shell', function () {
         ->assertSee(__('Log out'));
 });
 
-it('loads the passkeys settings page when passkeys are enabled', function () {
+it('redirects to password confirmation before security settings', function () {
     $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
 
     $this->actingAs($admin)
+        ->get(route('security.edit'))
+        ->assertRedirect(route('password.confirm'));
+});
+
+it('loads security settings after password confirmation', function () {
+    $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
+
+    $this->actingAs($admin)
+        ->withSession(['auth.password_confirmed_at' => time()])
+        ->get(route('security.edit'))
+        ->assertSuccessful()
+        ->assertSee(__('Update password'));
+});
+
+it('loads the passkeys settings page when passkeys are enabled and password is confirmed', function () {
+    $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
+
+    $this->actingAs($admin)
+        ->withSession(['auth.password_confirmed_at' => time()])
         ->get(route('passkeys.edit'))
         ->assertSuccessful()
         ->assertSee(__('Passkeys'));

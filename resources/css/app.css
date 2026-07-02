@@ -99,6 +99,18 @@
         );
     }
 
+    .handoff-clip-sm {
+        @apply rounded-none;
+        clip-path: polygon(
+            6px 0,
+            100% 0,
+            100% calc(100% - 6px),
+            calc(100% - 6px) 100%,
+            0 100%,
+            0 6px
+        );
+    }
+
     .handoff-card-clip {
         @apply rounded-none border-0 bg-white/95 backdrop-blur-sm dark:bg-brand-950/90;
         box-shadow:
@@ -343,7 +355,17 @@
     }
 
     .handoff-sidebar {
-        @apply border-e border-brand-800/80 text-brand-100;
+        --sidebar-fg: oklch(0.82 0.03 258 / 0.92);
+        --sidebar-fg-muted: oklch(0.62 0.06 258 / 0.72);
+        --sidebar-fg-active: oklch(1 0 0);
+        --sidebar-hover: oklch(1 0 0 / 0.07);
+        --sidebar-active-bg: oklch(1 0 0 / 0.11);
+        --sidebar-active-frame: oklch(0.68 0.08 258 / 0.55);
+        --sidebar-badge-bg: oklch(1 0 0 / 0.1);
+        --sidebar-badge-fg: oklch(0.82 0.03 258 / 0.95);
+
+        @apply border-e border-brand-800/80;
+        color: var(--sidebar-fg);
         background: linear-gradient(
             180deg,
             oklch(0.19 0.04 258) 0%,
@@ -393,40 +415,144 @@
         @apply flex flex-col gap-0.5;
     }
 
-    .handoff-sidebar-link {
-        @apply flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-brand-200/90 transition hover:bg-white/8 hover:text-white;
+    .handoff-sidebar [data-flux-sidebar-group] .px-3.py-2 > div,
+    .handoff-sidebar
+        [data-flux-sidebar-group]
+        button.group\/disclosure-button
+        > span {
+        @apply text-[0.68rem] font-semibold uppercase tracking-[0.12em];
+        color: var(--sidebar-fg-muted) !important;
     }
 
-    .handoff-sidebar-link__icon {
-        @apply flex size-9 shrink-0 items-center justify-center rounded-lg text-brand-300 transition;
+    .handoff-sidebar [data-flux-sidebar-group] button.group\/disclosure-button {
+        color: var(--sidebar-fg-muted) !important;
     }
 
-    .handoff-sidebar-link__label {
-        @apply truncate;
+    .handoff-sidebar
+        [data-flux-sidebar-group]
+        button.group\/disclosure-button:hover {
+        background: var(--sidebar-hover) !important;
+        color: var(--sidebar-fg-active) !important;
     }
 
-    .handoff-sidebar-link__badge {
-        @apply ms-auto rounded-md bg-white/10 px-1.5 py-0.5 text-[0.62rem] font-semibold uppercase tracking-wide text-brand-300/90;
+    .handoff-sidebar [data-flux-sidebar-item] {
+        @apply relative rounded-none;
+        clip-path: polygon(
+            6px 0,
+            100% 0,
+            100% calc(100% - 6px),
+            calc(100% - 6px) 100%,
+            0 100%,
+            0 6px
+        );
+        color: var(--sidebar-fg) !important;
+        border: none !important;
+        background-color: transparent !important;
+        box-shadow: none !important;
     }
 
-    .handoff-sidebar-link--current {
-        @apply bg-white/10 text-white;
+    .handoff-sidebar [data-flux-sidebar-item] [data-content] {
+        color: inherit !important;
     }
 
-    .handoff-sidebar-link--current .handoff-sidebar-link__icon {
-        @apply bg-brand-500/25 text-white;
+    .handoff-sidebar [data-flux-sidebar-item] svg {
+        color: var(--sidebar-fg-muted) !important;
+    }
+
+    .handoff-sidebar [data-flux-sidebar-item]:hover {
+        background: var(--sidebar-hover) !important;
+        color: var(--sidebar-fg-active) !important;
+        border: none !important;
+    }
+
+    .handoff-sidebar [data-flux-sidebar-item]:hover svg {
+        color: var(--sidebar-fg-active) !important;
+    }
+
+    .handoff-sidebar [data-flux-sidebar-item][data-current] {
+        background: var(--sidebar-active-bg) !important;
+        color: var(--sidebar-fg-active) !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    .handoff-sidebar [data-flux-sidebar-item][data-current]::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        clip-path: polygon(
+            6px 0,
+            100% 0,
+            100% calc(100% - 6px),
+            calc(100% - 6px) 100%,
+            0 100%,
+            0 6px
+        );
+        box-shadow: inset 0 0 0 1px var(--sidebar-active-frame);
+    }
+
+    .handoff-sidebar [data-flux-sidebar-item][data-current] svg {
+        color: var(--sidebar-fg-active) !important;
+    }
+
+    .handoff-sidebar__separator {
+        @apply my-2;
+        background: oklch(1 0 0 / 0.1) !important;
+    }
+
+    .handoff-sidebar [data-flux-navlist-badge] {
+        background: var(--sidebar-badge-bg) !important;
+        color: var(--sidebar-badge-fg) !important;
+        border: 1px solid oklch(1 0 0 / 0.08) !important;
     }
 
     .handoff-sidebar__footer {
-        @apply flex flex-col gap-2 border-t border-white/10 px-2 py-4;
+        @apply flex flex-col gap-2 border-t px-2 py-4;
+        border-color: oklch(1 0 0 / 0.1);
     }
 
     .handoff-sidebar-action {
-        @apply inline-flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-brand-200/90 transition hover:bg-white/8 hover:text-white;
+        @apply relative inline-flex w-full items-center justify-center gap-2 rounded-none px-3 py-2.5 text-sm font-medium transition;
+        clip-path: polygon(
+            6px 0,
+            100% 0,
+            100% calc(100% - 6px),
+            calc(100% - 6px) 100%,
+            0 100%,
+            0 6px
+        );
+        color: var(--sidebar-fg);
+    }
+
+    .handoff-sidebar-action:hover {
+        background: var(--sidebar-hover);
+        color: var(--sidebar-fg-active);
     }
 
     .handoff-sidebar-action--current {
-        @apply bg-white/10 text-white;
+        background: var(--sidebar-active-bg);
+        color: var(--sidebar-fg-active);
+    }
+
+    .handoff-sidebar-action--current::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        clip-path: polygon(
+            6px 0,
+            100% 0,
+            100% calc(100% - 6px),
+            calc(100% - 6px) 100%,
+            0 100%,
+            0 6px
+        );
+        box-shadow: inset 0 0 0 1px var(--sidebar-active-frame);
+    }
+
+    .handoff-sidebar-action svg {
+        color: currentColor;
     }
 
     .handoff-theme {
@@ -440,11 +566,13 @@
     }
 
     .handoff-theme__btn {
-        @apply flex items-center justify-center rounded-lg px-2 py-2 text-brand-300 transition;
+        @apply flex items-center justify-center rounded-lg px-2 py-2 transition;
+        color: var(--sidebar-fg-muted);
     }
 
     .handoff-theme__btn:hover {
-        @apply bg-white/6 text-white;
+        background: var(--sidebar-hover);
+        color: var(--sidebar-fg-active);
     }
 
     .handoff-theme__btn.is-active {
@@ -476,7 +604,7 @@
     }
 
     .handoff-stat-card {
-        @apply flex items-center gap-4 rounded-2xl border border-brand-200/50 bg-white/95 p-5 shadow-[0_4px_24px_-8px] shadow-brand-900/8 dark:border-brand-800/50 dark:bg-brand-950/80 dark:shadow-black/20;
+        @apply border-brand-200/50 bg-white/95 dark:border-brand-800/50 dark:bg-brand-950/80;
     }
 
     .handoff-stat-card__icon {
@@ -511,6 +639,10 @@
         @apply mx-auto max-w-md text-brand-700/70 dark:text-brand-200/70;
     }
 
+    .handoff-dashboard-callout {
+        @apply border-brand-200/60 bg-brand-50/80 dark:border-brand-800/50 dark:bg-brand-950/60;
+    }
+
     .settings-layout {
         @apply mx-auto flex flex-col gap-8 py-2 text-center;
         width: 40rem;
@@ -530,13 +662,48 @@
     }
 
     .settings-layout__tab {
-        @apply inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold text-brand-700 transition hover:bg-brand-100 dark:text-brand-200 dark:hover:bg-brand-900;
+        @apply relative inline-flex items-center rounded-none px-4 py-2 text-sm font-semibold text-brand-700 transition dark:text-brand-200;
+        clip-path: polygon(
+            6px 0,
+            100% 0,
+            100% calc(100% - 6px),
+            calc(100% - 6px) 100%,
+            0 100%,
+            0 6px
+        );
+    }
+
+    .settings-layout__tab::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        clip-path: polygon(
+            6px 0,
+            100% 0,
+            100% calc(100% - 6px),
+            calc(100% - 6px) 100%,
+            0 100%,
+            0 6px
+        );
         box-shadow: inset 0 0 0 1.5px oklch(0.87 0.03 258 / 0.55);
+        transition: box-shadow 150ms ease;
+    }
+
+    .dark .settings-layout__tab::after {
+        box-shadow: inset 0 0 0 1.5px oklch(0.38 0.06 258 / 0.65);
+    }
+
+    .settings-layout__tab:hover {
+        @apply bg-brand-100/80 dark:bg-brand-900/50;
     }
 
     .settings-layout__tab--current {
         @apply bg-brand-600 text-white dark:bg-brand-500;
-        box-shadow: none;
+    }
+
+    .settings-layout__tab--current::after {
+        box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.22);
     }
 
     .settings-layout__card {

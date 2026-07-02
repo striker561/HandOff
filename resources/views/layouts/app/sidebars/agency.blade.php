@@ -3,26 +3,29 @@
     <flux:sidebar.collapse class="handoff-sidebar__collapse lg:hidden" />
 </flux:sidebar.header>
 
-<nav class="handoff-sidebar-menu" aria-label="{{ __('Navigation') }}">
-    <div class="handoff-sidebar-menu__group">
-        <x-sidebar.nav-item icon="home" :href="route('dashboard')" :label="__('Dashboard')"
-            :current="request()->routeIs('dashboard')" />
+<flux:sidebar.nav>
+    <flux:sidebar.group :heading="__('Workspace')" class="grid">
+        <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')"
+            :accent="false" wire:navigate>
+            {{ __('Dashboard') }}
+        </flux:sidebar.item>
+    </flux:sidebar.group>
 
-        <x-sidebar.nav-item icon="users" :href="route('dashboard')" :label="__('Clients')" :current="false"
-            :badge="__('Soon')" />
+    <flux:separator class="handoff-sidebar__separator" />
 
-        <x-sidebar.nav-item icon="folder" :href="route('dashboard')" :label="__('Projects')" :current="false"
-            :badge="__('Soon')" />
-    </div>
-</nav>
+    <flux:sidebar.group expandable icon="building-office-2" :heading="__('Agency')" class="grid">
+        <flux:sidebar.item icon="users" :href="route('dashboard')" :current="false" :badge="__('Soon')" :accent="false"
+            wire:navigate>
+            {{ __('Clients') }}
+        </flux:sidebar.item>
+
+        <flux:sidebar.item icon="folder" :href="route('dashboard')" :current="false" :badge="__('Soon')" :accent="false"
+            wire:navigate>
+            {{ __('Projects') }}
+        </flux:sidebar.item>
+    </flux:sidebar.group>
+</flux:sidebar.nav>
 
 <flux:spacer />
 
-<div class="handoff-sidebar__footer">
-    <x-sidebar.theme-toggle />
-
-    <x-sidebar.action icon="cog" :href="route('profile.edit')" :label="__('Settings')"
-        :current="request()->routeIs('profile.edit', 'security.edit', 'passkeys.edit')" />
-
-    <x-sidebar.logout />
-</div>
+@include('layouts.app.sidebars._footer')

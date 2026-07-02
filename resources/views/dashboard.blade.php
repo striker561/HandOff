@@ -38,30 +38,28 @@
             </div>
         @endif
 
-        <div class="handoff-panel">
-            <div class="handoff-panel__body handoff-panel__body--centered">
-                <span class="handoff-panel__mark">
-                    <x-app-logo-icon class="size-8 text-white" />
-                </span>
-
+        <flux:callout icon="sparkles" color="indigo" class="handoff-dashboard-callout">
+            <x-slot name="heading">
                 @if ($isAdmin)
-                    <flux:heading size="lg" class="mb-2">{{ __('Agency tools are on the way') }}</flux:heading>
-                    <flux:text class="handoff-panel__copy">
-                        {{ __('Client management, project boards, and credential vaults will land here. You are building the foundation early.') }}
-                    </flux:text>
+                    {{ __('Agency tools are on the way') }}
                 @else
-                    <flux:heading size="lg" class="mb-2">{{ __('Projects are on the way') }}</flux:heading>
-                    <flux:text class="handoff-panel__copy">
-                        {{ __('Milestones, deliverables, and shared credentials from your agency will appear here.') }}
-                    </flux:text>
+                    {{ __('Projects are on the way') }}
                 @endif
+            </x-slot>
 
-                <div class="mx-auto mt-8 w-full max-w-xs">
-                    <x-ui.button :href="route('profile.edit')" icon="user" wire:navigate>
-                        {{ __('Set up your profile') }}
-                    </x-ui.button>
-                </div>
-            </div>
-        </div>
+            <x-slot name="text">
+                @if ($isAdmin)
+                    {{ __('Client management, project boards, and credential vaults will land here. You are building the foundation early.') }}
+                @else
+                    {{ __('Milestones, deliverables, and shared credentials from your agency will appear here.') }}
+                @endif
+            </x-slot>
+
+            <x-slot name="actions">
+                <x-ui.button :href="route('profile.edit')" icon="user" class="!w-auto" wire:navigate>
+                    {{ __('Set up your profile') }}
+                </x-ui.button>
+            </x-slot>
+        </flux:callout>
     </div>
 </x-layouts.workspace>
