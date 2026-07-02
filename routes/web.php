@@ -2,8 +2,12 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return ['Laravel' => app()->version()];
+Route::view('/', 'welcome')->name('home');
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::view('dashboard', 'dashboard')->name('dashboard');
 });
 
-require __DIR__.'/paths/auth.php';
+Route::middleware(['auth'])->group(function () {
+    Route::view('profile', 'profile')->name('profile.edit');
+});

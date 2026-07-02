@@ -4,7 +4,7 @@ namespace App\Models;
 
 
 use App\Enums\User\AccountRole;
-use Laravel\Sanctum\HasApiTokens;
+use Laravel\Fortify\TwoFactorAuthenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\{HasMany, MorphMany};
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasUuids, SoftDeletes, HasApiTokens;
+    use HasFactory, Notifiable, HasUuids, SoftDeletes, TwoFactorAuthenticatable;
 
     protected $fillable = [
         'unique_id',
@@ -113,5 +113,17 @@ class User extends Authenticatable
     public function isClient(): bool
     {
         return $this->role === AccountRole::CLIENT;
+    }
+
+    public function initials(): string
+    {
+        $words = explode(' ', $this->name);
+        $initials = '';
+
+        foreach ($words as $word) {
+            $initials .= strtoupper(substr($word, 0, 1));
+        }
+
+        return substr($initials, 0, 2);
     }
 }
