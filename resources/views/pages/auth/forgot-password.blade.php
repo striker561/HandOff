@@ -7,12 +7,12 @@
         <form method="POST" action="{{ route('password.email') }}" class="flex flex-col gap-4">
             @csrf
 
-            <x-handoff-input name="email" :label="__('Email address')" type="email" required autofocus
+            <x-ui.input name="email" :label="__('Email address')" type="email" required autofocus
                 placeholder="you@agency.com" />
 
-            <x-handoff-button type="submit" icon="envelope">
+            <x-ui.button type="submit" icon="envelope">
                 {{ __('Send reset link') }}
-            </x-handoff-button>
+            </x-ui.button>
         </form>
 
         <p class="text-center text-sm text-brand-700/60 dark:text-brand-300/60">

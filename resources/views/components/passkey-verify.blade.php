@@ -45,15 +45,15 @@
 >
     <template x-if="supported">
         <div class="flex flex-col gap-5">
-            <x-handoff-button type="button" variant="outline" icon="finger-print" class="w-full"
+            <x-ui.button type="button" variant="outline" icon="finger-print" class="w-full"
                 x-on:click="verify()" x-bind:disabled="loading">
                 <span x-show="!loading">{{ $label }}</span>
                 <span x-show="loading" x-cloak>{{ $loadingLabel }}</span>
-            </x-handoff-button>
+            </x-ui.button>
 
             <p x-show="error" x-text="error" x-cloak class="text-center text-sm text-red-600 dark:text-red-400"></p>
 
-            <x-handoff-divider :label="$separator" />
+            <x-ui.divider :label="$separator" />
         </div>
     </template>
 </div>

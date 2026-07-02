@@ -11,9 +11,9 @@
         <div class="flex flex-col gap-3">
             <form method="POST" action="{{ route('verification.send') }}">
                 @csrf
-                <x-handoff-button type="submit" icon="envelope">
+                <x-ui.button type="submit" icon="envelope">
                     {{ __('Resend verification email') }}
-                </x-handoff-button>
+                </x-ui.button>
             </form>
 
             <form method="POST" action="{{ route('logout') }}" class="text-center">

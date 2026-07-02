@@ -19,13 +19,13 @@
             @if (Route::has('login'))
                 <nav class="flex items-center gap-3">
                     @auth
-                        <x-handoff-button :href="route('dashboard')" variant="outline" icon="home" class="!w-auto">
+                        <x-ui.button :href="route('dashboard')" variant="outline" icon="home" class="!w-auto">
                             {{ __('Dashboard') }}
-                        </x-handoff-button>
+                        </x-ui.button>
                     @else
-                        <x-handoff-button :href="route('login')" icon="arrow-right-start-on-rectangle" class="!w-auto">
+                        <x-ui.button :href="route('login')" icon="arrow-right-start-on-rectangle" class="!w-auto">
                             {{ __('Log in') }}
-                        </x-handoff-button>
+                        </x-ui.button>
                     @endauth
                 </nav>
             @endif
@@ -45,31 +45,31 @@
 
                     <div class="flex flex-wrap gap-3">
                         @auth
-                            <x-handoff-button :href="route('dashboard')" icon="arrow-right" class="!w-auto">
+                            <x-ui.button :href="route('dashboard')" icon="arrow-right" class="!w-auto">
                                 {{ __('Go to dashboard') }}
-                            </x-handoff-button>
+                            </x-ui.button>
                         @else
-                            <x-handoff-button :href="route('login')" icon="arrow-right-start-on-rectangle" class="!w-auto">
+                            <x-ui.button :href="route('login')" icon="arrow-right-start-on-rectangle" class="!w-auto">
                                 {{ __('Sign in') }}
-                            </x-handoff-button>
-                            <x-handoff-button :href="route('login')" variant="outline" icon="archive-box" class="!w-auto">
+                            </x-ui.button>
+                            <x-ui.button :href="route('login')" variant="outline" icon="archive-box" class="!w-auto">
                                 {{ __('See how it works') }}
-                            </x-handoff-button>
+                            </x-ui.button>
                         @endauth
                     </div>
 
                     <div class="grid grid-cols-2 gap-4 pt-2 sm:gap-5">
-                        <x-handoff-feature-card :label="__('Deliverables')" icon="archive-box" />
-                        <x-handoff-feature-card :label="__('Credentials')" icon="key" />
-                        <x-handoff-feature-card :label="__('Meetings')" icon="calendar-days" />
-                        <x-handoff-feature-card :label="__('Updates')" icon="chat-bubble-left-right" />
+                        <x-marketing.feature-card :label="__('Deliverables')" icon="archive-box" />
+                        <x-marketing.feature-card :label="__('Credentials')" icon="key" />
+                        <x-marketing.feature-card :label="__('Meetings')" icon="calendar-days" />
+                        <x-marketing.feature-card :label="__('Updates')" icon="chat-bubble-left-right" />
                     </div>
                 </div>
 
                 <div class="order-1 flex justify-center lg:order-2">
-                    <div class="handoff-auth-wrap w-full max-w-xs sm:max-w-sm">
-                        <div class="handoff-auth-frame">
-                            <div class="handoff-auth-shell">
+                    <div class="handoff-clip-wrap w-full max-w-xs sm:max-w-sm">
+                        <div class="handoff-clip-frame handoff-clip-frame--ticks">
+                            <div class="handoff-clip-shell">
                                 <div class="p-10 text-center">
                                     <span
                                         class="handoff-clip mx-auto flex size-24 items-center justify-center bg-brand-700 text-white shadow-sm dark:bg-brand-600">

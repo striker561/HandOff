@@ -7,12 +7,12 @@
         <form method="POST" action="{{ route('password.confirm') }}" class="flex flex-col gap-4">
             @csrf
 
-            <x-handoff-input name="password" :label="__('Password')" viewable required autocomplete="current-password"
+            <x-ui.input name="password" :label="__('Password')" viewable required autocomplete="current-password"
                 :placeholder="__('Your password')" />
 
-            <x-handoff-button type="submit" icon="lock-closed">
+            <x-ui.button type="submit" icon="lock-closed">
                 {{ __('Confirm') }}
-            </x-handoff-button>
+            </x-ui.button>
         </form>
     </div>
 </x-layouts::auth>

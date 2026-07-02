@@ -9,14 +9,14 @@
         <form method="POST" action="{{ route('login') }}" class="flex flex-col gap-4">
             @csrf
 
-            <x-handoff-input name="email" :label="__('Email address')" type="email" :value="old('email')" required
+            <x-ui.input name="email" :label="__('Email address')" type="email" :value="old('email')" required
                 autofocus autocomplete="email" placeholder="you@agency.com" />
 
-            <x-handoff-input name="password" :label="__('Password')" viewable required autocomplete="current-password"
+            <x-ui.input name="password" :label="__('Password')" viewable required autocomplete="current-password"
                 :placeholder="__('Your password')" />
 
             <div class="flex items-center justify-between gap-4">
-                <x-handoff-checkbox name="remember" :label="__('Remember me')" :checked="old('remember')" />
+                <x-ui.checkbox name="remember" :label="__('Remember me')" :checked="old('remember')" />
 
                 @if (Route::has('password.request'))
                     <a class="shrink-0 text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
@@ -26,9 +26,9 @@
                 @endif
             </div>
 
-            <x-handoff-button type="submit" icon="arrow-right-start-on-rectangle">
+            <x-ui.button type="submit" icon="arrow-right-start-on-rectangle">
                 {{ __('Log in') }}
-            </x-handoff-button>
+            </x-ui.button>
         </form>
     </div>
 </x-layouts::auth>

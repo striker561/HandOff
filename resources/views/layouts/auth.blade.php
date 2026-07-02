@@ -7,10 +7,10 @@
 
 <body class="handoff-canvas min-h-screen antialiased">
     <div class="flex min-h-svh items-center justify-center p-4 sm:p-8">
-        <div class="handoff-auth-wrap w-full">
-            <div class="handoff-auth-frame">
-                <div class="handoff-auth-shell">
-                    <div class="handoff-auth-form">
+        <div class="handoff-clip-wrap w-full">
+            <div class="handoff-clip-frame handoff-clip-frame--ticks">
+                <div class="handoff-clip-shell">
+                    <div class="handoff-clip-form">
                         <a href="{{ route('home') }}" class="mb-8 flex items-center gap-3" wire:navigate>
                             <span
                                 class="handoff-clip flex size-10 items-center justify-center bg-brand-700 text-white shadow-sm dark:bg-brand-600">
