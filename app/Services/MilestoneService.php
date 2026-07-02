@@ -2,11 +2,11 @@
 
 namespace App\Services;
 
-use App\Models\User;
-use App\Models\Milestone;
-use App\Enums\Milestone\MilestoneStatus;
 use App\Enums\Milestone\MilestoneAction;
+use App\Enums\Milestone\MilestoneStatus;
 use App\Events\Milestone\MilestoneEvent;
+use App\Models\Milestone;
+use App\Models\User;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class MilestoneService extends BaseCRUDService
@@ -49,6 +49,7 @@ class MilestoneService extends BaseCRUDService
     {
         $query = Milestone::query()->where('project_unique_id', $projectUniqueId);
         $query = $this->applyFilters($query, $filters);
+
         return $this->paginateQuery($query, $filters);
     }
 

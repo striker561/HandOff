@@ -2,12 +2,13 @@
 
 namespace App\Services;
 
-use App\Enums\Credential\CredentialType;
-use App\Models\{Credential, User};
-use Illuminate\Support\Facades\Crypt;
 use App\Enums\Credential\CredentialAction;
+use App\Enums\Credential\CredentialType;
 use App\Events\Credential\CredentialEvent;
+use App\Models\Credential;
+use App\Models\User;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Crypt;
 
 class CredentialService extends BaseCRUDService
 {
@@ -51,6 +52,7 @@ class CredentialService extends BaseCRUDService
             $performedBy,
             []
         );
+
         return $credential;
     }
 
@@ -66,7 +68,7 @@ class CredentialService extends BaseCRUDService
         ];
 
         // Only update password if provided
-        if (isset($data['password']) && !empty($data['password'])) {
+        if (isset($data['password']) && ! empty($data['password'])) {
             $updateData['password'] = $this->encryptPassword($data['password']);
         }
 
@@ -86,6 +88,7 @@ class CredentialService extends BaseCRUDService
     {
         $query = Credential::query()->where('project_unique_id', $projectUniqueId);
         $query = $this->applyFilters($query, $filters);
+
         return $this->paginateQuery($query, $filters);
     }
 

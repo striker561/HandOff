@@ -1,12 +1,13 @@
 <?php
 
-use App\Models\User;
 use App\Enums\User\AccountRole;
+use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
-use Illuminate\Support\Facades\Notification;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->user = User::factory()->create([

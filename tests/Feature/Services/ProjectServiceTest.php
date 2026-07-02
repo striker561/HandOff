@@ -1,12 +1,15 @@
 <?php
 
-use App\Models\User;
-use App\Models\Project;
-use App\Enums\User\AccountRole;
+use App\Enums\Milestone\MilestoneStatus;
 use App\Enums\Project\ProjectStatus;
+use App\Enums\User\AccountRole;
+use App\Models\Milestone;
+use App\Models\Project;
+use App\Models\User;
 use App\Services\ProjectService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->service = app(ProjectService::class);
@@ -36,13 +39,13 @@ it('calculates progress as 0 when no milestones', function () {
 
 it('calculates progress based on completed milestones', function () {
     $project = Project::factory()->create(['client_unique_id' => $this->client->unique_id]);
-    \App\Models\Milestone::factory()->count(3)->create([
+    Milestone::factory()->count(3)->create([
         'project_unique_id' => $project->unique_id,
-        'status' => \App\Enums\Milestone\MilestoneStatus::IN_PROGRESS,
+        'status' => MilestoneStatus::IN_PROGRESS,
     ]);
-    \App\Models\Milestone::factory()->count(1)->create([
+    Milestone::factory()->count(1)->create([
         'project_unique_id' => $project->unique_id,
-        'status' => \App\Enums\Milestone\MilestoneStatus::COMPLETED,
+        'status' => MilestoneStatus::COMPLETED,
     ]);
 
     $progress = $this->service->calculateProgress($project);

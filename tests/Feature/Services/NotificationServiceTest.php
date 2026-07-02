@@ -1,13 +1,14 @@
 <?php
 
-use App\Models\User;
-use App\Models\Project;
-use App\Models\Notification;
-use App\Enums\User\AccountRole;
 use App\Enums\Notification\NotificationType;
+use App\Enums\User\AccountRole;
+use App\Models\Notification;
+use App\Models\Project;
+use App\Models\User;
 use App\Services\NotificationService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->service = app(NotificationService::class);

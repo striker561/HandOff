@@ -2,12 +2,13 @@
 
 namespace App\Services;
 
-use App\Models\{Comment, User};
-use Illuminate\Support\Collection;
 use App\Enums\Comment\CommentAction;
 use App\Events\Comment\CommentEvent;
+use App\Models\Comment;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 
 class CommentService extends BaseCRUDService
 {
@@ -57,7 +58,7 @@ class CommentService extends BaseCRUDService
             []
         );
 
-        if (!empty($mentionedUsers)) {
+        if (! empty($mentionedUsers)) {
             CommentEvent::dispatch(
                 $comment,
                 CommentAction::MENTIONED_USERS,
@@ -95,7 +96,7 @@ class CommentService extends BaseCRUDService
             ->with(['user', 'replies.user'])
             ->orderBy('created_at', 'desc');
 
-        if (!$includeInternal) {
+        if (! $includeInternal) {
             $query->where('is_internal', false);
         }
 
@@ -113,7 +114,7 @@ class CommentService extends BaseCRUDService
             ->orderBy('created_at', 'desc');
 
         $includeInternal = $filters['include_internal'] ?? true;
-        if (!$includeInternal) {
+        if (! $includeInternal) {
             $query->where('is_internal', false);
         }
 
@@ -136,6 +137,7 @@ class CommentService extends BaseCRUDService
     public function markAsRead(Comment $comment): Comment
     {
         $comment->update(['read_at' => now()]);
+
         return $comment->fresh();
     }
 
@@ -143,6 +145,7 @@ class CommentService extends BaseCRUDService
     {
         // Soft delete replies as well
         $comment->replies()->delete();
+
         return $comment->delete();
     }
 
@@ -150,6 +153,7 @@ class CommentService extends BaseCRUDService
     {
         // Extract @username or @user_id patterns
         preg_match_all('/@(\w+)/', $body, $matches);
+
         return $matches[1];
     }
 

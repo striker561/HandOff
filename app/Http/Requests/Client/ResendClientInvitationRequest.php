@@ -9,6 +9,7 @@ class ResendClientInvitationRequest extends FormRequest
     public function authorize(): bool
     {
         $client = $this->route('client');
+
         return $this->user()->can('resendInvitation', $client) ?? false;
     }
 

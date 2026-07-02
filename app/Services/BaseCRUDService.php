@@ -2,8 +2,9 @@
 
 namespace App\Services;
 
-use Illuminate\Database\Eloquent\{Builder, Model};
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 abstract class BaseCRUDService
 {
@@ -13,6 +14,7 @@ abstract class BaseCRUDService
     {
         $query = $this->getModel()::query();
         $query = $this->applyFilters($query, $filters);
+
         return $this->paginateQuery($query, $filters);
     }
 
@@ -24,6 +26,7 @@ abstract class BaseCRUDService
     public function update(Model $model, array $data): Model
     {
         $model->update($data);
+
         return $model->fresh();
     }
 
@@ -35,7 +38,7 @@ abstract class BaseCRUDService
     protected function applyFilters(Builder $query, array $filters): Builder
     {
         // Apply search
-        if (!empty($filters['search']) && !empty($this->searchableColumns())) {
+        if (! empty($filters['search']) && ! empty($this->searchableColumns())) {
             $query->where(function ($q) use ($filters) {
                 foreach ($this->searchableColumns() as $column) {
                     $q->orWhere($column, 'LIKE', "%{$filters['search']}%");
@@ -71,6 +74,7 @@ abstract class BaseCRUDService
     protected function getPerPage(array $filters): int
     {
         $perPage = (int) ($filters['per_page'] ?? 15);
+
         return min(max($perPage, 1), 100); // Between 1 and 100
     }
 

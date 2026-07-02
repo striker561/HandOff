@@ -3,11 +3,11 @@
 namespace App\Services;
 
 use App\Enums\ActivityLog\LogName;
-use App\Models\BaseModel;
-use App\Models\{ActivityLog, User};
+use App\Models\ActivityLog;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Request;
 
 class ActivityLogService extends BaseCRUDService
 {
@@ -37,6 +37,7 @@ class ActivityLogService extends BaseCRUDService
             ->where('subject_type', get_class($subject))
             ->where('subject_id', $subject->unique_id);
         $query = $this->applyFilters($query, $filters);
+
         return $this->paginateQuery($query, $filters);
     }
 
@@ -44,6 +45,7 @@ class ActivityLogService extends BaseCRUDService
     {
         $query = ActivityLog::query()->where('user_unique_id', $user->unique_id);
         $query = $this->applyFilters($query, $filters);
+
         return $this->paginateQuery($query, $filters);
     }
 
@@ -61,7 +63,7 @@ class ActivityLogService extends BaseCRUDService
             default => LogName::DEFAULT ,
         };
 
-        $description = class_basename($subject) . ' ' . str_replace('_', ' ', $action);
+        $description = class_basename($subject).' '.str_replace('_', ' ', $action);
 
         /** @var ActivityLog $log */
         $log = $this->create([
@@ -76,6 +78,7 @@ class ActivityLogService extends BaseCRUDService
             'ip_address' => Request::ip(),
             'user_agent' => Request::userAgent(),
         ]);
+
         return $log;
     }
 }

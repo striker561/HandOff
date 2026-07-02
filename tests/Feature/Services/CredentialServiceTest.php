@@ -1,13 +1,14 @@
 <?php
 
-use App\Models\User;
-use App\Models\Project;
-use App\Models\Credential;
-use App\Enums\User\AccountRole;
 use App\Enums\Credential\CredentialType;
+use App\Enums\User\AccountRole;
+use App\Models\Credential;
+use App\Models\Project;
+use App\Models\User;
 use App\Services\CredentialService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->service = app(CredentialService::class);

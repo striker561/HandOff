@@ -2,9 +2,9 @@
 
 namespace App\Policies;
 
-use App\Models\User;
-use App\Models\Project;
 use App\Models\Meeting;
+use App\Models\Project;
+use App\Models\User;
 
 class MeetingPolicy
 {

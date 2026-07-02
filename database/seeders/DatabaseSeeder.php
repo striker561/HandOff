@@ -2,23 +2,21 @@
 
 namespace Database\Seeders;
 
-use App\Models\{
-    User,
-    Project,
-    Milestone,
-    Deliverable,
-    DeliverableFile,
-    Meeting,
-    Credential,
-    Comment,
-    ActivityLog,
-    Notification
-};
 use App\Enums\User\AccountRole;
-use Illuminate\Database\Seeder;
+use App\Models\ActivityLog;
+use App\Models\Comment;
+use App\Models\Credential;
+use App\Models\Deliverable;
+use App\Models\DeliverableFile;
+use App\Models\Meeting;
+use App\Models\Milestone;
+use App\Models\Notification;
+use App\Models\Project;
+use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
 
-// THIS IS AI ASSISTED TO SAVE TIME 
+// THIS IS AI ASSISTED TO SAVE TIME
 class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
@@ -103,15 +101,16 @@ class DatabaseSeeder extends Seeder
                 $factoryMethod($count)->for($item, 'commentable')->create(['user_unique_id' => $users->random()->unique_id]);
                 $total += $count;
             }
+
             return $total;
         };
 
         // ---------- Comments ----------
         $this->command->info('Creating comments...');
         $totalComments = 0;
-        $totalComments += $createPolymorphic($allProjects, fn($count) => Comment::factory($count)->forProject(), 5, 20);
-        $totalComments += $createPolymorphic($allMilestones, fn($count) => Comment::factory($count)->forMilestone(), 5, 15);
-        $totalComments += $createPolymorphic($allDeliverables, fn($count) => Comment::factory($count)->forDeliverable(), 5, 20);
+        $totalComments += $createPolymorphic($allProjects, fn ($count) => Comment::factory($count)->forProject(), 5, 20);
+        $totalComments += $createPolymorphic($allMilestones, fn ($count) => Comment::factory($count)->forMilestone(), 5, 15);
+        $totalComments += $createPolymorphic($allDeliverables, fn ($count) => Comment::factory($count)->forDeliverable(), 5, 20);
         $this->command->info("Created {$totalComments} comments");
 
         // ---------- ActivityLogs ----------
@@ -125,13 +124,14 @@ class DatabaseSeeder extends Seeder
                 ActivityLog::factory(rand(1, 5))->for($item, 'subject')->causedBy($users->random())->create(['user_unique_id' => $users->random()->unique_id]);
                 $total += $count;
             }
+
             return $total;
         };
 
         $totalActivityLogs = 0;
-        $totalActivityLogs += $createActivity($allProjects, fn($count) => ActivityLog::factory($count)->forProject(), 5, 30);
-        $totalActivityLogs += $createActivity($allMilestones, fn($count) => ActivityLog::factory($count)->forMilestone(), 5, 20);
-        $totalActivityLogs += $createActivity($allDeliverables, fn($count) => ActivityLog::factory($count)->forDeliverable(), 5, 25);
+        $totalActivityLogs += $createActivity($allProjects, fn ($count) => ActivityLog::factory($count)->forProject(), 5, 30);
+        $totalActivityLogs += $createActivity($allMilestones, fn ($count) => ActivityLog::factory($count)->forMilestone(), 5, 20);
+        $totalActivityLogs += $createActivity($allDeliverables, fn ($count) => ActivityLog::factory($count)->forDeliverable(), 5, 25);
         $this->command->info("Created {$totalActivityLogs} activity logs");
 
         // ---------- Notifications ----------
@@ -139,8 +139,9 @@ class DatabaseSeeder extends Seeder
         $totalNotifications = 0;
         foreach ($users as $user) {
             foreach ([$allProjects, $allDeliverables, $allMilestones] as $collection) {
-                if ($collection->isEmpty())
+                if ($collection->isEmpty()) {
                     continue;
+                }
                 $count = rand(1, 10);
                 $factory = Notification::factory($count);
                 $factory->for($collection->random(), $collection === $allProjects ? 'project' : ($collection === $allDeliverables ? 'deliverable' : 'milestone'))

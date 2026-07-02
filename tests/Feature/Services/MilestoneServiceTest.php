@@ -1,13 +1,14 @@
 <?php
 
-use App\Models\User;
-use App\Models\Project;
-use App\Models\Milestone;
-use App\Enums\User\AccountRole;
 use App\Enums\Milestone\MilestoneStatus;
+use App\Enums\User\AccountRole;
+use App\Models\Milestone;
+use App\Models\Project;
+use App\Models\User;
 use App\Services\MilestoneService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->service = app(MilestoneService::class);

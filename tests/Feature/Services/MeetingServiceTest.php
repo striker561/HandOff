@@ -1,13 +1,14 @@
 <?php
 
-use App\Models\User;
-use App\Models\Project;
-use App\Models\Meeting;
-use App\Enums\User\AccountRole;
 use App\Enums\Meeting\MeetingStatus;
+use App\Enums\User\AccountRole;
+use App\Models\Meeting;
+use App\Models\Project;
+use App\Models\User;
 use App\Services\MeetingService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->service = app(MeetingService::class);

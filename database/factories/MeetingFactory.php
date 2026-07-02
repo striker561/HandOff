@@ -2,12 +2,16 @@
 
 namespace Database\Factories;
 
-use App\Models\{Project, Deliverable, User};
+use App\Enums\Meeting\MeetingLocation;
+use App\Enums\Meeting\MeetingStatus;
+use App\Models\Deliverable;
+use App\Models\Meeting;
+use App\Models\Project;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use App\Enums\Meeting\{MeetingLocation, MeetingStatus};
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Meeting>
+ * @extends Factory<Meeting>
  */
 class MeetingFactory extends Factory
 {
@@ -16,9 +20,9 @@ class MeetingFactory extends Factory
         $scheduledAt = now()->addDays(rand(1, 30))->setHour(rand(9, 17))->setMinute(0);
 
         return [
-            'project_unique_id' => fn() => Project::factory()->create()->unique_id,
+            'project_unique_id' => fn () => Project::factory()->create()->unique_id,
             'deliverable_unique_id' => null,
-            'scheduled_by_unique_id' => fn() => User::factory()->create()->unique_id,
+            'scheduled_by_unique_id' => fn () => User::factory()->create()->unique_id,
             'title' => fake()->sentence(4),
             'description' => fake()->paragraph(),
             'scheduled_at' => $scheduledAt,
@@ -35,14 +39,14 @@ class MeetingFactory extends Factory
 
     public function withDeliverable(): static
     {
-        return $this->state(fn() => [
-            'deliverable_unique_id' => fn() => Deliverable::factory()->create()->unique_id,
+        return $this->state(fn () => [
+            'deliverable_unique_id' => fn () => Deliverable::factory()->create()->unique_id,
         ]);
     }
 
     public function completed(): static
     {
-        return $this->state(fn() => [
+        return $this->state(fn () => [
             'status' => MeetingStatus::COMPLETED,
             'scheduled_at' => now()->subDays(rand(1, 10)),
             'meeting_notes' => fake()->paragraphs(3, true),
@@ -51,7 +55,7 @@ class MeetingFactory extends Factory
 
     public function upcoming(): static
     {
-        return $this->state(fn() => [
+        return $this->state(fn () => [
             'status' => MeetingStatus::SCHEDULED,
             'scheduled_at' => now()->addDays(rand(1, 14)),
         ]);

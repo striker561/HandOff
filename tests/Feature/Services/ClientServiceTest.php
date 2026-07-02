@@ -1,10 +1,12 @@
 <?php
 
-use App\Models\User;
 use App\Enums\User\AccountRole;
+use App\Models\User;
 use App\Services\ClientService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Pagination\LengthAwarePaginator;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->service = app(ClientService::class);
@@ -27,7 +29,7 @@ it('lists clients with pagination', function () {
 
     $result = $this->service->getClients();
 
-    expect($result)->toBeInstanceOf(\Illuminate\Pagination\LengthAwarePaginator::class)
+    expect($result)->toBeInstanceOf(LengthAwarePaginator::class)
         ->and($result->total())->toBe(5);
 });
 

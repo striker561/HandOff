@@ -1,13 +1,15 @@
 <?php
 
-use App\Models\User;
-use App\Models\Project;
-use App\Models\Deliverable;
-use App\Enums\User\AccountRole;
 use App\Enums\Deliverable\DeliverableStatus;
+use App\Enums\Deliverable\DeliverableType;
+use App\Enums\User\AccountRole;
+use App\Models\Deliverable;
+use App\Models\Project;
+use App\Models\User;
 use App\Services\DeliverableService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->service = app(DeliverableService::class);
@@ -21,7 +23,7 @@ it('creates a deliverable', function () {
         'project_unique_id' => $this->project->unique_id,
         'created_by_unique_id' => $this->admin->unique_id,
         'name' => 'Test Deliverable',
-        'type' => \App\Enums\Deliverable\DeliverableType::FILE,
+        'type' => DeliverableType::FILE,
     ], $this->admin);
 
     expect($deliverable)->toBeInstanceOf(Deliverable::class)

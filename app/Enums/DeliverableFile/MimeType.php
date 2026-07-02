@@ -4,7 +4,6 @@ namespace App\Enums\DeliverableFile;
 
 enum MimeType: string
 {
-
     case PDF = 'application/pdf';
     case PNG = 'image/pdf';
     case JPG = 'image/jpeg';

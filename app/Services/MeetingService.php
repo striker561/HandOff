@@ -2,12 +2,14 @@
 
 namespace App\Services;
 
-use Carbon\Carbon;
-use App\Models\{Meeting, User};
 use App\Enums\Meeting\MeetingAction;
+use App\Enums\Meeting\MeetingLocation;
+use App\Enums\Meeting\MeetingStatus;
 use App\Events\Meeting\MeetingEvent;
+use App\Models\Meeting;
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
-use App\Enums\Meeting\{MeetingStatus, MeetingLocation};
 
 class MeetingService extends BaseCRUDService
 {
@@ -131,6 +133,7 @@ class MeetingService extends BaseCRUDService
     {
         $query = Meeting::query()->where('project_unique_id', $projectUniqueId);
         $query = $this->applyFilters($query, $filters);
+
         return $this->paginateQuery($query, $filters);
     }
 
@@ -138,6 +141,7 @@ class MeetingService extends BaseCRUDService
     {
         $query = Meeting::query()->where('deliverable_unique_id', $deliverableUniqueId);
         $query = $this->applyFilters($query, $filters);
+
         return $this->paginateQuery($query, $filters);
     }
 
@@ -145,6 +149,7 @@ class MeetingService extends BaseCRUDService
     {
         $query = Meeting::query()->where('scheduled_by_unique_id', $user->unique_id);
         $query = $this->applyFilters($query, $filters);
+
         return $this->paginateQuery($query, $filters);
     }
 

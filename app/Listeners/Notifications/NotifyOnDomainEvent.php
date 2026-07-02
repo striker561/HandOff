@@ -2,32 +2,26 @@
 
 namespace App\Listeners\Notifications;
 
-
-use App\Enums\Meeting\MeetingAction;
 use App\Enums\Comment\CommentAction;
-use App\Enums\Milestone\MilestoneAction;
 use App\Enums\Deliverable\DeliverableAction;
-
-use App\Events\User\ClientEvent;
-use App\Events\Meeting\MeetingEvent;
+use App\Enums\Meeting\MeetingAction;
+use App\Enums\Milestone\MilestoneAction;
 use App\Events\Comment\CommentEvent;
-use App\Events\Project\ProjectEvent;
-use App\Events\Milestone\MilestoneEvent;
 use App\Events\Credential\CredentialEvent;
 use App\Events\Deliverable\DeliverableEvent;
-
-use App\Services\NotificationService;
-
+use App\Events\Meeting\MeetingEvent;
+use App\Events\Milestone\MilestoneEvent;
+use App\Events\Project\ProjectEvent;
+use App\Events\User\ClientEvent;
 use App\Models\User;
-
+use App\Services\NotificationService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
 class NotifyOnDomainEvent implements ShouldQueue
 {
     public function __construct(
         protected NotificationService $notifications
-    ) {
-    }
+    ) {}
 
     public function handle(
         ProjectEvent|MilestoneEvent|DeliverableEvent|MeetingEvent|CredentialEvent|CommentEvent|ClientEvent $event
@@ -46,7 +40,7 @@ class NotifyOnDomainEvent implements ShouldQueue
         $deliverable = $event->deliverable;
         $client = $deliverable->project->client;
 
-        if (!$client) {
+        if (! $client) {
             return;
         }
 
@@ -75,7 +69,7 @@ class NotifyOnDomainEvent implements ShouldQueue
         $milestone = $event->milestone;
         $client = $milestone->project->client;
 
-        if (!$client) {
+        if (! $client) {
             return;
         }
 
@@ -91,7 +85,7 @@ class NotifyOnDomainEvent implements ShouldQueue
             $meeting = $event->meeting;
             $client = $meeting->project->client;
 
-            if (!$client) {
+            if (! $client) {
                 return;
             }
 
@@ -108,7 +102,7 @@ class NotifyOnDomainEvent implements ShouldQueue
             $meeting = $event->meeting;
             $client = $meeting->project->client;
 
-            if (!$client) {
+            if (! $client) {
                 return;
             }
 
@@ -129,7 +123,7 @@ class NotifyOnDomainEvent implements ShouldQueue
         $comment = $event->comment;
         $mentioned = $comment->mentioned_users ?? $event->metadata['mentioned_users'] ?? [];
 
-        if (!is_array($mentioned) || $mentioned === []) {
+        if (! is_array($mentioned) || $mentioned === []) {
             return;
         }
 

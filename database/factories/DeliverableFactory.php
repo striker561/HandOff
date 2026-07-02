@@ -2,21 +2,25 @@
 
 namespace Database\Factories;
 
-use App\Models\{Project, Milestone, User};
+use App\Enums\Deliverable\DeliverableStatus;
+use App\Enums\Deliverable\DeliverableType;
+use App\Models\Deliverable;
+use App\Models\Milestone;
+use App\Models\Project;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use App\Enums\Deliverable\{DeliverableStatus, DeliverableType};
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Deliverable>
+ * @extends Factory<Deliverable>
  */
 class DeliverableFactory extends Factory
 {
     public function definition(): array
     {
         return [
-            'project_unique_id' => fn() => Project::factory()->create()->unique_id,
-            'milestone_unique_id' => fn() => Milestone::factory()->create()->unique_id,
-            'created_by_unique_id' => fn() => User::factory()->create()->unique_id,
+            'project_unique_id' => fn () => Project::factory()->create()->unique_id,
+            'milestone_unique_id' => fn () => Milestone::factory()->create()->unique_id,
+            'created_by_unique_id' => fn () => User::factory()->create()->unique_id,
             'name' => fake()->sentence(3),
             'description' => fake()->paragraph(),
             'type' => fake()->randomElement(DeliverableType::cases()),
@@ -35,16 +39,16 @@ class DeliverableFactory extends Factory
 
     public function approved(): static
     {
-        return $this->state(fn() => [
+        return $this->state(fn () => [
             'status' => DeliverableStatus::APPROVED,
             'approved_at' => now(),
-            'approved_by_unique_id' => fn() => User::factory()->create()->unique_id,
+            'approved_by_unique_id' => fn () => User::factory()->create()->unique_id,
         ]);
     }
 
     public function pending(): static
     {
-        return $this->state(fn() => [
+        return $this->state(fn () => [
             'status' => DeliverableStatus::IN_REVIEW,
         ]);
     }

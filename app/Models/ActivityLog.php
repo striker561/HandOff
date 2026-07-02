@@ -3,12 +3,14 @@
 namespace App\Models;
 
 use App\Enums\ActivityLog\LogName;
+use Database\Factories\ActivityLogFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\{BelongsTo, MorphTo};
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class ActivityLog extends BaseModel
 {
-    /** @use HasFactory<\Database\Factories\ActivityLogFactory> */
+    /** @use HasFactory<ActivityLogFactory> */
     public $timestamps = true;
 
     /**

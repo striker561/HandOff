@@ -2,22 +2,23 @@
 
 namespace App\Models;
 
-
 use App\Enums\User\AccountRole;
+use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\Contracts\PasskeyUser;
 use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
-use Illuminate\Notifications\Notifiable;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Database\Eloquent\Relations\{HasMany, MorphMany};
 
 class User extends Authenticatable implements PasskeyUser
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasUuids, SoftDeletes, TwoFactorAuthenticatable, PasskeyAuthenticatable;
+    /** @use HasFactory<UserFactory> */
+    use HasFactory, HasUuids, Notifiable, PasskeyAuthenticatable, SoftDeletes, TwoFactorAuthenticatable;
 
     protected $fillable = [
         'unique_id',
@@ -43,7 +44,7 @@ class User extends Authenticatable implements PasskeyUser
         ];
     }
 
-    //Auto gen the uuid for the unique id col
+    // Auto gen the uuid for the unique id col
     public function uniqueIds(): array
     {
         return ['unique_id'];
@@ -53,7 +54,6 @@ class User extends Authenticatable implements PasskeyUser
     {
         return 'unique_id';
     }
-
 
     public function projects(): HasMany
     {

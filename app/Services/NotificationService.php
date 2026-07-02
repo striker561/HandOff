@@ -2,8 +2,9 @@
 
 namespace App\Services;
 
-use App\Models\{Notification, User};
 use App\Enums\Notification\NotificationType;
+use App\Models\Notification;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -29,7 +30,6 @@ class NotificationService extends BaseCRUDService
         return ['created_at', 'updated_at', 'read_at'];
     }
 
-
     public function notifyMultipleUsers(
         array $users,
         NotificationType $type,
@@ -52,6 +52,7 @@ class NotificationService extends BaseCRUDService
     {
         $query = Notification::query()->where('user_unique_id', $user->unique_id);
         $query = $this->applyFilters($query, $filters);
+
         return $this->paginateQuery($query, $filters);
     }
 
@@ -65,6 +66,7 @@ class NotificationService extends BaseCRUDService
     public function markAsRead(Notification $notification): Notification
     {
         $notification->markAsRead();
+
         return $notification->fresh();
     }
 
@@ -180,7 +182,6 @@ class NotificationService extends BaseCRUDService
             ]
         );
     }
-
 
     public function createNotification(
         User $user,

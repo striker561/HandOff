@@ -2,18 +2,20 @@
 
 namespace App\Models;
 
+use App\Enums\Project\ProjectCurrency;
+use App\Enums\Project\ProjectStatus;
+use Database\Factories\ProjectFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Enums\Project\{ProjectCurrency, ProjectStatus};
-use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, MorphMany};
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 /**
- * @property-read \App\Models\User|null $client
+ * @property-read User|null $client
  */
 class Project extends BaseModel
 {
-
-    /** @use HasFactory<\Database\Factories\ProjectFactory> */
-
+    /** @use HasFactory<ProjectFactory> */
     protected $fillable = [
         'client_unique_id',
         'name',

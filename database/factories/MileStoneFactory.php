@@ -2,12 +2,13 @@
 
 namespace Database\Factories;
 
-use App\Models\Project;
 use App\Enums\Milestone\MilestoneStatus;
+use App\Models\MileStone;
+use App\Models\Project;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\MileStone>
+ * @extends Factory<MileStone>
  */
 class MilestoneFactory extends Factory
 {
@@ -17,7 +18,7 @@ class MilestoneFactory extends Factory
         $startDate = now()->subDays(rand(0, 30));
 
         return [
-            'project_unique_id' => fn() => Project::factory()->create()->unique_id,
+            'project_unique_id' => fn () => Project::factory()->create()->unique_id,
             'name' => fake()->sentence(3),
             'description' => fake()->paragraph(),
             'order' => 0,
@@ -29,10 +30,9 @@ class MilestoneFactory extends Factory
         ];
     }
 
-
     public function completed(): static
     {
-        return $this->state(fn() => [
+        return $this->state(fn () => [
             'status' => MilestoneStatus::COMPLETED,
             'completed_at' => now(),
             'progress_percentage' => 100,
