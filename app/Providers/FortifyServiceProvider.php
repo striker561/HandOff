@@ -35,14 +35,28 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
         Fortify::redirectUserForTwoFactorAuthenticationUsing(RedirectIfTwoFactorAuthenticatable::class);
 
-        // Register Flux component views for Fortify
+        $this->configureViews();
+        $this->configureRateLimiting();
+    }
+
+    /**
+     * Configure Fortify views.
+     */
+    private function configureViews(): void
+    {
         Fortify::loginView(fn() => view('pages.auth.login'));
         Fortify::requestPasswordResetLinkView(fn() => view('pages.auth.forgot-password'));
         Fortify::resetPasswordView(fn(Request $request) => view('pages.auth.reset-password', ['request' => $request]));
         Fortify::confirmPasswordView(fn() => view('pages.auth.confirm-password'));
         Fortify::twoFactorChallengeView(fn() => view('pages.auth.two-factor-challenge'));
         Fortify::verifyEmailView(fn() => view('pages.auth.verify-email'));
+    }
 
+    /**
+     * Configure rate limiting.
+     */
+    private function configureRateLimiting(): void
+    {
         RateLimiter::for('login', function (Request $request) {
             $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())) . '|' . $request->ip());
 

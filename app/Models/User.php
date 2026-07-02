@@ -4,6 +4,8 @@ namespace App\Models;
 
 
 use App\Enums\User\AccountRole;
+use Laravel\Fortify\Contracts\PasskeyUser;
+use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -12,10 +14,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Relations\{HasMany, MorphMany};
 
-class User extends Authenticatable
+class User extends Authenticatable implements PasskeyUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasUuids, SoftDeletes, TwoFactorAuthenticatable;
+    use HasFactory, Notifiable, HasUuids, SoftDeletes, TwoFactorAuthenticatable, PasskeyAuthenticatable;
 
     protected $fillable = [
         'unique_id',
