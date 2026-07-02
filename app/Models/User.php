@@ -4,7 +4,9 @@ namespace App\Models;
 
 
 use App\Enums\User\AccountRole;
-use Laravel\Sanctum\HasApiTokens;
+use Laravel\Fortify\Contracts\PasskeyUser;
+use Laravel\Fortify\PasskeyAuthenticatable;
+use Laravel\Fortify\TwoFactorAuthenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -12,10 +14,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Relations\{HasMany, MorphMany};
 
-class User extends Authenticatable
+class User extends Authenticatable implements PasskeyUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasUuids, SoftDeletes, HasApiTokens;
+    use HasFactory, Notifiable, HasUuids, SoftDeletes, TwoFactorAuthenticatable, PasskeyAuthenticatable;
 
     protected $fillable = [
         'unique_id',
@@ -113,5 +115,17 @@ class User extends Authenticatable
     public function isClient(): bool
     {
         return $this->role === AccountRole::CLIENT;
+    }
+
+    public function initials(): string
+    {
+        $words = explode(' ', $this->name);
+        $initials = '';
+
+        foreach ($words as $word) {
+            $initials .= strtoupper(substr($word, 0, 1));
+        }
+
+        return substr($initials, 0, 2);
     }
 }
