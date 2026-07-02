@@ -19,13 +19,11 @@
             @if (Route::has('login'))
                 <nav class="flex items-center gap-3">
                     @auth
-                        <x-handoff-button :href="route('dashboard')" variant="outline" icon="home"
-                            class="!w-auto">
+                        <x-handoff-button :href="route('dashboard')" variant="outline" icon="home" class="!w-auto">
                             {{ __('Dashboard') }}
                         </x-handoff-button>
                     @else
-                        <x-handoff-button :href="route('login')" icon="arrow-right-start-on-rectangle"
-                            class="!w-auto">
+                        <x-handoff-button :href="route('login')" icon="arrow-right-start-on-rectangle" class="!w-auto">
                             {{ __('Log in') }}
                         </x-handoff-button>
                     @endauth
@@ -36,18 +34,12 @@
         <main class="relative z-10 flex flex-1 flex-col items-center justify-center px-6 pb-20 pt-4 lg:px-12">
             <div class="mx-auto grid w-full max-w-6xl items-center gap-12 lg:grid-cols-2 lg:gap-16">
                 <div class="order-2 flex flex-col gap-8 lg:order-1">
-                    <div
-                        class="inline-flex w-fit items-center gap-2 rounded-full bg-brand-100 px-4 py-1.5 text-sm font-semibold text-brand-700 dark:bg-brand-900 dark:text-brand-200">
-                        <flux:icon.sparkles variant="mini" />
-                        {{ __('Client portal') }}
-                    </div>
-
                     <div class="space-y-4">
                         <flux:heading size="xl" class="text-balance text-4xl leading-tight sm:text-5xl">
                             {{ __('Pass projects to clients without the chaos') }}
                         </flux:heading>
                         <flux:text class="max-w-lg text-lg text-brand-800/70 dark:text-brand-200/70">
-                            {{ __('HandOff is where deliverables, credentials, and updates land — so your clients always know what’s next.') }}
+                            {{ __('HandOff is where deliverables, credentials, and updates land, so your clients always know what’s next.') }}
                         </flux:text>
                     </div>
 
@@ -57,40 +49,38 @@
                                 {{ __('Go to dashboard') }}
                             </x-handoff-button>
                         @else
-                            <x-handoff-button :href="route('login')" icon="arrow-right-start-on-rectangle"
-                                class="!w-auto">
+                            <x-handoff-button :href="route('login')" icon="arrow-right-start-on-rectangle" class="!w-auto">
                                 {{ __('Sign in') }}
                             </x-handoff-button>
-                            <x-handoff-button :href="route('login')" variant="outline" icon="archive-box"
-                                class="!w-auto">
+                            <x-handoff-button :href="route('login')" variant="outline" icon="archive-box" class="!w-auto">
                                 {{ __('See how it works') }}
                             </x-handoff-button>
                         @endauth
                     </div>
 
-                    <div class="grid grid-cols-3 gap-4 pt-4">
-                        @foreach ([
-                                ['label' => __('Deliverables'), 'icon' => 'archive-box'],
-                                ['label' => __('Credentials'), 'icon' => 'key'],
-                                ['label' => __('Meetings'), 'icon' => 'calendar-days'],
-                            ] as $feature)
-                            <div class="handoff-card rounded-xl p-4 text-center">
-                                    <x-dynamic-component :component="'flux::icon.' . $feature['icon']" variant="mini"
-                                        class="mx-auto mb-2 size-6 text-brand-600 dark:text-brand-400" />
-                                    <flux:text class="text-xs font-semibold">{{ $feature['label'] }}</flux:text>
-                                </div>
-                        @endforeach
+                    <div class="grid grid-cols-2 gap-4 pt-2 sm:gap-5">
+                        <x-handoff-feature-card :label="__('Deliverables')" icon="archive-box" />
+                        <x-handoff-feature-card :label="__('Credentials')" icon="key" />
+                        <x-handoff-feature-card :label="__('Meetings')" icon="calendar-days" />
+                        <x-handoff-feature-card :label="__('Updates')" icon="chat-bubble-left-right" />
                     </div>
                 </div>
 
                 <div class="order-1 flex justify-center lg:order-2">
-                    <div class="relative">
-                        <div class="absolute -inset-4 rounded-3xl bg-brand-400/20 blur-2xl"></div>
-                        <div class="handoff-card relative rounded-3xl p-10">
-                            <x-app-logo-icon class="mx-auto size-40 text-brand-700 dark:text-brand-300" />
-                            <flux:text class="mt-6 text-center text-sm font-medium text-brand-700/80 dark:text-brand-300/80">
-                                {{ __('Ready when you are.') }}
-                            </flux:text>
+                    <div class="handoff-auth-wrap w-full max-w-xs sm:max-w-sm">
+                        <div class="handoff-auth-frame">
+                            <div class="handoff-auth-shell">
+                                <div class="p-10 text-center">
+                                    <span
+                                        class="handoff-clip mx-auto flex size-24 items-center justify-center bg-brand-700 text-white shadow-sm dark:bg-brand-600">
+                                        <x-app-logo-icon class="size-14 text-white" />
+                                    </span>
+                                    <flux:text
+                                        class="mt-6 text-sm font-medium text-brand-700/80 dark:text-brand-300/80">
+                                        {{ __('Ready when you are.') }}
+                                    </flux:text>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

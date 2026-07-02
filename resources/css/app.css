@@ -285,4 +285,44 @@
     .handoff-auth-form {
         @apply relative flex flex-col justify-center p-8 sm:p-10;
     }
+
+    .handoff-feature-wrap {
+        @apply w-full;
+        filter: drop-shadow(0 14px 32px oklch(0.32 0.06 258 / 0.1));
+    }
+
+    .dark .handoff-feature-wrap {
+        filter: drop-shadow(0 16px 36px oklch(0 0 0 / 0.3));
+    }
+
+    .handoff-feature-frame {
+        @apply relative rounded-none p-px;
+        clip-path: polygon(
+            8px 0,
+            100% 0,
+            100% calc(100% - 8px),
+            calc(100% - 8px) 100%,
+            0 100%,
+            0 8px
+        );
+        background: linear-gradient(
+            145deg,
+            oklch(0.72 0.06 258 / 0.55),
+            oklch(0.48 0.09 258 / 0.85),
+            oklch(0.38 0.08 258 / 0.75)
+        );
+    }
+
+    .handoff-feature-shell {
+        @apply flex flex-col items-center justify-center gap-3 rounded-none bg-white p-5 text-center sm:gap-4 sm:p-6 dark:bg-brand-950;
+        clip-path: polygon(
+            8px 0,
+            100% 0,
+            100% calc(100% - 8px),
+            calc(100% - 8px) 100%,
+            0 100%,
+            0 8px
+        );
+        min-height: 8.5rem;
+    }
 }
