@@ -8,7 +8,7 @@ use App\Models\Project;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<MileStone>
+ * @extends Factory<Milestone>
  */
 class MilestoneFactory extends Factory
 {
