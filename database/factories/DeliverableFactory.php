@@ -14,9 +14,9 @@ class DeliverableFactory extends Factory
     public function definition(): array
     {
         return [
-            'project_unique_id' => Project::factory(),
-            'milestone_unique_id' => Milestone::factory(),
-            'created_by_unique_id' => User::factory(),
+            'project_unique_id' => fn() => Project::factory()->create()->unique_id,
+            'milestone_unique_id' => fn() => Milestone::factory()->create()->unique_id,
+            'created_by_unique_id' => fn() => User::factory()->create()->unique_id,
             'name' => fake()->sentence(3),
             'description' => fake()->paragraph(),
             'type' => fake()->randomElement(DeliverableType::cases()),
@@ -38,7 +38,7 @@ class DeliverableFactory extends Factory
         return $this->state(fn() => [
             'status' => DeliverableStatus::APPROVED,
             'approved_at' => now(),
-            'approved_by_unique_id' => User::factory(),
+            'approved_by_unique_id' => fn() => User::factory()->create()->unique_id,
         ]);
     }
 

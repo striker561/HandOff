@@ -13,9 +13,13 @@ class NotificationFactory extends Factory
 {
     public function definition(): array
     {
+        $project = Project::factory()->create();
+
         return [
-            'user_unique_id' => User::factory(),
+            'user_unique_id' => fn() => User::factory()->create()->unique_id,
             'type' => fake()->randomElement(NotificationType::cases()),
+            'notifiable_type' => \App\Models\Project::class,
+            'notifiable_id' => $project->unique_id,
             'data' => [
                 'title' => fake()->sentence(),
                 'message' => fake()->paragraph(),

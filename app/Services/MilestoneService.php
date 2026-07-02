@@ -37,10 +37,9 @@ class MilestoneService extends BaseCRUDService
         $milestone = $this->create([
             'name' => $data['name'],
             'description' => $data['description'] ?? null,
-            'project_id' => $data['project_id'],
+            'project_unique_id' => $data['project_unique_id'],
             'due_date' => $data['due_date'] ?? null,
-            'order' => $this->getNextOrder($data['project_id']),
-            'is_completed' => false,
+            'order' => $this->getNextOrder($data['project_unique_id']),
         ]);
 
         return $milestone;
@@ -74,7 +73,7 @@ class MilestoneService extends BaseCRUDService
             $action,
             $performedBy,
             [
-                'from_status' => $fromStatus?->value,
+                'from_status' => $fromStatus instanceof MilestoneStatus ? $fromStatus->value : $fromStatus,
                 'to_status' => $status->value,
             ]
         );

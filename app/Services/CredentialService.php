@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\Credential\CredentialType;
 use App\Models\{Credential, User};
 use Illuminate\Support\Facades\Crypt;
 use App\Enums\Credential\CredentialAction;
@@ -103,7 +104,7 @@ class CredentialService extends BaseCRUDService
         return [
             'unique_id' => $credential->unique_id,
             'name' => $credential->name,
-            'type' => $credential->type->value,
+            'type' => $credential->type instanceof CredentialType ? $credential->type->value : $credential->type,
             'username' => $credential->username,
             'password' => $this->decryptPassword($credential),
             'url' => $credential->url,

@@ -6,6 +6,9 @@ use App\Enums\Milestone\MilestoneStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, MorphMany};
 
+/**
+ * @property-read \App\Models\Project|null $project
+ */
 class Milestone extends BaseModel
 {
 
@@ -38,6 +41,11 @@ class Milestone extends BaseModel
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class, 'project_unique_id', 'unique_id');
+    }
+
+    public function getIsCompletedAttribute(): bool
+    {
+        return $this->status === MilestoneStatus::COMPLETED;
     }
 
     public function deliverables(): HasMany

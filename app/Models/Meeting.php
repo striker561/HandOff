@@ -6,6 +6,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Enums\Meeting\{MeetingLocation, MeetingStatus};
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, MorphMany};
 
+/**
+ * @property-read \App\Models\Project|null $project
+ * @property-read \App\Models\Deliverable|null $deliverable
+ */
 class Meeting extends BaseModel
 {
     /** @use HasFactory<\Database\Factories\MeetingFactory> */

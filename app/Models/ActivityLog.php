@@ -11,6 +11,14 @@ class ActivityLog extends BaseModel
     /** @use HasFactory<\Database\Factories\ActivityLogFactory> */
     public $timestamps = true;
 
+    /**
+     * ActivityLog table doesn't have a unique_id column.
+     */
+    public function uniqueIds(): array
+    {
+        return [];
+    }
+
     protected $fillable = [
         'user_unique_id',
         'log_name',
@@ -34,12 +42,12 @@ class ActivityLog extends BaseModel
 
     public function subject(): MorphTo
     {
-        return $this->morphTo();
+        return $this->morphTo('subject', 'subject_type', 'subject_id', 'unique_id');
     }
 
     public function causer(): MorphTo
     {
-        return $this->morphTo();
+        return $this->morphTo('causer', 'causer_type', 'causer_id', 'unique_id');
     }
 
     public function user(): BelongsTo

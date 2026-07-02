@@ -150,7 +150,7 @@ class CommentService extends BaseCRUDService
     {
         // Extract @username or @user_id patterns
         preg_match_all('/@(\w+)/', $body, $matches);
-        return $matches[1] ?? [];
+        return $matches[1];
     }
 
     public function canUserSeeComment(User $user, Comment $comment): bool

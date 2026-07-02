@@ -87,30 +87,37 @@ class NotifyOnDomainEvent implements ShouldQueue
 
     private function handleMeeting(MeetingEvent $event): void
     {
-        if (!in_array($event->action, [MeetingAction::SCHEDULED, MeetingAction::RESCHEDULED], true)) {
-            return;
-        }
+        if ($event->action === MeetingAction::SCHEDULED) {
+            $meeting = $event->meeting;
+            $client = $meeting->project->client;
 
-        $meeting = $event->meeting;
-        $client = $meeting->project->client;
+            if (!$client) {
+                return;
+            }
 
-        if (!$client) {
-            return;
-        }
-
-        match ($event->action) {
-            MeetingAction::SCHEDULED => $this->notifications->notifyMeetingScheduled(
+            $this->notifications->notifyMeetingScheduled(
                 meeting: $meeting,
                 recipient: $client,
                 scheduledBy: $event->performedBy
-            ),
-            MeetingAction::RESCHEDULED => $this->notifications->notifyMeetingRescheduled(
+            );
+
+            return;
+        }
+
+        if ($event->action === MeetingAction::RESCHEDULED) {
+            $meeting = $event->meeting;
+            $client = $meeting->project->client;
+
+            if (!$client) {
+                return;
+            }
+
+            $this->notifications->notifyMeetingRescheduled(
                 meeting: $meeting,
                 recipient: $client,
                 rescheduledBy: $event->performedBy
-            ),
-            default => null,
-        };
+            );
+        }
     }
 
     private function handleComment(CommentEvent $event): void

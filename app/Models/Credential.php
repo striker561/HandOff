@@ -6,6 +6,9 @@ use App\Enums\Credential\CredentialType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, MorphMany};
 
+/**
+ * @property-read \App\Models\Project|null $project
+ */
 class Credential extends BaseModel
 {
     /** @use HasFactory<\Database\Factories\CredentialFactory> */

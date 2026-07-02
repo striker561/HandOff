@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\ActivityLog\LogName;
+use App\Models\BaseModel;
 use App\Models\{ActivityLog, User};
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Request;

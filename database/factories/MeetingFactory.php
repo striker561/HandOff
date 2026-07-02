@@ -16,9 +16,9 @@ class MeetingFactory extends Factory
         $scheduledAt = now()->addDays(rand(1, 30))->setHour(rand(9, 17))->setMinute(0);
 
         return [
-            'project_unique_id' => Project::factory(),
+            'project_unique_id' => fn() => Project::factory()->create()->unique_id,
             'deliverable_unique_id' => null,
-            'scheduled_by_unique_id' => User::factory(),
+            'scheduled_by_unique_id' => fn() => User::factory()->create()->unique_id,
             'title' => fake()->sentence(4),
             'description' => fake()->paragraph(),
             'scheduled_at' => $scheduledAt,
@@ -36,7 +36,7 @@ class MeetingFactory extends Factory
     public function withDeliverable(): static
     {
         return $this->state(fn() => [
-            'deliverable_unique_id' => Deliverable::factory(),
+            'deliverable_unique_id' => fn() => Deliverable::factory()->create()->unique_id,
         ]);
     }
 

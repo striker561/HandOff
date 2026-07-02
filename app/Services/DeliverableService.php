@@ -217,6 +217,7 @@ class DeliverableService extends BaseCRUDService
 
         $this->trackDownload($file);
 
+        /** @var \App\Models\Deliverable|null $deliverable */
         $deliverable = $file->deliverable;
         if ($deliverable) {
             DeliverableEvent::dispatch(
@@ -243,6 +244,7 @@ class DeliverableService extends BaseCRUDService
         $deleted = $file->delete();
 
         if ($deleted) {
+            /** @var \App\Models\Deliverable|null $deliverable */
             $deliverable = $file->deliverable;
             if ($deliverable) {
                 DeliverableEvent::dispatch(

@@ -182,7 +182,7 @@ class NotificationService extends BaseCRUDService
     }
 
 
-    private function createNotification(
+    public function createNotification(
         User $user,
         NotificationType $type,
         Model $notifiable,

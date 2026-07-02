@@ -6,6 +6,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Enums\Deliverable\{DeliverableStatus, DeliverableType};
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, MorphMany};
 
+/**
+ * @property-read \App\Models\Project|null $project
+ * @property-read \App\Models\Milestone|null $milestone
+ */
 class Deliverable extends BaseModel
 {
     /** @use HasFactory<\Database\Factories\DeliverableFactory> */

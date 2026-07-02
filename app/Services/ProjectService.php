@@ -58,7 +58,7 @@ class ProjectService extends BaseCRUDService
             ProjectAction::STATUS_CHANGED,
             $performedBy,
             [
-                'from_status' => $fromStatus?->value,
+                'from_status' => $fromStatus instanceof \App\Enums\Project\ProjectStatus ? $fromStatus->value : $fromStatus,
                 'to_status' => $status->value,
             ]
         );

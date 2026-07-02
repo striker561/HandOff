@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\User;
+use App\Enums\User\AccountRole;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use App\Enums\Project\{ProjectCurrency, ProjectStatus};
 
@@ -17,7 +18,7 @@ class ProjectFactory extends Factory
         $startDate = now()->subDays(rand(0, 30));
 
         return [
-            'client_unique_id' => User::factory(),
+            'client_unique_id' => fn() => User::factory()->create(['role' => AccountRole::CLIENT])->unique_id,
             'name' => fake()->sentence(3),
             'description' => fake()->paragraph(),
             'status' => fake()->randomElement(ProjectStatus::cases()),

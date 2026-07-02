@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Enums\Project\{ProjectCurrency, ProjectStatus};
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, MorphMany};
 
+/**
+ * @property-read \App\Models\User|null $client
+ */
 class Project extends BaseModel
 {
 

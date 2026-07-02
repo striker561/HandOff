@@ -31,7 +31,7 @@ class Notification extends BaseModel
 
     public function notifiable(): MorphTo
     {
-        return $this->morphTo();
+        return $this->morphTo('notifiable', 'notifiable_type', 'notifiable_id', 'unique_id');
     }
 
     public function user(): BelongsTo

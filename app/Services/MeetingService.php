@@ -60,8 +60,8 @@ class MeetingService extends BaseCRUDService
     public function rescheduleMeeting(
         Meeting $meeting,
         Carbon $newScheduledAt,
+        User $performedBy,
         ?int $newDuration = null,
-        User $performedBy
     ): Meeting {
         $meeting->update([
             'scheduled_at' => $newScheduledAt,
@@ -79,7 +79,7 @@ class MeetingService extends BaseCRUDService
         return $meeting->fresh();
     }
 
-    public function completeMeeting(Meeting $meeting, ?string $notes = null, User $performedBy): Meeting
+    public function completeMeeting(Meeting $meeting, User $performedBy, ?string $notes = null): Meeting
     {
         $updateData = ['status' => MeetingStatus::COMPLETED];
 
@@ -150,12 +150,15 @@ class MeetingService extends BaseCRUDService
 
     public function isMeetingUpcoming(Meeting $meeting): bool
     {
-        return $meeting->scheduled_at->isFuture()
+        return $meeting->scheduled_at instanceof Carbon
+            && $meeting->scheduled_at->isFuture()
             && $meeting->status === MeetingStatus::SCHEDULED;
     }
 
-    public function getMeetingEndTime(Meeting $meeting): Carbon
+    public function getMeetingEndTime(Meeting $meeting): ?Carbon
     {
-        return $meeting->scheduled_at->copy()->addMinutes($meeting->duration_minutes);
+        return $meeting->scheduled_at instanceof Carbon
+            ? $meeting->scheduled_at->copy()->addMinutes($meeting->duration_minutes)
+            : null;
     }
 }

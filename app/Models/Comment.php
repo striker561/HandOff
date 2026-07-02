@@ -30,7 +30,7 @@ class Comment extends BaseModel
 
     public function commentable(): MorphTo
     {
-        return $this->morphTo();
+        return $this->morphTo('commentable', 'commentable_type', 'commentable_id', 'unique_id');
     }
 
     public function user(): BelongsTo

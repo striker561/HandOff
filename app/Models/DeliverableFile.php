@@ -6,6 +6,10 @@ use App\Enums\DeliverableFile\MimeType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property-read \App\Models\Deliverable|null $deliverable
+ * @property-read \App\Models\User|null $uploadedBy
+ */
 class DeliverableFile extends BaseModel
 {
     /** @use HasFactory<\Database\Factories\DeliverableFileFactory> */

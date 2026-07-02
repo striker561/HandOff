@@ -17,8 +17,8 @@ class DeliverableFileFactory extends Factory
         $originalFilename = fake()->word() . '_' . fake()->word() . '.pdf';
 
         return [
-            'deliverable_unique_id' => Deliverable::factory(),
-            'uploaded_by_unique_id' => User::factory(),
+            'deliverable_unique_id' => fn() => Deliverable::factory()->create()->unique_id,
+            'uploaded_by_unique_id' => fn() => User::factory()->create()->unique_id,
             'filename' => $filename,
             'original_filename' => $originalFilename,
             'file_path' => 'deliverables/' . $filename,

@@ -17,7 +17,7 @@ class MilestoneFactory extends Factory
         $startDate = now()->subDays(rand(0, 30));
 
         return [
-            'project_unique_id' => Project::factory(),
+            'project_unique_id' => fn() => Project::factory()->create()->unique_id,
             'name' => fake()->sentence(3),
             'description' => fake()->paragraph(),
             'order' => 0,

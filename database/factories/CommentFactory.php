@@ -14,7 +14,7 @@ class CommentFactory extends Factory
     {
         return [
             'parent_unique_id' => null,
-            'user_unique_id' => User::factory(),
+            'user_unique_id' => fn() => User::factory()->create()->unique_id,
             'body' => fake()->paragraph(),
             'is_internal' => fake()->boolean(30),
             'mentioned_users' => [],
