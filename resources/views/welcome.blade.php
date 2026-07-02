@@ -71,10 +71,7 @@
                         <div class="handoff-clip-frame handoff-clip-frame--ticks">
                             <div class="handoff-clip-shell">
                                 <div class="p-10 text-center">
-                                    <span
-                                        class="handoff-clip mx-auto flex size-24 items-center justify-center bg-brand-700 text-white shadow-sm dark:bg-brand-600">
-                                        <x-app-logo-icon class="size-14 text-white" />
-                                    </span>
+                                    <x-ui.logo-mark size="hero" class="mx-auto" />
                                     <flux:text
                                         class="mt-6 text-sm font-medium text-brand-700/80 dark:text-brand-300/80">
                                         {{ __('Ready when you are.') }}

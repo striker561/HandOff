@@ -14,13 +14,13 @@
     <flux:separator class="handoff-sidebar__separator" />
 
     <flux:sidebar.group expandable icon="building-office-2" :heading="__('Agency')" class="grid">
-        <flux:sidebar.item icon="users" :href="route('dashboard')" :current="false" :badge="__('Soon')" :accent="false"
-            wire:navigate>
+        <flux:sidebar.item icon="users" href="#" :current="false" :badge="__('Soon')" :accent="false"
+            aria-disabled="true">
             {{ __('Clients') }}
         </flux:sidebar.item>
 
-        <flux:sidebar.item icon="folder" :href="route('dashboard')" :current="false" :badge="__('Soon')" :accent="false"
-            wire:navigate>
+        <flux:sidebar.item icon="folder" href="#" :current="false" :badge="__('Soon')" :accent="false"
+            aria-disabled="true">
             {{ __('Projects') }}
         </flux:sidebar.item>
     </flux:sidebar.group>

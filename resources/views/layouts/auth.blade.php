@@ -12,10 +12,7 @@
                 <div class="handoff-clip-shell">
                     <div class="handoff-clip-form">
                         <a href="{{ route('home') }}" class="mb-8 flex items-center gap-3" wire:navigate>
-                            <span
-                                class="handoff-clip flex size-10 items-center justify-center bg-brand-700 text-white shadow-sm dark:bg-brand-600">
-                                <x-app-logo-icon class="size-6 text-white" />
-                            </span>
+                            <x-ui.logo-mark size="md" />
                             <flux:heading size="sm">{{ config('app.name') }}</flux:heading>
                         </a>
 

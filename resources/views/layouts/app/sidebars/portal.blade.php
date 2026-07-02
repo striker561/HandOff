@@ -14,8 +14,8 @@
     <flux:separator class="handoff-sidebar__separator" />
 
     <flux:sidebar.group :heading="__('Projects')" class="grid">
-        <flux:sidebar.item icon="folder" :href="route('dashboard')" :current="false" :badge="__('Soon')" :accent="false"
-            wire:navigate>
+        <flux:sidebar.item icon="folder" href="#" :current="false" :badge="__('Soon')" :accent="false"
+            aria-disabled="true">
             {{ __('My projects') }}
         </flux:sidebar.item>
     </flux:sidebar.group>

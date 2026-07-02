@@ -37,6 +37,23 @@
         --color-accent-foreground: var(--color-white);
         --handoff-btn-edge: oklch(0.78 0.05 258);
         --handoff-btn-edge-dark: oklch(0.45 0.06 258);
+        /* ponytail: single clip definition; change corner size here globally */
+        --handoff-clip-path-md: polygon(
+            8px 0,
+            100% 0,
+            100% calc(100% - 8px),
+            calc(100% - 8px) 100%,
+            0 100%,
+            0 8px
+        );
+        --handoff-clip-path-sm: polygon(
+            6px 0,
+            100% 0,
+            100% calc(100% - 6px),
+            calc(100% - 6px) 100%,
+            0 100%,
+            0 6px
+        );
     }
 
     .dark {
@@ -83,45 +100,18 @@
             );
     }
 
-    .handoff-card {
-        @apply rounded-2xl border border-brand-200/50 bg-white/95 shadow-[0_4px_24px_-8px] shadow-brand-900/8 backdrop-blur-sm dark:border-brand-800/50 dark:bg-brand-950/80 dark:shadow-black/20;
-    }
-
     .handoff-clip {
         @apply rounded-none;
-        clip-path: polygon(
-            8px 0,
-            100% 0,
-            100% calc(100% - 8px),
-            calc(100% - 8px) 100%,
-            0 100%,
-            0 8px
-        );
+        clip-path: var(--handoff-clip-path-md);
     }
 
-    .handoff-clip-sm {
-        @apply rounded-none;
-        clip-path: polygon(
-            6px 0,
-            100% 0,
-            100% calc(100% - 6px),
-            calc(100% - 6px) 100%,
-            0 100%,
-            0 6px
-        );
+    .handoff-logo-mark {
+        @apply flex items-center justify-center rounded-none bg-brand-700 text-white shadow-sm dark:bg-brand-600;
+        clip-path: var(--handoff-clip-path-md);
     }
 
-    .handoff-card-clip {
-        @apply rounded-none border-0 bg-white/95 backdrop-blur-sm dark:bg-brand-950/90;
-        box-shadow:
-            inset 0 0 0 1px oklch(0.87 0.03 258 / 0.45),
-            0 8px 32px -12px oklch(0.32 0.06 258 / 0.1);
-    }
-
-    .dark .handoff-card-clip {
-        box-shadow:
-            inset 0 0 0 1px oklch(0.32 0.06 258 / 0.55),
-            0 8px 32px -12px oklch(0 0 0 / 0.25);
+    .handoff-logo-mark--sidebar {
+        @apply bg-brand-500 shadow-lg shadow-brand-950/30;
     }
 
     .handoff-btn {
@@ -130,14 +120,7 @@
 
     .handoff-btn-action {
         @apply rounded-none;
-        clip-path: polygon(
-            8px 0,
-            100% 0,
-            100% calc(100% - 8px),
-            calc(100% - 8px) 100%,
-            0 100%,
-            0 8px
-        );
+        clip-path: var(--handoff-clip-path-md);
     }
 
     .handoff-btn-primary {
@@ -221,10 +204,6 @@
         @apply text-sm text-brand-800/80 dark:text-brand-100/80;
     }
 
-    .handoff-auth-panel-card {
-        @apply flex items-start gap-3 rounded-xl bg-white/10 p-4 ring-1 ring-white/15 backdrop-blur-sm;
-    }
-
     .handoff-error {
         @apply text-sm font-medium text-red-600 dark:text-red-400;
     }
@@ -240,14 +219,7 @@
 
     .handoff-clip-frame {
         @apply relative rounded-none p-px;
-        clip-path: polygon(
-            8px 0,
-            100% 0,
-            100% calc(100% - 8px),
-            calc(100% - 8px) 100%,
-            0 100%,
-            0 8px
-        );
+        clip-path: var(--handoff-clip-path-md);
         background: linear-gradient(
             145deg,
             oklch(0.72 0.06 258 / 0.7),
@@ -284,14 +256,7 @@
 
     .handoff-clip-shell {
         @apply rounded-none bg-white dark:bg-brand-950;
-        clip-path: polygon(
-            8px 0,
-            100% 0,
-            100% calc(100% - 8px),
-            calc(100% - 8px) 100%,
-            0 100%,
-            0 8px
-        );
+        clip-path: var(--handoff-clip-path-md);
     }
 
     .handoff-clip-form {
@@ -349,7 +314,6 @@
         @apply text-brand-700 dark:text-brand-200;
     }
 
-    .handoff-logout--icon,
     .handoff-sidebar-action--icon {
         @apply w-auto px-2.5 py-2 text-brand-700 hover:bg-brand-100 dark:text-brand-200 dark:hover:bg-brand-900;
     }
@@ -395,26 +359,7 @@
         @apply flex items-center justify-center;
     }
 
-    .handoff-sidebar__logo-mark {
-        @apply flex size-11 items-center justify-center rounded-none bg-brand-500 text-white shadow-lg shadow-brand-950/30;
-        clip-path: polygon(
-            8px 0,
-            100% 0,
-            100% calc(100% - 8px),
-            calc(100% - 8px) 100%,
-            0 100%,
-            0 8px
-        );
-    }
-
-    .handoff-sidebar-menu {
-        @apply flex flex-col gap-1 px-2;
-    }
-
-    .handoff-sidebar-menu__group {
-        @apply flex flex-col gap-0.5;
-    }
-
+    /* ponytail: Flux sidebar ships light-theme item styles; overrides scoped to .handoff-sidebar */
     .handoff-sidebar [data-flux-sidebar-group] .px-3.py-2 > div,
     .handoff-sidebar
         [data-flux-sidebar-group]
@@ -435,16 +380,15 @@
         color: var(--sidebar-fg-active) !important;
     }
 
+    .handoff-sidebar [data-flux-sidebar-item][aria-disabled="true"] {
+        opacity: 0.55;
+        pointer-events: none;
+        cursor: default;
+    }
+
     .handoff-sidebar [data-flux-sidebar-item] {
         @apply relative rounded-none;
-        clip-path: polygon(
-            6px 0,
-            100% 0,
-            100% calc(100% - 6px),
-            calc(100% - 6px) 100%,
-            0 100%,
-            0 6px
-        );
+        clip-path: var(--handoff-clip-path-sm);
         color: var(--sidebar-fg) !important;
         border: none !important;
         background-color: transparent !important;
@@ -481,14 +425,7 @@
         position: absolute;
         inset: 0;
         pointer-events: none;
-        clip-path: polygon(
-            6px 0,
-            100% 0,
-            100% calc(100% - 6px),
-            calc(100% - 6px) 100%,
-            0 100%,
-            0 6px
-        );
+        clip-path: var(--handoff-clip-path-sm);
         box-shadow: inset 0 0 0 1px var(--sidebar-active-frame);
     }
 
@@ -514,14 +451,7 @@
 
     .handoff-sidebar-action {
         @apply relative inline-flex w-full items-center justify-center gap-2 rounded-none px-3 py-2.5 text-sm font-medium transition;
-        clip-path: polygon(
-            6px 0,
-            100% 0,
-            100% calc(100% - 6px),
-            calc(100% - 6px) 100%,
-            0 100%,
-            0 6px
-        );
+        clip-path: var(--handoff-clip-path-sm);
         color: var(--sidebar-fg);
     }
 
@@ -540,14 +470,7 @@
         position: absolute;
         inset: 0;
         pointer-events: none;
-        clip-path: polygon(
-            6px 0,
-            100% 0,
-            100% calc(100% - 6px),
-            calc(100% - 6px) 100%,
-            0 100%,
-            0 6px
-        );
+        clip-path: var(--handoff-clip-path-sm);
         box-shadow: inset 0 0 0 1px var(--sidebar-active-frame);
     }
 
@@ -639,10 +562,24 @@
         @apply mx-auto max-w-md text-brand-700/70 dark:text-brand-200/70;
     }
 
+    .handoff-panel__codes {
+        @apply grid gap-1 rounded-lg bg-brand-100 p-4 font-mono text-sm dark:bg-brand-900/50;
+    }
+
+    .handoff-panel__qr {
+        @apply relative mx-auto aspect-square w-56 overflow-hidden border border-brand-200/60 bg-white dark:border-brand-800/60 dark:bg-brand-950;
+        clip-path: var(--handoff-clip-path-md);
+    }
+
+    .handoff-setup-key {
+        @apply break-all rounded-lg bg-brand-100 p-3 font-mono text-xs leading-relaxed text-brand-900 dark:bg-brand-900/50 dark:text-brand-100;
+    }
+
     .handoff-dashboard-callout {
         @apply border-brand-200/60 bg-brand-50/80 dark:border-brand-800/50 dark:bg-brand-950/60;
     }
 
+    /* settings-layout__* — BEM namespace for settings tabs/panel (isolated from handoff-page) */
     .settings-layout {
         @apply mx-auto flex flex-col gap-8 py-2 text-center;
         width: 40rem;
@@ -663,14 +600,7 @@
 
     .settings-layout__tab {
         @apply relative inline-flex items-center rounded-none px-4 py-2 text-sm font-semibold text-brand-700 transition dark:text-brand-200;
-        clip-path: polygon(
-            6px 0,
-            100% 0,
-            100% calc(100% - 6px),
-            calc(100% - 6px) 100%,
-            0 100%,
-            0 6px
-        );
+        clip-path: var(--handoff-clip-path-sm);
     }
 
     .settings-layout__tab::after {
@@ -678,14 +608,7 @@
         position: absolute;
         inset: 0;
         pointer-events: none;
-        clip-path: polygon(
-            6px 0,
-            100% 0,
-            100% calc(100% - 6px),
-            calc(100% - 6px) 100%,
-            0 100%,
-            0 6px
-        );
+        clip-path: var(--handoff-clip-path-sm);
         box-shadow: inset 0 0 0 1.5px oklch(0.87 0.03 258 / 0.55);
         transition: box-shadow 150ms ease;
     }
@@ -741,14 +664,7 @@
 
     .handoff-feature-frame {
         @apply relative rounded-none p-px;
-        clip-path: polygon(
-            8px 0,
-            100% 0,
-            100% calc(100% - 8px),
-            calc(100% - 8px) 100%,
-            0 100%,
-            0 8px
-        );
+        clip-path: var(--handoff-clip-path-md);
         background: linear-gradient(
             145deg,
             oklch(0.72 0.06 258 / 0.55),
@@ -759,14 +675,7 @@
 
     .handoff-feature-shell {
         @apply flex flex-col items-center justify-center gap-3 rounded-none bg-white p-5 text-center sm:gap-4 sm:p-6 dark:bg-brand-950;
-        clip-path: polygon(
-            8px 0,
-            100% 0,
-            100% calc(100% - 8px),
-            calc(100% - 8px) 100%,
-            0 100%,
-            0 8px
-        );
+        clip-path: var(--handoff-clip-path-md);
         min-height: 8.5rem;
     }
 }
