@@ -99,7 +99,7 @@ class CreateProject extends Component
     {
         $this->authorize('create', Project::class);
 
-        if (!$this->attemptRateLimitedAction('create-project', maxAttempts: 10, decaySeconds: 60)) {
+        if (! $this->attemptRateLimitedAction('create-project', maxAttempts: 10, decaySeconds: 60)) {
             $this->notifyWarning(__('Too many attempts. Please try again in a minute.'), duration: 8000);
 
             return;
