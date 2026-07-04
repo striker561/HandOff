@@ -1,9 +1,13 @@
-<flux:modal name="schedule-meeting" flyout variant="floating" class="md:w-lg">
+<flux:modal name="save-meeting" flyout variant="floating" class="md:w-lg">
     <div class="space-y-6">
         <div>
-            <flux:heading size="lg">{{ __('Schedule Meeting') }}</flux:heading>
+            <flux:heading size="lg">
+                {{ $this->isEditing ? __('Edit Meeting') : __('Schedule Meeting') }}
+            </flux:heading>
             <flux:text class="mt-2">
-                {{ __('Schedule a meeting for this project. Optionally link it to a deliverable.') }}
+                {{ $this->isEditing
+                    ? __('Update meeting details for this project.')
+                    : __('Schedule a meeting for this project. Optionally link it to a deliverable.') }}
             </flux:text>
         </div>
 
@@ -56,9 +60,11 @@
 
         <x-ui.modal-footer>
             <flux:modal.close>
-                <flux:button variant="filled">{{ __('Cancel') }}</flux:button>
+                <x-ui.button variant="secondary" class="!w-auto">{{ __('Cancel') }}</x-ui.button>
             </flux:modal.close>
-            <flux:button wire:click="schedule" variant="primary">{{ __('Schedule meeting') }}</flux:button>
+            <x-ui.button wire:click="save" class="!w-auto">
+                {{ $this->isEditing ? __('Save changes') : __('Schedule meeting') }}
+            </x-ui.button>
         </x-ui.modal-footer>
     </div>
 </flux:modal>

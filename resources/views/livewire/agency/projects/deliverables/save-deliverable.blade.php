@@ -1,9 +1,13 @@
-<flux:modal name="create-deliverable" flyout variant="floating" class="md:w-lg">
+<flux:modal name="save-deliverable" flyout variant="floating" class="md:w-lg">
     <div class="space-y-6">
         <div>
-            <flux:heading size="lg">{{ __('Add Deliverable') }}</flux:heading>
+            <flux:heading size="lg">
+                {{ $this->isEditing ? __('Edit Deliverable') : __('Add Deliverable') }}
+            </flux:heading>
             <flux:text class="mt-2">
-                {{ __('Create a deliverable and link it to a milestone.') }}
+                {{ $this->isEditing
+                    ? __('Update deliverable details. File uploads are managed separately.')
+                    : __('Create a deliverable and link it to a milestone.') }}
             </flux:text>
         </div>
 
@@ -47,17 +51,21 @@
             <flux:error name="due_date" />
         </flux:field>
 
-        <flux:field>
-            <flux:label>{{ __('File') }}</flux:label>
-            <flux:input type="file" wire:model="file" />
-            <flux:error name="file" />
-        </flux:field>
+        @if (!$this->isEditing)
+            <flux:field>
+                <flux:label>{{ __('File') }}</flux:label>
+                <flux:input type="file" wire:model="file" />
+                <flux:error name="file" />
+            </flux:field>
+        @endif
 
         <x-ui.modal-footer>
             <flux:modal.close>
-                <flux:button variant="filled">{{ __('Cancel') }}</flux:button>
+                <x-ui.button variant="secondary" class="!w-auto">{{ __('Cancel') }}</x-ui.button>
             </flux:modal.close>
-            <flux:button wire:click="create" variant="primary">{{ __('Create deliverable') }}</flux:button>
+            <x-ui.button wire:click="save" class="!w-auto">
+                {{ $this->isEditing ? __('Save changes') : __('Create deliverable') }}
+            </x-ui.button>
         </x-ui.modal-footer>
     </div>
 </flux:modal>

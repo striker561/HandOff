@@ -25,7 +25,7 @@
             <flux:modal.close>
                 <flux:button variant="filled">{{ __('Cancel') }}</flux:button>
             </flux:modal.close>
-            <flux:button wire:click="create" variant="primary">{{ __('Send Invitation') }}</flux:button>
+            <x-ui.button wire:click="create" variant="primary">{{ __('Send Invitation') }}</x-ui.button>
         </x-ui.modal-footer>
     </div>
 </flux:modal>

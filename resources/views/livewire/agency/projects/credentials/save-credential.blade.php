@@ -1,9 +1,13 @@
-<flux:modal name="create-credential" flyout variant="floating" class="md:w-lg">
+<flux:modal name="save-credential" flyout variant="floating" class="md:w-lg">
     <div class="space-y-6">
         <div>
-            <flux:heading size="lg">{{ __('Add Credential') }}</flux:heading>
+            <flux:heading size="lg">
+                {{ $this->isEditing ? __('Edit Credential') : __('Add Credential') }}
+            </flux:heading>
             <flux:text class="mt-2">
-                {{ __('Store encrypted credentials for this project. Passwords are never shown in lists.') }}
+                {{ $this->isEditing
+                    ? __('Update credential details. Leave password blank to keep the current password.')
+                    : __('Store encrypted credentials for this project. Passwords are never shown in lists.') }}
             </flux:text>
         </div>
 
@@ -31,8 +35,9 @@
         </flux:field>
 
         <flux:field>
-            <flux:label>{{ __('Password') }}</flux:label>
-            <flux:input type="password" wire:model="password" autocomplete="new-password" />
+            <flux:label>{{ $this->isEditing ? __('New password') : __('Password') }}</flux:label>
+            <flux:input type="password" wire:model="password" autocomplete="new-password"
+                :placeholder="$this->isEditing ? __('Leave blank to keep current') : null" />
             <flux:error name="password" />
         </flux:field>
 
@@ -50,9 +55,11 @@
 
         <x-ui.modal-footer>
             <flux:modal.close>
-                <flux:button variant="filled">{{ __('Cancel') }}</flux:button>
+                <x-ui.button variant="secondary" class="!w-auto">{{ __('Cancel') }}</x-ui.button>
             </flux:modal.close>
-            <flux:button wire:click="create" variant="primary">{{ __('Save credential') }}</flux:button>
+            <x-ui.button wire:click="save" class="!w-auto">
+                {{ $this->isEditing ? __('Save changes') : __('Save credential') }}
+            </x-ui.button>
         </x-ui.modal-footer>
     </div>
 </flux:modal>

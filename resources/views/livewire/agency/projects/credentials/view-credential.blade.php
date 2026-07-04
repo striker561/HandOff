@@ -22,7 +22,7 @@
                     <flux:text class="mt-1">
                         @if ($url)
                             <a href="{{ $url }}" target="_blank" rel="noopener noreferrer"
-                                class="text-brand-600 hover:underline dark:text-brand-400">{{ $url }}</a>
+                                class="text-brand-600 dark:text-brand-400 hover:underline">{{ $url }}</a>
                         @else
                             —
                         @endif
@@ -33,14 +33,16 @@
                     @if ($passwordRevealed && $revealedPassword)
                         <div class="mt-2 flex items-center gap-2">
                             <flux:input readonly :value="$revealedPassword" class="font-mono" />
-                            <flux:button x-data x-on:click="navigator.clipboard.writeText(@js($revealedPassword))"
-                                variant="ghost" size="sm" icon="clipboard" :tooltip="__('Copy')" />
+                            <x-ui.button x-data x-on:click="navigator.clipboard.writeText(@js($revealedPassword))"
+                                variant="outline" icon="clipboard" class="!w-auto px-3 py-2">
+                                <span class="sr-only">{{ __('Copy') }}</span>
+                            </x-ui.button>
                         </div>
                     @else
                         <div class="mt-2">
-                            <flux:button wire:click="revealPassword" variant="filled" size="sm" icon="eye">
+                            <x-ui.button wire:click="revealPassword" icon="eye" class="!w-auto">
                                 {{ __('Reveal password') }}
-                            </flux:button>
+                            </x-ui.button>
                         </div>
                     @endif
                 </div>
@@ -53,10 +55,10 @@
             </dl>
 
             <x-ui.modal-footer>
-                <flux:button wire:click="close" variant="filled">{{ __('Close') }}</flux:button>
-                <flux:button wire:click="edit" variant="primary" icon="pencil-square">
+                <x-ui.button wire:click="close" variant="secondary" class="!w-auto">{{ __('Close') }}</x-ui.button>
+                <x-ui.button wire:click="edit" icon="pencil-square" class="!w-auto">
                     {{ __('Edit') }}
-                </flux:button>
+                </x-ui.button>
             </x-ui.modal-footer>
         </div>
     @endif

@@ -48,11 +48,11 @@
             </dl>
 
             <x-ui.modal-footer>
-                <flux:button wire:click="close" variant="filled">{{ __('Close') }}</flux:button>
-                <flux:button href="{{ route('agency.projects.show', ['projectUniqueId' => $uniqueId]) }}" wire:navigate
+                <x-ui.button wire:click="close" variant="secondary" class="!w-auto">{{ __('Close') }}</x-ui.button>
+                <x-ui.button href="{{ route('agency.projects.show', ['projectUniqueId' => $uniqueId]) }}" wire:navigate
                     variant="primary" icon="arrow-top-right-on-square">
                     {{ __('Open project') }}
-                </flux:button>
+                </x-ui.button>
             </x-ui.modal-footer>
         </div>
     @endif
