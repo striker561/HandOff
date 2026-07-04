@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\Project\ProjectCurrency;
 use App\Enums\Project\ProjectStatus;
 use Database\Factories\ProjectFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,6 +13,10 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 /**
  * @property-read User|null $client
+ * @property-read string|null $formatted_budget
+ * @property-read string|null $formatted_due_date
+ * @property-read string $client_display_name
+ * @property-read string $list_summary
  */
 class Project extends BaseModel
 {
@@ -83,5 +88,35 @@ class Project extends BaseModel
     public function activities(): MorphMany
     {
         return $this->morphMany(ActivityLog::class, 'subject', 'subject_type', 'subject_id', 'unique_id');
+    }
+
+    protected function formattedBudget(): Attribute
+    {
+        return Attribute::get(function (): ?string {
+            if ($this->budget === null) {
+                return null;
+            }
+
+            return $this->currency->symbol() . number_format((float) $this->budget, 2);
+        });
+    }
+
+    protected function formattedDueDate(): Attribute
+    {
+        return Attribute::get(fn(): ?string => $this->due_date?->format('M j, Y'));
+    }
+
+    protected function clientDisplayName(): Attribute
+    {
+        return Attribute::get(fn(): string => $this->client?->name ?? __('Unknown'));
+    }
+
+    protected function listSummary(): Attribute
+    {
+        return Attribute::get(fn(): string => collect([
+            $this->client_display_name,
+            $this->formatted_budget,
+            $this->formatted_due_date,
+        ])->filter()->implode(' · '));
     }
 }

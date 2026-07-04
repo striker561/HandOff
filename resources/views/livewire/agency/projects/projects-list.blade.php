@@ -20,55 +20,47 @@
                         wire:click="sortBy('name')">
                         {{ __('Name') }}
                     </flux:table.column>
-                    <flux:table.column>{{ __('Client') }}</flux:table.column>
-                    <flux:table.column sortable :sorted="$sort === 'status'"
-                        :direction="$sort === 'status' ? $direction : null" wire:click="sortBy('status')">
-                        {{ __('Status') }}
-                    </flux:table.column>
+                    <flux:table.column class="hidden md:table-cell">{{ __('Client') }}</flux:table.column>
+                    <flux:table.column>{{ __('Status') }}</flux:table.column>
                     <flux:table.column sortable :sorted="$sort === 'budget'"
-                        :direction="$sort === 'budget' ? $direction : null" wire:click="sortBy('budget')">
+                        :direction="$sort === 'budget' ? $direction : null" wire:click="sortBy('budget')"
+                        class="hidden md:table-cell">
                         {{ __('Budget') }}
                     </flux:table.column>
                     <flux:table.column sortable :sorted="$sort === 'due_date'"
-                        :direction="$sort === 'due_date' ? $direction : null" wire:click="sortBy('due_date')">
+                        :direction="$sort === 'due_date' ? $direction : null" wire:click="sortBy('due_date')"
+                        class="hidden lg:table-cell">
                         {{ __('Due') }}
                     </flux:table.column>
-                    <flux:table.column class="w-14">{{ __('Actions') }}</flux:table.column>
+                    <flux:table.column class="w-16">{{ __('Actions') }}</flux:table.column>
                 </flux:table.columns>
 
                 <flux:table.rows>
                     @foreach ($this->projects as $project)
                         <flux:table.row :key="$project->unique_id">
-                            <flux:table.cell variant="strong">{{ $project->name }}</flux:table.cell>
-                            <flux:table.cell>{{ $project->client?->name ?? __('Unknown') }}</flux:table.cell>
+                            <flux:table.cell variant="strong">
+                                <div class="min-w-0">
+                                    <div class="truncate">{{ $project->name }}</div>
+                                    <div class="truncate text-sm text-zinc-500 md:hidden">{{ $project->list_summary }}</div>
+                                </div>
+                            </flux:table.cell>
+                            <flux:table.cell class="hidden md:table-cell">
+                                {{ $project->client_display_name }}
+                            </flux:table.cell>
                             <flux:table.cell>
-                                @php
-                                    $statusColors = [
-                                        'planning' => 'gray',
-                                        'active' => 'blue',
-                                        'on_hold' => 'amber',
-                                        'completed' => 'lime',
-                                        'cancelled' => 'red',
-                                    ];
-                                    $color = $statusColors[$project->status->value] ?? 'gray';
-                                @endphp
-                                <flux:badge :color="$color" size="sm">
-                                    {{ __(ucfirst($project->status->value)) }}
+                                <flux:badge :color="$project->status->badgeColor()" size="sm">
+                                    {{ $project->status->label() }}
                                 </flux:badge>
                             </flux:table.cell>
-                            <flux:table.cell>
-                                @if ($project->budget)
-                                    @php
-                                        $symbols = ['usd' => '$', 'ngn' => '₦', 'eur' => '€'];
-                                        $symbol = $symbols[$project->currency->value] ?? '$';
-                                    @endphp
-                                    {{ $symbol }}{{ number_format($project->budget, 2) }}
+                            <flux:table.cell class="hidden md:table-cell">
+                                @if ($project->formatted_budget)
+                                    {{ $project->formatted_budget }}
                                 @else
-                                    <span class="text-brand-400 dark:text-brand-600">&mdash;</span>
+                                    <span class="text-zinc-300 dark:text-zinc-600">&mdash;</span>
                                 @endif
                             </flux:table.cell>
-                            <flux:table.cell>
-                                {{ $project->due_date?->format('M j, Y') ?? __('No date') }}
+                            <flux:table.cell class="hidden lg:table-cell">
+                                {{ $project->formatted_due_date ?? __('No date') }}
                             </flux:table.cell>
                             <flux:table.cell>
                                 <x-ui.button icon="eye" wire:click="viewProject('{{ $project->unique_id }}')" class="px-3"

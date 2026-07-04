@@ -78,9 +78,9 @@
             <flux:field>
                 <flux:label>{{ __('Currency') }}</flux:label>
                 <flux:select wire:model="currency">
-                    <flux:select.option value="usd">{{ __('USD ($)') }}</flux:select.option>
-                    <flux:select.option value="ngn">{{ __('NGN (₦)') }}</flux:select.option>
-                    <flux:select.option value="eur">{{ __('EUR (€)') }}</flux:select.option>
+                    @foreach (\App\Enums\Project\ProjectCurrency::cases() as $currency)
+                        <flux:select.option value="{{ $currency->value }}">{{ $currency->label() }}</flux:select.option>
+                    @endforeach
                 </flux:select>
                 <flux:error name="currency" />
             </flux:field>
