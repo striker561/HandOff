@@ -196,8 +196,9 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 ## Components
 
-- **Form primitives:** `x-ui.*` (`button`, `input`, `checkbox`, `divider`, `logo-mark`, `empty-state`, `modal-footer`) — branded HandOff controls.
+- **Form primitives:** `x-ui.*` (`button`, `input`, `checkbox`, `divider`, `logo-mark`, `empty-state`, `modal-footer`, `page-header`) — branded HandOff controls.
 - **App chrome:** `x-sidebar.*` for sidebar footer/header pieces.
+- **`x-ui.page-header`** — page title + subtitle + actions bar. Props: `heading`, `subheading`, `actions` slot (search, buttons).
 - **`x-ui.modal-footer`** — use inside modal content divs instead of `x-slot name="footer"` (the Flux slot doesn't render in the free edition). Props: `align` (start/center/end, default: end).
 - **`x-ui.empty-state`** — reusable empty state with icon, heading, text, and `actions` slot.
 - **Shell/nav:** raw `flux:*` (sidebar, header, toast, modal). ponytail: don't rebuild what Flux already ships.

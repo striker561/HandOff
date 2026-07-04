@@ -52,8 +52,7 @@ return [
                     [
                         'label' => 'Projects',
                         'icon' => 'folder',
-                        'badge' => 'Soon',
-                        'disabled' => true,
+                        'route' => 'agency.projects.index',
                     ],
                 ],
             ],

@@ -1,15 +1,9 @@
 <div>
-    <header class="handoff-page__header">
-        <div class="space-y-1">
-            <flux:heading size="xl">
-                {{ __('Clients') }}
-            </flux:heading>
-            <flux:text class="handoff-page__lede">
-                {{ __('Manage the clients in your agency workspace.') }}
-            </flux:text>
-        </div>
-
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+    <x-ui.page-header
+        :heading="__('Clients')"
+        :subheading="__('Manage the clients in your agency workspace.')"
+    >
+        <x-slot:actions>
             <flux:input wire:model.live.debounce.300ms="search" placeholder="{{ __('Search clients…') }}"
                 icon="magnifying-glass" class="w-full sm:max-w-xs" />
 
@@ -18,8 +12,8 @@
                     {{ __('Create') }}
                 </x-ui.button>
             </flux:modal.trigger>
-        </div>
-    </header>
+        </x-slot:actions>
+    </x-ui.page-header>
 
     @if (count($this->clients) > 0)
         <div class="overflow-x-auto my-5">

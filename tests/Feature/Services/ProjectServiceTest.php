@@ -1,5 +1,6 @@
 <?php
 
+use App\Data\Projects\CreateProjectData;
 use App\Enums\Milestone\MilestoneStatus;
 use App\Enums\Project\ProjectStatus;
 use App\Enums\User\AccountRole;
@@ -8,6 +9,7 @@ use App\Models\Project;
 use App\Models\User;
 use App\Services\ProjectService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 
 uses(RefreshDatabase::class);
 
@@ -17,16 +19,31 @@ beforeEach(function () {
     $this->client = User::factory()->create(['role' => AccountRole::CLIENT]);
 });
 
-it('creates a project', function () {
-    $project = $this->service->create([
-        'client_unique_id' => $this->client->unique_id,
-        'name' => 'Test Project',
-        'description' => 'A test project',
-        'status' => ProjectStatus::PLANNING,
-    ]);
+it('creates a project from dto data', function () {
+    $project = $this->service->createProject(
+        CreateProjectData::fromArray([
+            'client_unique_id' => $this->client->unique_id,
+            'name' => 'Test Project',
+            'description' => 'A test project',
+            'currency' => 'usd',
+        ]),
+        $this->admin,
+    );
 
     expect($project)->toBeInstanceOf(Project::class)
-        ->and($project->name)->toBe('Test Project');
+        ->and($project->name)->toBe('Test Project')
+        ->and($project->status)->toBe(ProjectStatus::PLANNING);
+});
+
+it('rejects project creation for an unknown client', function () {
+    expect(fn () => $this->service->createProject(
+        CreateProjectData::fromArray([
+            'client_unique_id' => 'missing-client-id',
+            'name' => 'Test Project',
+            'currency' => 'usd',
+        ]),
+        $this->admin,
+    ))->toThrow(ValidationException::class);
 });
 
 it('calculates progress as 0 when no milestones', function () {

@@ -18,6 +18,7 @@ Route::middleware(['auth', 'verified', 'ensureAdmin'])
     ->name('agency.')
     ->group(function () {
         Route::view('clients', 'pages.agency.clients')->name('clients.index');
+        Route::view('projects', 'pages.agency.projects')->name('projects.index');
     });
 
 Route::middleware(['auth'])->group(function () {

@@ -7,6 +7,7 @@ use App\Enums\User\ClientAction;
 use App\Events\User\ClientEvent;
 use App\Models\User;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
@@ -43,6 +44,29 @@ class ClientService extends BaseCRUDService
             ->clients()
             ->where('unique_id', $uniqueId)
             ->first();
+    }
+
+    /**
+     * @return Collection<int, User>
+     */
+    public function searchClientsForSelect(string $search, int $limit = 10): Collection
+    {
+        $search = trim($search);
+
+        if ($search === '') {
+            return collect();
+        }
+
+        $query = User::query()->clients();
+        $query = $this->applyFilters($query, [
+            'search' => $search,
+            'sort' => 'name',
+            'direction' => 'asc',
+        ]);
+
+        return $query
+            ->limit(min($limit, 25))
+            ->get(['unique_id', 'name', 'email']);
     }
 
     public function createClient(array $data, User $performedBy): User

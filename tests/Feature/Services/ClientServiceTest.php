@@ -50,6 +50,22 @@ it('finds a client by unique id', function () {
         ->and($this->service->findClient('missing-id'))->toBeNull();
 });
 
+it('searches clients for select', function () {
+    User::factory()->create(['name' => 'Alice Client', 'role' => AccountRole::CLIENT]);
+    User::factory()->create(['name' => 'Bob Client', 'role' => AccountRole::CLIENT]);
+
+    $results = $this->service->searchClientsForSelect('Alice');
+
+    expect($results)->toHaveCount(1)
+        ->and($results->first()->name)->toBe('Alice Client');
+});
+
+it('returns no clients for blank select search', function () {
+    User::factory()->create(['role' => AccountRole::CLIENT]);
+
+    expect($this->service->searchClientsForSelect(''))->toBeEmpty();
+});
+
 it('does not find admins when looking up a client', function () {
     $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
 

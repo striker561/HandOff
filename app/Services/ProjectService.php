@@ -2,14 +2,19 @@
 
 namespace App\Services;
 
+use App\Data\Projects\CreateProjectData;
 use App\Enums\Project\ProjectAction;
 use App\Enums\Project\ProjectStatus;
 use App\Events\Project\ProjectEvent;
 use App\Models\Project;
 use App\Models\User;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Validation\ValidationException;
 
 class ProjectService extends BaseCRUDService
 {
+    public function __construct(private ClientService $clients) {}
+
     protected function getModel(): string
     {
         return Project::class;
@@ -28,6 +33,33 @@ class ProjectService extends BaseCRUDService
     protected function sortableColumns(): array
     {
         return ['name', 'status', 'budget', 'due_date', 'created_at', 'updated_at'];
+    }
+
+    public function getAll(array $filters = []): LengthAwarePaginator
+    {
+        $query = Project::query()->with('client');
+        $query = $this->applyFilters($query, $filters);
+
+        return $this->paginateQuery($query, $filters);
+    }
+
+    public function createProject(CreateProjectData $data, User $performedBy): Project
+    {
+        if ($this->clients->findClient($data->clientUniqueId) === null) {
+            $this->fieldError('client_unique_id', __('Selected client was not found.'));
+        }
+
+        /** @var Project $project */
+        $project = $this->create($data->toAttributes());
+
+        ProjectEvent::dispatch(
+            $project,
+            ProjectAction::CREATED,
+            $performedBy,
+            []
+        );
+
+        return $project;
     }
 
     public function calculateProgress(Project $project): float
@@ -64,5 +96,15 @@ class ProjectService extends BaseCRUDService
         );
 
         return $project->fresh();
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    private function fieldError(string $field, string $message): never
+    {
+        throw ValidationException::withMessages([
+            $field => $message,
+        ]);
     }
 }
