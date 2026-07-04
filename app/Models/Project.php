@@ -50,6 +50,11 @@ class Project extends BaseModel
         ];
     }
 
+    public function getRouteKeyName(): string
+    {
+        return 'unique_id';
+    }
+
     public function client(): BelongsTo
     {
         return $this->belongsTo(User::class, 'client_unique_id', 'unique_id');
@@ -97,23 +102,23 @@ class Project extends BaseModel
                 return null;
             }
 
-            return $this->currency->symbol() . number_format((float) $this->budget, 2);
+            return $this->currency->symbol().number_format((float) $this->budget, 2);
         });
     }
 
     protected function formattedDueDate(): Attribute
     {
-        return Attribute::get(fn(): ?string => $this->due_date?->format('M j, Y'));
+        return Attribute::get(fn (): ?string => $this->due_date?->format('M j, Y'));
     }
 
     protected function clientDisplayName(): Attribute
     {
-        return Attribute::get(fn(): string => $this->client?->name ?? __('Unknown'));
+        return Attribute::get(fn (): string => $this->client?->name ?? __('Unknown'));
     }
 
     protected function listSummary(): Attribute
     {
-        return Attribute::get(fn(): string => collect([
+        return Attribute::get(fn (): string => collect([
             $this->client_display_name,
             $this->formatted_budget,
         ])->filter()->implode(' · '));
