@@ -3,7 +3,6 @@
 namespace App\Http\Middleware;
 
 use App\Enums\User\AccountRole;
-use App\Http\Responses\APIResponse;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -19,12 +18,12 @@ class EnsureAdmin
     {
         $user = $request->user();
 
-        if (! $user) {
-            return APIResponse::unauthorized();
+        if (!$user) {
+            return redirect()->guest(route('login'));
         }
 
         if ($user->role !== AccountRole::ADMIN) {
-            return APIResponse::forbidden();
+            abort(403);
         }
 
         return $next($request);

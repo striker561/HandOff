@@ -20,6 +20,14 @@ it('loads the clients page for admins', function () {
         ->assertSeeLivewire(ViewClient::class);
 });
 
+it('forbids client users from the agency clients page', function () {
+    $client = User::factory()->create(['role' => AccountRole::CLIENT]);
+
+    $this->actingAs($client)
+        ->get(route('agency.clients.index'))
+        ->assertForbidden();
+});
+
 it('filters clients when search is updated', function () {
     $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
     User::factory()->create(['name' => 'John Doe', 'role' => AccountRole::CLIENT]);
@@ -115,6 +123,6 @@ it('throws validation exceptions from the service for invalid resend', function 
     $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
     $client = User::factory()->create(['role' => AccountRole::CLIENT]);
 
-    expect(fn () => app(ClientService::class)->resendInvitation($client, $admin))
+    expect(fn() => app(ClientService::class)->resendInvitation($client, $admin))
         ->toThrow(ValidationException::class);
 });
