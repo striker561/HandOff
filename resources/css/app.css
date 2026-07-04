@@ -550,6 +550,29 @@
         @apply p-6 sm:p-8;
     }
 
+    .handoff-data-table ui-table-scroll-area {
+        @apply px-4 sm:px-6;
+    }
+
+    .handoff-data-table [data-flux-table] {
+        @apply w-full;
+    }
+
+    .handoff-data-table [data-flux-pagination],
+    .handoff-data-table flux-pagination {
+        @apply border-t border-brand-200/50 px-4 py-3 dark:border-brand-800/50 sm:px-6;
+    }
+
+    @media (max-width: 639px) {
+        .handoff-data-table [data-flux-table] {
+            white-space: normal;
+        }
+
+        .handoff-data-table [data-flux-cell]:first-child {
+            @apply w-full;
+        }
+    }
+
     .handoff-panel__body--centered {
         @apply p-10 text-center sm:p-12;
     }

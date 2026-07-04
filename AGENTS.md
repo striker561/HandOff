@@ -196,13 +196,29 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 ## Components
 
-- **Form primitives:** `x-ui.*` (`button`, `input`, `checkbox`, `divider`, `logo-mark`, `empty-state`, `modal-footer`, `page-header`) — branded HandOff controls.
+- **Form primitives:** `x-ui.*` (`button`, `input`, `checkbox`, `divider`, `logo-mark`, `empty-state`, `modal-footer`, `page-header`, `data-table`) — branded HandOff controls.
 - **App chrome:** `x-sidebar.*` for sidebar footer/header pieces.
 - **`x-ui.page-header`** — page title + subtitle + actions bar. Props: `heading`, `subheading`, `actions` slot (search, buttons).
 - **`x-ui.modal-footer`** — use inside modal content divs instead of `x-slot name="footer"` (the Flux slot doesn't render in the free edition). Props: `align` (start/center/end, default: end).
-- **`x-ui.empty-state`** — reusable empty state with icon, heading, text, and `actions` slot.
+- **`x-ui.empty-state`** — reusable empty state with icon, heading, text, and `actions` slot. Use when a list has **no records** (outside the table).
 - **Shell/nav:** raw `flux:*` (sidebar, header, toast, modal). ponytail: don't rebuild what Flux already ships.
 - **Feature UI:** group under `components/{dashboard,marketing,settings}/` or `livewire/{domain}/` when routes exist.
+
+## Agency list pages
+
+Admin index tables (clients, projects) under `livewire/agency/`. Portal/client lists may use a different pattern later.
+
+- **`x-ui.data-table`** — panel-wrapped `flux:table` with pagination. Pass `:paginate="$this->items"`.
+- **`x-ui.data-table.primary-cell`** — props: `title`, `meta` (mobile-only subline). Slots: `action` (view button, mobile-only, inline with title), `mobile` (badge under meta on mobile).
+- **`x-ui.data-table.action-cell`** — view/action column; visible from `sm` up only.
+- **`x-ui.data-table.view-button`** — standard agency row action (`icon="eye"`). Props: `wireClick`, `name`.
+- **`x-ui.data-table.empty`** — em dash for empty **cell** values inside a table row.
+
+**Mobile:** one column — title with inline action, meta line (`line-clamp-2`), status badge. No horizontal scroll.
+
+**Desktop:** extra columns at `sm` (status, action), `md` (email/client, budget), `lg` (date).
+
+**Empty collection:** `x-ui.page-header` + `x-ui.empty-state` — not a table row.
 
 ## Livewire style
 
