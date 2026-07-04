@@ -189,7 +189,8 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 ## Layouts
 
-- **Authenticated app:** `<x-layouts.workspace>` or Livewire `#[Layout('layouts.workspace')]`. Workspace type (agency vs portal) is resolved in `App\View\Components\Layouts\Workspace`.
+- **Authenticated app:** `<x-layouts::app>` or Livewire `#[Layout('layouts.app')]`. Admin vs client chrome is resolved in [`resources/views/layouts/app.blade.php`](resources/views/layouts/app.blade.php).
+- **Sidebar nav:** add items in [`config/navigation.php`](config/navigation.php) — do not edit sidebar Blade for new routes.
 - **Guest/auth:** `<x-layouts::auth>` for Fortify pages under `resources/views/pages/auth/`.
 - **Clip-path surfaces:** reserve `handoff-clip-*` for auth, landing hero, and settings card — not scattered in the app shell.
 
