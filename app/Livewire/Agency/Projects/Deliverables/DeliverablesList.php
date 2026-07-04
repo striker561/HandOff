@@ -36,8 +36,14 @@ class DeliverablesList extends Component
 
     public function openCreateDeliverable(): void
     {
-        $this->dispatch('open-create-deliverable', projectUniqueId: $this->projectUniqueId, milestoneUniqueId: $this->milestoneUniqueId)
-            ->to(CreateDeliverable::class);
+        $this->dispatch('open-save-deliverable', projectUniqueId: $this->projectUniqueId, milestoneUniqueId: $this->milestoneUniqueId)
+            ->to(SaveDeliverable::class);
+    }
+
+    public function editDeliverable(string $uniqueId): void
+    {
+        $this->dispatch('open-save-deliverable', projectUniqueId: $this->projectUniqueId, uniqueId: $uniqueId)
+            ->to(SaveDeliverable::class);
     }
 
     public function approve(string $uniqueId): void

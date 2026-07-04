@@ -25,6 +25,7 @@ class MeetingsList extends Component
     }
 
     #[On('meeting-scheduled')]
+    #[On('meeting-updated')]
     public function refreshMeetings(): void
     {
         $this->resetPage();
@@ -32,8 +33,14 @@ class MeetingsList extends Component
 
     public function openScheduleMeeting(): void
     {
-        $this->dispatch('open-schedule-meeting', projectUniqueId: $this->projectUniqueId)
-            ->to(ScheduleMeeting::class);
+        $this->dispatch('open-save-meeting', projectUniqueId: $this->projectUniqueId)
+            ->to(SaveMeeting::class);
+    }
+
+    public function editMeeting(string $uniqueId): void
+    {
+        $this->dispatch('open-save-meeting', projectUniqueId: $this->projectUniqueId, uniqueId: $uniqueId)
+            ->to(SaveMeeting::class);
     }
 
     #[Computed]

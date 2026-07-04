@@ -32,8 +32,14 @@ class MilestonesList extends Component
 
     public function openCreateMilestone(): void
     {
-        $this->dispatch('open-create-milestone', projectUniqueId: $this->projectUniqueId)
-            ->to(CreateMilestone::class);
+        $this->dispatch('open-save-milestone', projectUniqueId: $this->projectUniqueId)
+            ->to(SaveMilestone::class);
+    }
+
+    public function editMilestone(string $uniqueId): void
+    {
+        $this->dispatch('open-save-milestone', projectUniqueId: $this->projectUniqueId, uniqueId: $uniqueId)
+            ->to(SaveMilestone::class);
     }
 
     #[Computed]

@@ -107,8 +107,8 @@ class ViewCredential extends Component
 
         $this->close();
 
-        $this->dispatch('open-edit-credential', uniqueId: $this->uniqueId, projectUniqueId: $this->projectUniqueId)
-            ->to(EditCredential::class);
+        $this->dispatch('open-save-credential', projectUniqueId: $this->projectUniqueId, uniqueId: $this->uniqueId)
+            ->to(SaveCredential::class);
     }
 
     public function close(): void

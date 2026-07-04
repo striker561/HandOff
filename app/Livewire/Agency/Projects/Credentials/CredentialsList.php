@@ -33,8 +33,8 @@ class CredentialsList extends Component
 
     public function openCreateCredential(): void
     {
-        $this->dispatch('open-create-credential', projectUniqueId: $this->projectUniqueId)
-            ->to(CreateCredential::class);
+        $this->dispatch('open-save-credential', projectUniqueId: $this->projectUniqueId)
+            ->to(SaveCredential::class);
     }
 
     public function viewCredential(string $uniqueId): void
@@ -45,8 +45,8 @@ class CredentialsList extends Component
 
     public function editCredential(string $uniqueId): void
     {
-        $this->dispatch('open-edit-credential', uniqueId: $uniqueId, projectUniqueId: $this->projectUniqueId)
-            ->to(EditCredential::class);
+        $this->dispatch('open-save-credential', projectUniqueId: $this->projectUniqueId, uniqueId: $uniqueId)
+            ->to(SaveCredential::class);
     }
 
     #[Computed]
