@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Data\Milestones\SaveMilestoneData;
 use App\Enums\Milestone\MilestoneAction;
 use App\Enums\Milestone\MilestoneStatus;
 use App\Events\Milestone\MilestoneEvent;
@@ -31,16 +32,12 @@ class MilestoneService extends BaseCRUDService
         return ['name', 'order', 'due_date', 'created_at', 'updated_at', 'completed_at'];
     }
 
-    public function createOrderedMilestone(array $data, User $performedBy): Milestone
+    public function createOrderedMilestone(SaveMilestoneData $data, User $performedBy): Milestone
     {
         /** @var Milestone $milestone */
-        $milestone = $this->create([
-            'name' => $data['name'],
-            'description' => $data['description'] ?? null,
-            'project_unique_id' => $data['project_unique_id'],
-            'due_date' => $data['due_date'] ?? null,
-            'order' => $this->getNextOrder($data['project_unique_id']),
-        ]);
+        $milestone = $this->create($data->toCreateAttributes(
+            $this->getNextOrder($data->projectUniqueId)
+        ));
 
         MilestoneEvent::dispatch(
             $milestone,
@@ -50,6 +47,20 @@ class MilestoneService extends BaseCRUDService
         );
 
         return $milestone;
+    }
+
+    public function updateMilestone(Milestone $milestone, SaveMilestoneData $data, User $performedBy): Milestone
+    {
+        $milestone->update($data->toUpdateAttributes());
+
+        MilestoneEvent::dispatch(
+            $milestone,
+            MilestoneAction::UPDATED,
+            $performedBy,
+            []
+        );
+
+        return $milestone->fresh();
     }
 
     public function getMilestonesForProject(string $projectUniqueId, array $filters = []): LengthAwarePaginator

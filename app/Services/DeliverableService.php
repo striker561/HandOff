@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Data\Deliverables\SaveDeliverableData;
 use App\Enums\Deliverable\DeliverableAction;
 use App\Enums\Deliverable\DeliverableStatus;
 use App\Events\Deliverable\DeliverableEvent;
@@ -44,27 +45,18 @@ class DeliverableService extends BaseCRUDService
         return ['name', 'status', 'type', 'order', 'version', 'due_date', 'created_at', 'updated_at', 'approved_at'];
     }
 
-    public function createDeliverable(array $data, User $performedBy): Deliverable
+    public function createDeliverable(SaveDeliverableData $data, User $performedBy): Deliverable
     {
         $nextOrder = $this->getNextOrder(
-            $data['project_unique_id'],
-            $data['milestone_unique_id'] ?? null
+            $data->projectUniqueId,
+            $data->milestoneUniqueId
         );
 
         /** @var Deliverable $deliverable */
-        $deliverable = $this->create([
-            'project_unique_id' => $data['project_unique_id'],
-            'milestone_unique_id' => $data['milestone_unique_id'] ?? null,
-            'created_by_unique_id' => $data['created_by_unique_id'],
-            'name' => $data['name'],
-            'description' => $data['description'] ?? null,
-            'type' => $data['type'],
+        $deliverable = $this->create(array_merge($data->toCreateAttributes($nextOrder), [
             'status' => DeliverableStatus::DRAFT,
             'version' => 1,
-            'order' => $nextOrder,
-            'due_date' => $data['due_date'] ?? null,
-            'metadata' => $data['metadata'] ?? [],
-        ]);
+        ]));
 
         DeliverableEvent::dispatch(
             $deliverable,
@@ -74,6 +66,20 @@ class DeliverableService extends BaseCRUDService
         );
 
         return $deliverable;
+    }
+
+    public function updateDeliverable(Deliverable $deliverable, SaveDeliverableData $data, User $performedBy): Deliverable
+    {
+        $deliverable->update($data->toUpdateAttributes());
+
+        DeliverableEvent::dispatch(
+            $deliverable,
+            DeliverableAction::UPDATED,
+            $performedBy,
+            []
+        );
+
+        return $deliverable->fresh();
     }
 
     public function getDeliverablesForProject(string $projectUniqueId, array $filters = []): LengthAwarePaginator

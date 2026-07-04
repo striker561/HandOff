@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Data\Credentials\SaveCredentialData;
 use App\Enums\Credential\CredentialAction;
 use App\Enums\Credential\CredentialType;
 use App\Events\Credential\CredentialEvent;
@@ -32,19 +33,16 @@ class CredentialService extends BaseCRUDService
         return ['name', 'type', 'created_at', 'updated_at', 'last_accessed_at'];
     }
 
-    public function createCredential(array $data, User $performedBy): Credential
+    public function createCredential(SaveCredentialData $data, User $performedBy): Credential
     {
+        if ($data->password === null) {
+            throw new \InvalidArgumentException('Password is required when creating a credential.');
+        }
+
         /** @var Credential $credential */
-        $credential = $this->create([
-            'project_unique_id' => $data['project_unique_id'],
-            'name' => $data['name'],
-            'type' => $data['type'],
-            'username' => $data['username'] ?? null,
-            'password' => $this->encryptPassword($data['password']),
-            'url' => $data['url'] ?? null,
-            'notes' => $data['notes'] ?? null,
-            'metadata' => $data['metadata'] ?? [],
-        ]);
+        $credential = $this->create($data->toCreateAttributes(
+            $this->encryptPassword($data->password)
+        ));
 
         CredentialEvent::dispatch(
             $credential,
@@ -56,20 +54,12 @@ class CredentialService extends BaseCRUDService
         return $credential;
     }
 
-    public function updateCredential(Credential $credential, array $data, User $performedBy): Credential
+    public function updateCredential(Credential $credential, SaveCredentialData $data, User $performedBy): Credential
     {
-        $updateData = [
-            'name' => $data['name'] ?? $credential->name,
-            'type' => $data['type'] ?? $credential->type,
-            'username' => $data['username'] ?? $credential->username,
-            'url' => $data['url'] ?? $credential->url,
-            'notes' => $data['notes'] ?? $credential->notes,
-            'metadata' => $data['metadata'] ?? $credential->metadata,
-        ];
+        $updateData = $data->toUpdateAttributes();
 
-        // Only update password if provided
-        if (isset($data['password']) && ! empty($data['password'])) {
-            $updateData['password'] = $this->encryptPassword($data['password']);
+        if ($data->password !== null) {
+            $updateData['password'] = $this->encryptPassword($data->password);
         }
 
         $credential->update($updateData);
