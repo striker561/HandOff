@@ -116,7 +116,6 @@ class Project extends BaseModel
         return Attribute::get(fn(): string => collect([
             $this->client_display_name,
             $this->formatted_budget,
-            $this->formatted_due_date,
         ])->filter()->implode(' · '));
     }
 }

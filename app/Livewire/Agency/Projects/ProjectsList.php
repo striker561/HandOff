@@ -2,7 +2,6 @@
 
 namespace App\Livewire\Agency\Projects;
 
-use App\Concerns\WithNotifications;
 use App\Models\Project;
 use App\Services\ProjectService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -16,7 +15,7 @@ use Livewire\WithPagination;
 #[Title('Projects')]
 class ProjectsList extends Component
 {
-    use WithNotifications, WithPagination;
+    use WithPagination;
 
     #[Url(as: 'search', history: true)]
     public string $search = '';
@@ -70,7 +69,7 @@ class ProjectsList extends Component
 
     public function viewProject(string $uniqueId): void
     {
-        $this->notifyInfo(__('Project details coming soon.'), duration: 3000);
+        $this->dispatch('open-project-view', uniqueId: $uniqueId)->to(ViewProject::class);
     }
 
     #[Computed]
