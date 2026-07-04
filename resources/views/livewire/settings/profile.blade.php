@@ -7,7 +7,7 @@ use Livewire\Attributes\Title;
 use Livewire\Volt\Component;
 
 new
-    #[Layout('layouts.workspace')]
+    #[Layout('layouts.app')]
     #[Title('Profile settings')]
     class extends Component {
     public string $name = '';

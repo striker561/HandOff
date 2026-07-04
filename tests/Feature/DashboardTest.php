@@ -3,7 +3,7 @@
 use App\Enums\User\AccountRole;
 use App\Models\User;
 
-it('loads the dashboard for admin users with the workspace shell', function () {
+it('loads the dashboard for admin users with the app layout', function () {
     $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
 
     $response = $this->actingAs($admin)
@@ -17,14 +17,14 @@ it('loads the dashboard for admin users with the workspace shell', function () {
 
     $activeItems = array_filter(
         $items[0],
-        fn(string $item): bool => (bool) preg_match('/\sdata-current="/', $item),
+        fn (string $item): bool => (bool) preg_match('/\sdata-current="/', $item),
     );
 
     expect($activeItems)->toHaveCount(1)
         ->and($activeItems[array_key_first($activeItems)])->toContain(route('dashboard', absolute: false));
 });
 
-it('loads the dashboard for client users with the portal shell', function () {
+it('loads the dashboard for client users with the portal layout', function () {
     $client = User::factory()->create(['role' => AccountRole::CLIENT]);
 
     $this->actingAs($client)
@@ -34,7 +34,7 @@ it('loads the dashboard for client users with the portal shell', function () {
         ->assertSee(__('My projects'));
 });
 
-it('loads the profile settings page inside the workspace shell', function () {
+it('loads the profile settings page inside the app layout', function () {
     $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
 
     $this->actingAs($admin)

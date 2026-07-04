@@ -4,7 +4,7 @@
     $firstName = strtok($user->name, ' ');
 @endphp
 
-<x-layouts.workspace :title="__('Dashboard')">
+<x-layouts::app :title="__('Dashboard')">
     <div @class([
         'handoff-page',
         'handoff-page--wide' => $isAdmin,
@@ -62,4 +62,4 @@
             </x-slot>
         </flux:callout>
     </div>
-</x-layouts.workspace>
+</x-layouts::app>

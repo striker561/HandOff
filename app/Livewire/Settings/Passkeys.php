@@ -10,7 +10,7 @@ use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-#[Layout('layouts.workspace')]
+#[Layout('layouts.app')]
 #[Title('Passkey settings')]
 class Passkeys extends Component
 {
@@ -27,7 +27,7 @@ class Passkeys extends Component
 
     public function mount(): void
     {
-        if (!Features::canManagePasskeys()) {
+        if (! Features::canManagePasskeys()) {
             $this->redirect(route('security.edit'), navigate: true);
 
             return;
@@ -42,7 +42,7 @@ class Passkeys extends Component
             ->select(['id', 'name', 'credential', 'created_at', 'last_used_at'])
             ->latest()
             ->get()
-            ->map(fn($passkey) => [
+            ->map(fn ($passkey) => [
                 'id' => $passkey->id,
                 'name' => $passkey->name,
                 'authenticator' => $passkey->authenticator,
@@ -62,7 +62,7 @@ class Passkeys extends Component
 
     public function deletePasskey(DeletePasskey $deletePasskey): void
     {
-        if (!$this->deletingPasskeyId) {
+        if (! $this->deletingPasskeyId) {
             return;
         }
 

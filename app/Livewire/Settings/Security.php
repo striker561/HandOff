@@ -13,7 +13,7 @@ use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-#[Layout('layouts.workspace')]
+#[Layout('layouts.app')]
 #[Title('Security settings')]
 class Security extends Component
 {

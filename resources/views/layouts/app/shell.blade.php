@@ -1,6 +1,7 @@
 @props([
     'title' => null,
-    'workspace' => null,
+    'variant' => 'portal',
+    'content' => '',
 ])
 
 <!DOCTYPE html>
@@ -14,15 +15,15 @@
     <flux:sidebar sticky collapsible="mobile"
         @class([
             'handoff-sidebar',
-            'handoff-sidebar--' . $workspace->value,
+            'handoff-sidebar--' . $variant,
         ])>
-        @include('layouts.app.sidebars.' . $workspace->value)
+        @include('layouts.app.sidebars.sidebar', ['variant' => $variant])
     </flux:sidebar>
 
-    @include('layouts.app.headers.' . $workspace->value)
+    @include('layouts.app.headers.' . $variant)
 
     <flux:main class="handoff-main">
-        {{ $slot }}
+        {!! $content !!}
     </flux:main>
 
     @persist('toast')
