@@ -38,4 +38,4 @@ Route::middleware(['auth'])->group(function () {
     Route::redirect('profile', 'settings/profile');
 });
 
-require __DIR__ . '/settings.php';
+require __DIR__.'/settings.php';

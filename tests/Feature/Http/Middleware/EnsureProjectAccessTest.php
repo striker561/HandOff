@@ -19,7 +19,7 @@ function projectHubRequest(string $projectUniqueId): Request
     $route = new Route('GET', '/agency/projects/{projectUniqueId}', []);
     $route->bind($request);
 
-    $request->setRouteResolver(fn() => $route);
+    $request->setRouteResolver(fn () => $route);
 
     return $request;
 }
@@ -34,7 +34,7 @@ it('attaches the authorized project to the request', function () {
     $request = projectHubRequest($project->unique_id);
     $middleware = new EnsureProjectAccess;
 
-    $middleware->handle($request, fn() => response('ok'));
+    $middleware->handle($request, fn () => response('ok'));
 
     expect($request->attributes->get(EnsureProjectAccess::PROJECT_ATTRIBUTE))
         ->toBeInstanceOf(Project::class)
@@ -49,7 +49,7 @@ it('returns not found when the project does not exist', function () {
     $request = projectHubRequest(Str::uuid()->toString());
     $middleware = new EnsureProjectAccess;
 
-    $middleware->handle($request, fn() => response('ok'));
+    $middleware->handle($request, fn () => response('ok'));
 })->throws(NotFoundHttpException::class);
 
 it('forbids users who fail the project view policy', function () {
@@ -62,5 +62,5 @@ it('forbids users who fail the project view policy', function () {
     $request = projectHubRequest($project->unique_id);
     $middleware = new EnsureProjectAccess;
 
-    $middleware->handle($request, fn() => response('ok'));
+    $middleware->handle($request, fn () => response('ok'));
 })->throws(AuthorizationException::class);

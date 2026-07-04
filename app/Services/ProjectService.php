@@ -13,9 +13,7 @@ use Illuminate\Validation\ValidationException;
 
 class ProjectService extends BaseCRUDService
 {
-    public function __construct(private ClientService $clients)
-    {
-    }
+    public function __construct(private ClientService $clients) {}
 
     protected function getModel(): string
     {

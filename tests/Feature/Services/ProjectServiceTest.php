@@ -36,7 +36,7 @@ it('creates a project from dto data', function () {
 });
 
 it('rejects project creation for an unknown client', function () {
-    expect(fn() => $this->service->createProject(
+    expect(fn () => $this->service->createProject(
         CreateProjectData::fromArray([
             'client_unique_id' => 'missing-client-id',
             'name' => 'Test Project',
