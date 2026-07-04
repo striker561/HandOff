@@ -6,6 +6,7 @@ use App\Concerns\WithActionRateLimiting;
 use App\Concerns\WithNotifications;
 use App\Models\Milestone;
 use App\Services\MilestoneService;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -64,7 +65,7 @@ class CreateMilestone extends Component
             'description' => $validated['description'] ?? null,
             'project_unique_id' => $this->projectUniqueId,
             'due_date' => $validated['due_date'] ?? null,
-        ]);
+        ], Auth::user());
 
         $this->reset('name', 'description', 'due_date');
 

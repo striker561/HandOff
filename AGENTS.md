@@ -228,7 +228,8 @@ Project detail uses **controller-guarded pages** under `/agency/projects/{projec
     - Middleware loads the project via `ProjectService`, enforces `ProjectPolicy::view`, attaches `Project` to the request (`EnsureProjectAccess::PROJECT_ATTRIBUTE`).
     - Controller reads the authorized project and returns Blade only.
 - **Routes:** `agency.projects.show`, `.milestones`, `.deliverables`, `.credentials`, `.meetings` — param is `{projectUniqueId}` (UUID string).
-- **Shell:** [`x-agency.project-hub.shell`](resources/views/components/agency/project-hub/shell.blade.php) — breadcrumbs, title, status badge inline with client meta, tab links (`wire:navigate`), content card. Chrome only — no modals.
+- **Shell:** [`x-agency.project-hub.shell`](resources/views/components/agency/project-hub/shell.blade.php) — breadcrumbs, title, status badge inline with client meta, tab links (`wire:navigate`), content card. Pass `:content-panel="false"` on overview for the dashboard layout. Chrome only — no modals.
+- **Overview:** [`ProjectService::getProjectOverview()`](app/Services/ProjectService.php) — scalar stats cached 5 minutes (`ProjectOverviewStats`); milestone pipeline, recent deliverables, and next meeting load fresh. Cache bust via [`ForgetProjectOverviewCache`](app/Listeners/Projects/ForgetProjectOverviewCache.php) on deliverable/credential/meeting domain events. Progress is computed from completed milestones (`calculateProgress()`), not the `projects.progress_percentage` column.
 - **Modals:** mounted per section page via `<x-slot:modals>` on the shell (same pattern as [`pages/agency/projects.blade.php`](resources/views/pages/agency/projects.blade.php) list + create/view modals). Overview has none.
 - **List** (`ProjectsList`) → **flyout glance** (`ViewProject`) → **Open project** → hub overview page.
 - **Livewire** list/modal components receive `projectUniqueId` only — no `mount(Project)`. Mutations authorize on the action (`approve`, `create`, etc.).

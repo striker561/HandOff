@@ -1,12 +1,15 @@
 <?php
 
+use App\Enums\Milestone\MilestoneAction;
 use App\Enums\Milestone\MilestoneStatus;
 use App\Enums\User\AccountRole;
+use App\Events\Milestone\MilestoneEvent;
 use App\Models\Milestone;
 use App\Models\Project;
 use App\Models\User;
 use App\Services\MilestoneService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 
 uses(RefreshDatabase::class);
 
@@ -18,26 +21,34 @@ beforeEach(function () {
 });
 
 it('creates an ordered milestone', function () {
+    Event::fake([MilestoneEvent::class]);
+
     $milestone = $this->service->createOrderedMilestone([
         'name' => 'First Milestone',
         'project_unique_id' => $this->project->unique_id,
         'due_date' => now()->addDays(7),
-    ]);
+    ], $this->admin);
 
     expect($milestone)->toBeInstanceOf(Milestone::class)
         ->and($milestone->name)->toBe('First Milestone')
         ->and($milestone->order)->toBe(1);
+
+    Event::assertDispatched(MilestoneEvent::class, function (MilestoneEvent $event) use ($milestone) {
+        return $event->action === MilestoneAction::CREATED
+            && $event->milestone->is($milestone)
+            && $event->performedBy->is($this->admin);
+    });
 });
 
 it('creates milestones with sequential ordering', function () {
     $this->service->createOrderedMilestone([
         'name' => 'First',
         'project_unique_id' => $this->project->unique_id,
-    ]);
+    ], $this->admin);
     $this->service->createOrderedMilestone([
         'name' => 'Second',
         'project_unique_id' => $this->project->unique_id,
-    ]);
+    ], $this->admin);
 
     $milestones = Milestone::where('project_unique_id', $this->project->unique_id)
         ->orderBy('order')

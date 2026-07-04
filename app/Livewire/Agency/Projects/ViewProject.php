@@ -71,7 +71,7 @@ class ViewProject extends Component
         $this->formattedBudget = $project->formatted_budget;
         $this->formattedStartDate = $project->start_date?->format('M j, Y');
         $this->formattedDueDate = $project->formatted_due_date;
-        $this->progressPercentage = $project->progress_percentage;
+        $this->progressPercentage = (int) round($this->projectService->calculateProgress($project));
 
         $this->modal('view-project')->show();
     }

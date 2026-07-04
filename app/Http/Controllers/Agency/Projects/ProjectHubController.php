@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Agency\Projects;
 use App\Http\Controllers\Controller;
 use App\Http\Middleware\EnsureProjectAccess;
 use App\Models\Project;
+use App\Services\ProjectService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
@@ -16,9 +17,15 @@ use Illuminate\Http\Request;
  */
 class ProjectHubController extends Controller
 {
-    public function overview(Request $request): View
+    public function overview(Request $request, ProjectService $projects): View
     {
-        return $this->page($request, 'overview', 'pages.agency.projects.overview');
+        $project = $this->project($request);
+
+        return view('pages.agency.projects.overview', [
+            'project' => $project,
+            'section' => 'overview',
+            'overview' => $projects->getProjectOverview($project),
+        ]);
     }
 
     public function milestones(Request $request): View

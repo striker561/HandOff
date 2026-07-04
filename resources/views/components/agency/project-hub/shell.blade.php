@@ -1,6 +1,7 @@
 @props([
     'project',
     'section',
+    'contentPanel' => true,
 ])
 
 @php
@@ -29,7 +30,7 @@
 @endphp
 
 <x-layouts::app :title="$project->name">
-    <div class="handoff-page handoff-page--wide space-y-6">
+    <div class="handoff-page handoff-page--wide handoff-page--hub">
         <flux:breadcrumbs>
             <flux:breadcrumbs.item href="{{ route('agency.projects.index') }}" wire:navigate>
                 {{ __('Projects') }}
@@ -62,17 +63,21 @@
             @endforeach
         </nav>
 
-        <div class="settings-layout__card handoff-clip-wrap w-full max-w-none">
-            <div class="handoff-clip-frame handoff-clip-frame--ticks">
-                <div class="handoff-clip-shell">
-                    <section class="settings-layout__panel handoff-clip-form">
-                        <div class="settings-layout__content">
-                            {{ $slot }}
-                        </div>
-                    </section>
+        @if ($contentPanel)
+            <div class="settings-layout__card handoff-clip-wrap w-full max-w-none">
+                <div class="handoff-clip-frame handoff-clip-frame--ticks">
+                    <div class="handoff-clip-shell">
+                        <section class="settings-layout__panel handoff-clip-form handoff-clip-form--compact">
+                            <div class="settings-layout__content">
+                                {{ $slot }}
+                            </div>
+                        </section>
+                    </div>
                 </div>
             </div>
-        </div>
+        @else
+            {{ $slot }}
+        @endif
     </div>
 
     @isset($modals)

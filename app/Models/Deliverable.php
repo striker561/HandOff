@@ -97,7 +97,7 @@ class Deliverable extends BaseModel
     }
 
     /**
-     * @return object{total: int, approved: int, in_review: int, draft: int, final: int}
+     * @return object{total: int, approved: int}
      */
     public static function statusCountsForProject(string $projectUniqueId): object
     {
@@ -105,17 +105,11 @@ class Deliverable extends BaseModel
             ->forProject($projectUniqueId)
             ->selectRaw('COUNT(*) as total')
             ->selectRaw('SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as approved', [DeliverableStatus::APPROVED->value])
-            ->selectRaw('SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as in_review', [DeliverableStatus::IN_REVIEW->value])
-            ->selectRaw('SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as draft', [DeliverableStatus::DRAFT->value])
-            ->selectRaw('SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as final', [DeliverableStatus::FINAL ->value])
             ->first();
 
         return (object) [
             'total' => (int) ($stats->total ?? 0),
             'approved' => (int) ($stats->approved ?? 0),
-            'in_review' => (int) ($stats->in_review ?? 0),
-            'draft' => (int) ($stats->draft ?? 0),
-            'final' => (int) ($stats->final ?? 0),
         ];
     }
 

@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\Deliverable\DeliverableStatus;
+use App\Enums\Milestone\MilestoneStatus;
 use App\Enums\User\AccountRole;
 use App\Livewire\Agency\Projects\Credentials\CreateCredential;
 use App\Livewire\Agency\Projects\Credentials\ViewCredential;
@@ -27,12 +28,21 @@ it('loads the project overview page for admins', function () {
         'client_unique_id' => $client->unique_id,
         'name' => 'Hub Project',
     ]);
+    Milestone::factory()->create([
+        'project_unique_id' => $project->unique_id,
+        'name' => 'Discovery',
+        'status' => MilestoneStatus::IN_PROGRESS,
+        'order' => 1,
+    ]);
 
     $this->actingAs($admin)
         ->get(route('agency.projects.show', ['projectUniqueId' => $project->unique_id]))
         ->assertSuccessful()
         ->assertSee('Hub Project')
-        ->assertSee(__('Overview'));
+        ->assertSee(__('Overview'))
+        ->assertSee(__('Project progress'))
+        ->assertSee(__('Milestone pipeline'))
+        ->assertSee('Discovery');
 });
 
 it('loads the project milestones page for admins', function () {

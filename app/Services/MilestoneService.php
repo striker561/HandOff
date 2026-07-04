@@ -31,7 +31,7 @@ class MilestoneService extends BaseCRUDService
         return ['name', 'order', 'due_date', 'created_at', 'updated_at', 'completed_at'];
     }
 
-    public function createOrderedMilestone(array $data): Milestone
+    public function createOrderedMilestone(array $data, User $performedBy): Milestone
     {
         /** @var Milestone $milestone */
         $milestone = $this->create([
@@ -41,6 +41,13 @@ class MilestoneService extends BaseCRUDService
             'due_date' => $data['due_date'] ?? null,
             'order' => $this->getNextOrder($data['project_unique_id']),
         ]);
+
+        MilestoneEvent::dispatch(
+            $milestone,
+            MilestoneAction::CREATED,
+            $performedBy,
+            []
+        );
 
         return $milestone;
     }
