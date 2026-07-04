@@ -78,7 +78,9 @@ class DeliverableService extends BaseCRUDService
 
     public function getDeliverablesForProject(string $projectUniqueId, array $filters = []): LengthAwarePaginator
     {
-        $query = Deliverable::query()->where('project_unique_id', $projectUniqueId);
+        $query = Deliverable::query()
+            ->where('project_unique_id', $projectUniqueId)
+            ->with('milestone');
         $query = $this->applyFilters($query, $filters);
 
         return $this->paginateQuery($query, $filters);

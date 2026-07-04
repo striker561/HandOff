@@ -131,7 +131,9 @@ class MeetingService extends BaseCRUDService
 
     public function getMeetingsForProject(string $projectUniqueId, array $filters = []): LengthAwarePaginator
     {
-        $query = Meeting::query()->where('project_unique_id', $projectUniqueId);
+        $query = Meeting::query()
+            ->where('project_unique_id', $projectUniqueId)
+            ->with('deliverable');
         $query = $this->applyFilters($query, $filters);
 
         return $this->paginateQuery($query, $filters);

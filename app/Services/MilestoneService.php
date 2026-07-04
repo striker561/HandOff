@@ -47,7 +47,9 @@ class MilestoneService extends BaseCRUDService
 
     public function getMilestonesForProject(string $projectUniqueId, array $filters = []): LengthAwarePaginator
     {
-        $query = Milestone::query()->where('project_unique_id', $projectUniqueId);
+        $query = Milestone::query()
+            ->where('project_unique_id', $projectUniqueId)
+            ->withCount('deliverables');
         $query = $this->applyFilters($query, $filters);
 
         return $this->paginateQuery($query, $filters);

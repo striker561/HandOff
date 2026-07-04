@@ -4,7 +4,7 @@
             <div class="flex items-start justify-between gap-4">
                 <div class="min-w-0">
                     <flux:heading size="lg">{{ $name }}</flux:heading>
-                    <flux:text class="mt-2">{{ __('Project overview and upcoming work.') }}</flux:text>
+                    <flux:text class="mt-2">{{ __('Project overview at a glance.') }}</flux:text>
                 </div>
 
                 <flux:badge :color="$statusBadgeColor" size="sm" class="shrink-0">
@@ -47,22 +47,11 @@
                 @endif
             </dl>
 
-            <flux:separator />
-
-            <section class="space-y-3">
-                <flux:heading size="sm">{{ __('Milestones') }}</flux:heading>
-                <flux:text variant="subtle">{{ __('Milestone tracking will appear here.') }}</flux:text>
-            </section>
-
-            <section class="space-y-3">
-                <flux:heading size="sm">{{ __('Deliverables') }}</flux:heading>
-                <flux:text variant="subtle">{{ __('Deliverables linked to this project will appear here.') }}</flux:text>
-            </section>
-
             <x-ui.modal-footer>
                 <flux:button wire:click="close" variant="filled">{{ __('Close') }}</flux:button>
-                <flux:button variant="primary" icon="plus" disabled>
-                    {{ __('Add milestone') }}
+                <flux:button href="{{ route('agency.projects.show', ['projectUniqueId' => $uniqueId]) }}" wire:navigate
+                    variant="primary" icon="arrow-top-right-on-square">
+                    {{ __('Open project') }}
                 </flux:button>
             </x-ui.modal-footer>
         </div>
