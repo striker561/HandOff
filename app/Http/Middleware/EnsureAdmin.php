@@ -18,7 +18,7 @@ class EnsureAdmin
     {
         $user = $request->user();
 
-        if (!$user) {
+        if (! $user) {
             return redirect()->guest(route('login'));
         }
 

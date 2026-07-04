@@ -123,6 +123,6 @@ it('throws validation exceptions from the service for invalid resend', function 
     $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
     $client = User::factory()->create(['role' => AccountRole::CLIENT]);
 
-    expect(fn() => app(ClientService::class)->resendInvitation($client, $admin))
+    expect(fn () => app(ClientService::class)->resendInvitation($client, $admin))
         ->toThrow(ValidationException::class);
 });
