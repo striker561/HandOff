@@ -1,5 +1,6 @@
 <?php
 
+use App\Data\Credentials\SaveCredentialData;
 use App\Data\Projects\CreateProjectData;
 use App\Enums\Milestone\MilestoneStatus;
 use App\Enums\Project\ProjectStatus;
@@ -128,12 +129,12 @@ it('forgets overview cache when a credential is created via domain event', funct
 
     expect($this->service->getProjectOverview($project)->credentialsTotal)->toBe(0);
 
-    app(CredentialService::class)->createCredential([
+    app(CredentialService::class)->createCredential(SaveCredentialData::fromArray([
         'project_unique_id' => $project->unique_id,
         'name' => 'Production Login',
         'type' => 'login',
         'password' => 'secret-password',
-    ], $this->admin);
+    ]), $this->admin);
 
     expect($this->service->getProjectOverview($project)->credentialsTotal)->toBe(1);
 });

@@ -1,15 +1,16 @@
 <?php
 
 use App\Enums\Deliverable\DeliverableStatus;
+use App\Enums\Meeting\MeetingStatus;
 use App\Enums\Milestone\MilestoneStatus;
 use App\Enums\User\AccountRole;
-use App\Livewire\Agency\Projects\Credentials\CreateCredential;
+use App\Livewire\Agency\Projects\Credentials\SaveCredential;
 use App\Livewire\Agency\Projects\Credentials\ViewCredential;
-use App\Livewire\Agency\Projects\Deliverables\CreateDeliverable;
 use App\Livewire\Agency\Projects\Deliverables\DeliverablesList;
-use App\Livewire\Agency\Projects\Meetings\ScheduleMeeting;
-use App\Livewire\Agency\Projects\Milestones\CreateMilestone;
+use App\Livewire\Agency\Projects\Deliverables\SaveDeliverable;
+use App\Livewire\Agency\Projects\Meetings\SaveMeeting;
 use App\Livewire\Agency\Projects\Milestones\MilestonesList;
+use App\Livewire\Agency\Projects\Milestones\SaveMilestone;
 use App\Livewire\Agency\Projects\ViewProject;
 use App\Models\Credential;
 use App\Models\Deliverable;
@@ -94,11 +95,11 @@ it('creates a milestone from the modal', function () {
     $project = Project::factory()->create(['client_unique_id' => $client->unique_id]);
 
     Livewire::actingAs($admin)
-        ->test(CreateMilestone::class)
+        ->test(SaveMilestone::class)
         ->call('open', projectUniqueId: $project->unique_id)
         ->set('name', 'Discovery Phase')
         ->set('description', 'Initial research')
-        ->call('create')
+        ->call('save')
         ->assertHasNoErrors()
         ->assertDispatched('milestone-created');
 
@@ -177,12 +178,12 @@ it('creates a deliverable linked to a milestone', function () {
     ]);
 
     Livewire::actingAs($admin)
-        ->test(CreateDeliverable::class)
+        ->test(SaveDeliverable::class)
         ->call('open', projectUniqueId: $project->unique_id, milestoneUniqueId: $milestone->unique_id)
         ->set('name', 'Wireframes')
         ->set('type', 'design')
         ->set('milestone_unique_id', $milestone->unique_id)
-        ->call('create')
+        ->call('save')
         ->assertHasNoErrors()
         ->assertDispatched('deliverable-created');
 
@@ -245,13 +246,13 @@ it('creates an encrypted credential', function () {
     $project = Project::factory()->create(['client_unique_id' => $client->unique_id]);
 
     Livewire::actingAs($admin)
-        ->test(CreateCredential::class)
+        ->test(SaveCredential::class)
         ->call('open', projectUniqueId: $project->unique_id)
         ->set('name', 'Staging Login')
         ->set('type', 'login')
         ->set('username', 'admin')
         ->set('password', 'secret-password')
-        ->call('create')
+        ->call('save')
         ->assertHasNoErrors()
         ->assertDispatched('credential-created');
 
@@ -285,13 +286,13 @@ it('schedules a meeting for a project', function () {
     $project = Project::factory()->create(['client_unique_id' => $client->unique_id]);
 
     Livewire::actingAs($admin)
-        ->test(ScheduleMeeting::class)
+        ->test(SaveMeeting::class)
         ->call('open', projectUniqueId: $project->unique_id)
         ->set('title', 'Kickoff Call')
         ->set('scheduled_at', now()->addDay()->format('Y-m-d\TH:i'))
         ->set('duration_minutes', 60)
         ->set('location', 'meet')
-        ->call('schedule')
+        ->call('save')
         ->assertHasNoErrors()
         ->assertDispatched('meeting-scheduled');
 
@@ -311,14 +312,102 @@ it('schedules a meeting linked to a deliverable', function () {
     ]);
 
     Livewire::actingAs($admin)
-        ->test(ScheduleMeeting::class)
+        ->test(SaveMeeting::class)
         ->call('open', projectUniqueId: $project->unique_id)
         ->set('title', 'Review Session')
         ->set('scheduled_at', now()->addDays(2)->format('Y-m-d\TH:i'))
         ->set('deliverable_unique_id', $deliverable->unique_id)
-        ->call('schedule')
+        ->call('save')
         ->assertHasNoErrors();
 
     expect(Meeting::query()->where('title', 'Review Session')->value('deliverable_unique_id'))
         ->toBe($deliverable->unique_id);
+});
+
+it('updates a milestone from the save modal', function () {
+    $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
+    $client = User::factory()->create(['role' => AccountRole::CLIENT]);
+    $project = Project::factory()->create(['client_unique_id' => $client->unique_id]);
+    $milestone = Milestone::factory()->create([
+        'project_unique_id' => $project->unique_id,
+        'name' => 'Old Name',
+        'order' => 1,
+    ]);
+
+    Livewire::actingAs($admin)
+        ->test(SaveMilestone::class)
+        ->call('open', projectUniqueId: $project->unique_id, uniqueId: $milestone->unique_id)
+        ->set('name', 'Updated Name')
+        ->call('save')
+        ->assertHasNoErrors()
+        ->assertDispatched('milestone-created');
+
+    expect($milestone->fresh()->name)->toBe('Updated Name');
+});
+
+it('updates a deliverable from the save modal', function () {
+    $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
+    $client = User::factory()->create(['role' => AccountRole::CLIENT]);
+    $project = Project::factory()->create(['client_unique_id' => $client->unique_id]);
+    $milestone = Milestone::factory()->create(['project_unique_id' => $project->unique_id, 'order' => 1]);
+    $deliverable = Deliverable::factory()->create([
+        'project_unique_id' => $project->unique_id,
+        'milestone_unique_id' => $milestone->unique_id,
+        'created_by_unique_id' => $admin->unique_id,
+        'name' => 'Old Deliverable',
+    ]);
+
+    Livewire::actingAs($admin)
+        ->test(SaveDeliverable::class)
+        ->call('open', projectUniqueId: $project->unique_id, uniqueId: $deliverable->unique_id)
+        ->set('name', 'Updated Deliverable')
+        ->call('save')
+        ->assertHasNoErrors()
+        ->assertDispatched('deliverable-created');
+
+    expect($deliverable->fresh()->name)->toBe('Updated Deliverable');
+});
+
+it('updates a credential from the save modal without changing password', function () {
+    $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
+    $client = User::factory()->create(['role' => AccountRole::CLIENT]);
+    $project = Project::factory()->create(['client_unique_id' => $client->unique_id]);
+    $credential = Credential::factory()->create([
+        'project_unique_id' => $project->unique_id,
+        'name' => 'Old Credential',
+        'password' => Crypt::encryptString('unchanged-secret'),
+    ]);
+
+    Livewire::actingAs($admin)
+        ->test(SaveCredential::class)
+        ->call('open', projectUniqueId: $project->unique_id, uniqueId: $credential->unique_id)
+        ->set('name', 'Updated Credential')
+        ->call('save')
+        ->assertHasNoErrors()
+        ->assertDispatched('credential-updated');
+
+    expect($credential->fresh()->name)->toBe('Updated Credential');
+    expect(Crypt::decryptString($credential->fresh()->password))->toBe('unchanged-secret');
+});
+
+it('updates a scheduled meeting from the save modal', function () {
+    $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
+    $client = User::factory()->create(['role' => AccountRole::CLIENT]);
+    $project = Project::factory()->create(['client_unique_id' => $client->unique_id]);
+    $meeting = Meeting::factory()->create([
+        'project_unique_id' => $project->unique_id,
+        'title' => 'Old Title',
+        'status' => MeetingStatus::SCHEDULED,
+        'scheduled_at' => now()->addDay(),
+    ]);
+
+    Livewire::actingAs($admin)
+        ->test(SaveMeeting::class)
+        ->call('open', projectUniqueId: $project->unique_id, uniqueId: $meeting->unique_id)
+        ->set('title', 'Updated Title')
+        ->call('save')
+        ->assertHasNoErrors()
+        ->assertDispatched('meeting-updated');
+
+    expect($meeting->fresh()->title)->toBe('Updated Title');
 });

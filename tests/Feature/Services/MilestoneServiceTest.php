@@ -1,5 +1,6 @@
 <?php
 
+use App\Data\Milestones\SaveMilestoneData;
 use App\Enums\Milestone\MilestoneAction;
 use App\Enums\Milestone\MilestoneStatus;
 use App\Enums\User\AccountRole;
@@ -23,11 +24,11 @@ beforeEach(function () {
 it('creates an ordered milestone', function () {
     Event::fake([MilestoneEvent::class]);
 
-    $milestone = $this->service->createOrderedMilestone([
+    $milestone = $this->service->createOrderedMilestone(SaveMilestoneData::fromArray([
         'name' => 'First Milestone',
         'project_unique_id' => $this->project->unique_id,
-        'due_date' => now()->addDays(7),
-    ], $this->admin);
+        'due_date' => now()->addDays(7)->toDateString(),
+    ]), $this->admin);
 
     expect($milestone)->toBeInstanceOf(Milestone::class)
         ->and($milestone->name)->toBe('First Milestone')
@@ -41,14 +42,14 @@ it('creates an ordered milestone', function () {
 });
 
 it('creates milestones with sequential ordering', function () {
-    $this->service->createOrderedMilestone([
+    $this->service->createOrderedMilestone(SaveMilestoneData::fromArray([
         'name' => 'First',
         'project_unique_id' => $this->project->unique_id,
-    ], $this->admin);
-    $this->service->createOrderedMilestone([
+    ]), $this->admin);
+    $this->service->createOrderedMilestone(SaveMilestoneData::fromArray([
         'name' => 'Second',
         'project_unique_id' => $this->project->unique_id,
-    ], $this->admin);
+    ]), $this->admin);
 
     $milestones = Milestone::where('project_unique_id', $this->project->unique_id)
         ->orderBy('order')
@@ -56,6 +57,29 @@ it('creates milestones with sequential ordering', function () {
 
     expect($milestones[0]->order)->toBe(1)
         ->and($milestones[1]->order)->toBe(2);
+});
+
+it('updates milestone fields', function () {
+    Event::fake([MilestoneEvent::class]);
+
+    $milestone = Milestone::factory()->create([
+        'project_unique_id' => $this->project->unique_id,
+        'name' => 'Original',
+    ]);
+
+    $updated = $this->service->updateMilestone($milestone, SaveMilestoneData::fromArray([
+        'project_unique_id' => $this->project->unique_id,
+        'name' => 'Renamed',
+        'description' => 'Updated description',
+    ]), $this->admin);
+
+    expect($updated->name)->toBe('Renamed')
+        ->and($updated->description)->toBe('Updated description');
+
+    Event::assertDispatched(MilestoneEvent::class, function (MilestoneEvent $event) use ($milestone) {
+        return $event->action === MilestoneAction::UPDATED
+            && $event->milestone->is($milestone);
+    });
 });
 
 it('updates milestone status', function () {
