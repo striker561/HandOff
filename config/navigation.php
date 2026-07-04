@@ -47,8 +47,7 @@ return [
                     [
                         'label' => 'Clients',
                         'icon' => 'users',
-                        'badge' => 'Soon',
-                        'disabled' => true,
+                        'route' => 'agency.clients.index',
                     ],
                     [
                         'label' => 'Projects',

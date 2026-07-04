@@ -13,6 +13,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');
 });
 
+Route::middleware(['auth', 'verified', 'ensureAdmin'])
+    ->prefix('agency')
+    ->name('agency.')
+    ->group(function () {
+        Route::view('clients', 'pages.agency.clients')->name('clients.index');
+    });
+
 Route::middleware(['auth'])->group(function () {
     Route::redirect('profile', 'settings/profile');
 });
