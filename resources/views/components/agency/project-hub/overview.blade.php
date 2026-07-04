@@ -1,15 +1,12 @@
-@props([
-    'project',
-    'overview',
-])
+@props(['project', 'overview'])
 
 @php
     use App\Enums\Milestone\MilestoneStatus;
 
-    $projectRoutes = fn (string $name, array $params = []) => route($name, array_merge(
-        ['projectUniqueId' => $project->unique_id],
-        $params,
-    ));
+    $projectRoutes = fn(string $name, array $params = []) => route(
+        $name,
+        array_merge(['projectUniqueId' => $project->unique_id], $params),
+    );
 @endphp
 
 <div class="project-overview">
@@ -104,7 +101,8 @@
             </flux:card>
         </a>
 
-        <a href="{{ $projectRoutes('agency.projects.deliverables') }}" wire:navigate class="project-overview__stat-link">
+        <a href="{{ $projectRoutes('agency.projects.deliverables') }}" wire:navigate
+            class="project-overview__stat-link">
             <flux:card class="handoff-stat-card h-full">
                 <div class="flex items-center gap-4">
                     <div class="handoff-stat-card__icon">
@@ -123,7 +121,8 @@
             </flux:card>
         </a>
 
-        <a href="{{ $projectRoutes('agency.projects.credentials') }}" wire:navigate class="project-overview__stat-link">
+        <a href="{{ $projectRoutes('agency.projects.credentials') }}" wire:navigate
+            class="project-overview__stat-link">
             <flux:card class="handoff-stat-card h-full">
                 <div class="flex items-center gap-4">
                     <div class="handoff-stat-card__icon">
@@ -161,22 +160,26 @@
         <section class="project-overview__pipeline handoff-panel">
             <header class="project-overview__section-header">
                 <flux:heading size="sm">{{ __('Milestone pipeline') }}</flux:heading>
-                <flux:button :href="$projectRoutes('agency.projects.milestones')" variant="ghost" size="sm" wire:navigate>
+                <x-ui.button :href="$projectRoutes('agency.projects.milestones')" variant="outline" wire:navigate
+                    class="!w-auto px-3 py-1.5 text-xs sm:text-sm">
                     {{ __('View all') }}
-                </flux:button>
+                </x-ui.button>
             </header>
 
             @forelse ($overview->milestones as $milestone)
                 <article @class([
                     'project-overview__pipeline-item',
                     'project-overview__pipeline-item--completed' => $milestone->is_completed,
-                    'project-overview__pipeline-item--active' => $milestone->status === MilestoneStatus::IN_PROGRESS,
+                    'project-overview__pipeline-item--active' =>
+                        $milestone->status === MilestoneStatus::IN_PROGRESS,
                 ])>
                     <div @class([
                         'project-overview__pipeline-step',
                         'project-overview__pipeline-step--completed' => $milestone->is_completed,
-                        'project-overview__pipeline-step--in-progress' => $milestone->status === MilestoneStatus::IN_PROGRESS,
-                        'project-overview__pipeline-step--pending' => $milestone->status === MilestoneStatus::PENDING,
+                        'project-overview__pipeline-step--in-progress' =>
+                            $milestone->status === MilestoneStatus::IN_PROGRESS,
+                        'project-overview__pipeline-step--pending' =>
+                            $milestone->status === MilestoneStatus::PENDING,
                     ])>
                         @if ($milestone->is_completed)
                             <flux:icon.check variant="mini" class="size-4" />
@@ -193,7 +196,8 @@
                             </flux:badge>
                         </div>
 
-                        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-brand-700/70 dark:text-brand-200/70">
+                        <div
+                            class="text-brand-700/70 dark:text-brand-200/70 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
                             @if ($milestone->due_date)
                                 <span>{{ __('Due :date', ['date' => $milestone->due_date->format('M j, Y')]) }}</span>
                             @endif
@@ -201,16 +205,17 @@
                         </div>
 
                         @if ($milestone->progress_percentage > 0)
-                            <flux:progress :value="$milestone->progress_percentage" class="project-overview__mini-progress" />
+                            <flux:progress :value="$milestone->progress_percentage"
+                                class="project-overview__mini-progress" />
                         @endif
                     </div>
                 </article>
             @empty
                 <div class="project-overview__empty">
                     <flux:text>{{ __('No milestones yet. Add the first phase to track progress.') }}</flux:text>
-                    <flux:button :href="$projectRoutes('agency.projects.milestones')" variant="primary" size="sm" wire:navigate class="mt-4">
+                    <x-ui.button :href="$projectRoutes('agency.projects.milestones')" wire:navigate class="mt-4 !w-auto">
                         {{ __('Add milestone') }}
-                    </flux:button>
+                    </x-ui.button>
                 </div>
             @endforelse
         </section>
@@ -219,16 +224,18 @@
             <section class="handoff-panel">
                 <header class="project-overview__section-header">
                     <flux:heading size="sm">{{ __('Recent deliverables') }}</flux:heading>
-                    <flux:button :href="$projectRoutes('agency.projects.deliverables')" variant="ghost" size="sm" wire:navigate>
+                    <x-ui.button :href="$projectRoutes('agency.projects.deliverables')" variant="outline" wire:navigate
+                        class="!w-auto px-3 py-1.5 text-xs sm:text-sm">
                         {{ __('View all') }}
-                    </flux:button>
+                    </x-ui.button>
                 </header>
 
                 @forelse ($overview->recentDeliverables as $deliverable)
                     <article class="project-overview__list-item">
                         <div class="min-w-0 flex-1">
-                            <p class="truncate font-medium text-brand-900 dark:text-brand-50">{{ $deliverable->name }}</p>
-                            <p class="mt-0.5 truncate text-sm text-brand-700/70 dark:text-brand-200/70">
+                            <p class="text-brand-900 dark:text-brand-50 truncate font-medium">{{ $deliverable->name }}
+                            </p>
+                            <p class="text-brand-700/70 dark:text-brand-200/70 mt-0.5 truncate text-sm">
                                 {{ $deliverable->milestone?->name ?? __('Unassigned') }}
                             </p>
                         </div>
@@ -246,9 +253,10 @@
             <section class="handoff-panel">
                 <header class="project-overview__section-header">
                     <flux:heading size="sm">{{ __('Next meeting') }}</flux:heading>
-                    <flux:button :href="$projectRoutes('agency.projects.meetings')" variant="ghost" size="sm" wire:navigate>
+                    <x-ui.button :href="$projectRoutes('agency.projects.meetings')" variant="outline" wire:navigate
+                        class="!w-auto px-3 py-1.5 text-xs sm:text-sm">
                         {{ __('Schedule') }}
-                    </flux:button>
+                    </x-ui.button>
                 </header>
 
                 @if ($overview->nextMeeting)

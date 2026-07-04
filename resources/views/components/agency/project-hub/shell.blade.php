@@ -1,8 +1,4 @@
-@props([
-    'project',
-    'section',
-    'contentPanel' => true,
-])
+@props(['project', 'section'])
 
 @php
     $tabs = [
@@ -56,28 +52,13 @@
                     @class([
                         'settings-layout__tab',
                         'settings-layout__tab--current' => $section === $tabKey,
-                    ])
-                    @if ($section === $tabKey) aria-current="page" @endif>
+                    ]) @if ($section === $tabKey) aria-current="page" @endif>
                     {{ $tab['label'] }}
                 </a>
             @endforeach
         </nav>
 
-        @if ($contentPanel)
-            <div class="settings-layout__card handoff-clip-wrap w-full max-w-none">
-                <div class="handoff-clip-frame handoff-clip-frame--ticks">
-                    <div class="handoff-clip-shell">
-                        <section class="settings-layout__panel handoff-clip-form handoff-clip-form--compact">
-                            <div class="settings-layout__content">
-                                {{ $slot }}
-                            </div>
-                        </section>
-                    </div>
-                </div>
-            </div>
-        @else
-            {{ $slot }}
-        @endif
+        {{ $slot }}
     </div>
 
     @isset($modals)
