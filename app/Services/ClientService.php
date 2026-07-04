@@ -31,11 +31,18 @@ class ClientService extends BaseCRUDService
 
     public function getClients(array $filters = []): LengthAwarePaginator
     {
-        // Base Query
-        $query = User::query()->where('role', AccountRole::CLIENT);
+        $query = User::query()->clients();
         $query = $this->applyFilters($query, $filters);
 
         return $this->paginateQuery($query);
+    }
+
+    public function findClient(string $uniqueId): ?User
+    {
+        return User::query()
+            ->clients()
+            ->where('unique_id', $uniqueId)
+            ->first();
     }
 
     public function createClient(array $data, User $performedBy): User

@@ -5,6 +5,7 @@ use App\Models\User;
 use App\Services\ClientService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Validation\ValidationException;
 
 uses(RefreshDatabase::class);
 
@@ -42,10 +43,30 @@ it('filters clients by search', function () {
     expect($result->total())->toBe(1);
 });
 
-it('resends invitation', function () {
+it('finds a client by unique id', function () {
     $client = User::factory()->create(['role' => AccountRole::CLIENT]);
+
+    expect($this->service->findClient($client->unique_id)?->is($client))->toBeTrue()
+        ->and($this->service->findClient('missing-id'))->toBeNull();
+});
+
+it('does not find admins when looking up a client', function () {
+    $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
+
+    expect($this->service->findClient($admin->unique_id))->toBeNull();
+});
+
+it('resends invitation for unverified clients', function () {
+    $client = User::factory()->unverified()->create(['role' => AccountRole::CLIENT]);
 
     $this->service->resendInvitation($client, $this->admin);
 
     expect(true)->toBeTrue();
+});
+
+it('rejects resend for verified clients', function () {
+    $client = User::factory()->create(['role' => AccountRole::CLIENT]);
+
+    expect(fn () => $this->service->resendInvitation($client, $this->admin))
+        ->toThrow(ValidationException::class);
 });

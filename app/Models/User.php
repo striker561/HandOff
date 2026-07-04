@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Enums\User\AccountRole;
 use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -107,6 +109,12 @@ class User extends Authenticatable implements PasskeyUser
     }
 
     // Role helpers
+    #[Scope]
+    protected function clients(Builder $query): void
+    {
+        $query->where('role', AccountRole::CLIENT);
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === AccountRole::ADMIN;
