@@ -39,13 +39,7 @@ class CreateClient extends Component
             'email' => ['required', 'email:rfc,dns', 'max:190', 'unique:users,email'],
         ]);
 
-        try {
-            $this->clientService->createClient($validated, Auth::user());
-        } catch (\Exception $e) {
-            $this->notifyError($e->getMessage(), duration: 8000);
-
-            return;
-        }
+        $this->clientService->createClient($validated, Auth::user());
 
         $this->reset('name', 'email');
 

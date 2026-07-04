@@ -59,6 +59,11 @@ class ClientsList extends Component
         }
     }
 
+    public function viewClient(string $uniqueId): void
+    {
+        $this->dispatch('open-client-view', uniqueId: $uniqueId)->to(ViewClient::class);
+    }
+
     #[Computed]
     public function clients(): LengthAwarePaginator
     {

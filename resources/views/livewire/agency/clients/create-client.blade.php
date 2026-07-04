@@ -18,6 +18,7 @@
             <flux:input type="email" wire:model="email" placeholder="{{ __('client@example.com') }}"
                 wire:keydown.enter="create" />
             <flux:error name="email" />
+            <flux:error name="invitation" />
         </flux:field>
 
         <x-ui.modal-footer>

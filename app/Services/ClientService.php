@@ -10,6 +10,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class ClientService extends BaseCRUDService
 {
@@ -63,6 +64,13 @@ class ClientService extends BaseCRUDService
 
     public function resendInvitation(User $user, User $performedBy): void
     {
+        if ($user->email_verified_at !== null) {
+            $this->fieldError(
+                'invitation',
+                __('This client has already accepted their invitation.'),
+            );
+        }
+
         $tempPass = Str::random(12);
 
         $user->update([
@@ -85,9 +93,23 @@ class ClientService extends BaseCRUDService
 
         if (RateLimiter::tooManyAttempts($key, 1)) {
             $seconds = RateLimiter::availableIn($key);
-            abort(429, "Invitation already sent recently. Try again in {$seconds}s.");
+
+            $this->fieldError(
+                'invitation',
+                __('Invitation already sent recently. Try again in :seconds seconds.', ['seconds' => $seconds]),
+            );
         }
 
         RateLimiter::hit($key, 120); // 1 attempt per 120 seconds
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    private function fieldError(string $field, string $message): never
+    {
+        throw ValidationException::withMessages([
+            $field => $message,
+        ]);
     }
 }
