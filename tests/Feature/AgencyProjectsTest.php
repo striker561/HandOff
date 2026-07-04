@@ -57,7 +57,7 @@ it('loads project details when opened by unique id', function () {
         ->assertSet('name', 'Website Redesign')
         ->assertSet('clientName', 'Acme Corp')
         ->assertSet('formattedBudget', '$1,000.00')
-        ->assertSee(__('Milestones'));
+        ->assertSee(__('Open project'));
 });
 
 it('creates a project from the modal', function () {

@@ -78,6 +78,21 @@ private function fieldError(string $field, string $message): never
 
 No separate API response layer — services throw, Livewire displays.
 
+### Project hub pages (detail routes)
+
+Index pages (`clients`, `projects`) use `Route::view`. Project **detail sections** use a thin controller behind middleware:
+
+```text
+agency project hub routes
+  → ensureAdmin (role)
+  → ensureProjectAccess (ProjectService + ProjectPolicy::view → Project on request)
+  → ProjectHubController (view only)
+```
+
+- [`EnsureProjectAccess`](app/Http/Middleware/EnsureProjectAccess.php) resolves `{projectUniqueId}`, 404 if missing, `Gate::authorize('view', $project)`, sets request attribute `project`.
+- [`ProjectHubController`](app/Http/Controllers/Agency/Projects/ProjectHubController.php) reads the authorized project from the request and returns Blade.
+- Shared shell: `x-agency.project-hub.shell` (chrome only). Section pages mount their own modals via `<x-slot:modals>`. Livewire components receive `projectUniqueId` only; policy on mutations stays in Livewire actions.
+
 ## Service Pattern Overview
 
 All services extend `BaseCRUDService` which provides:

@@ -220,7 +220,26 @@ Admin index tables (clients, projects) under `livewire/agency/`. Portal/client l
 
 **Empty collection:** `x-ui.page-header` + `x-ui.empty-state` — not a table row.
 
+## Agency project hub
+
+Project detail uses **controller-guarded pages** under `/agency/projects/{projectUniqueId}`. Nested work has its own route; the tab bar reflects the active section. No models in route definitions.
+
+- **HTTP stack:** `ensureAdmin` → [`EnsureProjectAccess`](app/Http/Middleware/EnsureProjectAccess.php) → [`ProjectHubController`](app/Http/Controllers/Agency/Projects/ProjectHubController.php).
+    - Middleware loads the project via `ProjectService`, enforces `ProjectPolicy::view`, attaches `Project` to the request (`EnsureProjectAccess::PROJECT_ATTRIBUTE`).
+    - Controller reads the authorized project and returns Blade only.
+- **Routes:** `agency.projects.show`, `.milestones`, `.deliverables`, `.credentials`, `.meetings` — param is `{projectUniqueId}` (UUID string).
+- **Shell:** [`x-agency.project-hub.shell`](resources/views/components/agency/project-hub/shell.blade.php) — breadcrumbs, title, status badge inline with client meta, tab links (`wire:navigate`), content card. Chrome only — no modals.
+- **Modals:** mounted per section page via `<x-slot:modals>` on the shell (same pattern as [`pages/agency/projects.blade.php`](resources/views/pages/agency/projects.blade.php) list + create/view modals). Overview has none.
+- **List** (`ProjectsList`) → **flyout glance** (`ViewProject`) → **Open project** → hub overview page.
+- **Livewire** list/modal components receive `projectUniqueId` only — no `mount(Project)`. Mutations authorize on the action (`approve`, `create`, etc.).
+- Milestone → deliverables: link to `agency.projects.deliverables?milestone={id}`.
+
 ## Livewire style
+
+- **Agency projects** — group hub components by domain under `app/Livewire/Agency/Projects/`:
+    - Root: `ProjectsList`, `CreateProject`, `ViewProject` (index + flyout)
+    - `Milestones/`, `Deliverables/`, `Credentials/`, `Meetings/` — list + modal components per domain
+    - Blade tags: `agency.projects.milestones.milestones-list`, `agency.projects.credentials.create-credential`, etc.
 
 - **Volt** (`livewire/settings/profile.blade.php`): simple CRUD pages with little state.
 - **Class-based** (`app/Livewire/Settings/`): modals, `#[Locked]`, Fortify actions, security flows.
