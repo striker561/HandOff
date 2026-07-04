@@ -3,6 +3,7 @@
 use App\Enums\User\AccountRole;
 use App\Livewire\Agency\Projects\CreateProject;
 use App\Livewire\Agency\Projects\ProjectsList;
+use App\Livewire\Agency\Projects\ViewProject;
 use App\Models\Project;
 use App\Models\User;
 use Livewire\Livewire;
@@ -15,7 +16,8 @@ it('loads the projects page for admins', function () {
         ->assertSuccessful()
         ->assertSee(__('Projects'))
         ->assertSeeLivewire(ProjectsList::class)
-        ->assertSeeLivewire(CreateProject::class);
+        ->assertSeeLivewire(CreateProject::class)
+        ->assertSeeLivewire(ViewProject::class);
 });
 
 it('forbids client users from the agency projects page', function () {
@@ -24,6 +26,38 @@ it('forbids client users from the agency projects page', function () {
     $this->actingAs($client)
         ->get(route('agency.projects.index'))
         ->assertForbidden();
+});
+
+it('dispatches open-project-view with the project unique id', function () {
+    $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
+    $client = User::factory()->create(['role' => AccountRole::CLIENT]);
+    $project = Project::factory()->create(['client_unique_id' => $client->unique_id]);
+
+    Livewire::actingAs($admin)
+        ->test(ProjectsList::class)
+        ->call('viewProject', $project->unique_id)
+        ->assertDispatched('open-project-view', uniqueId: $project->unique_id);
+});
+
+it('loads project details when opened by unique id', function () {
+    $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
+    $client = User::factory()->create(['name' => 'Acme Corp', 'role' => AccountRole::CLIENT]);
+    $project = Project::factory()->create([
+        'client_unique_id' => $client->unique_id,
+        'name' => 'Website Redesign',
+        'description' => 'A full redesign',
+        'budget' => 1000,
+        'currency' => 'usd',
+    ]);
+
+    Livewire::actingAs($admin)
+        ->test(ViewProject::class)
+        ->call('open', uniqueId: $project->unique_id)
+        ->assertSet('uniqueId', $project->unique_id)
+        ->assertSet('name', 'Website Redesign')
+        ->assertSet('clientName', 'Acme Corp')
+        ->assertSet('formattedBudget', '$1,000.00')
+        ->assertSee(__('Milestones'));
 });
 
 it('creates a project from the modal', function () {

@@ -36,7 +36,7 @@ it('creates a project from dto data', function () {
 });
 
 it('rejects project creation for an unknown client', function () {
-    expect(fn () => $this->service->createProject(
+    expect(fn() => $this->service->createProject(
         CreateProjectData::fromArray([
             'client_unique_id' => 'missing-client-id',
             'name' => 'Test Project',
@@ -44,6 +44,13 @@ it('rejects project creation for an unknown client', function () {
         ]),
         $this->admin,
     ))->toThrow(ValidationException::class);
+});
+
+it('finds a project by unique id', function () {
+    $project = Project::factory()->create(['client_unique_id' => $this->client->unique_id]);
+
+    expect($this->service->findProject($project->unique_id)?->is($project))->toBeTrue()
+        ->and($this->service->findProject('missing-id'))->toBeNull();
 });
 
 it('calculates progress as 0 when no milestones', function () {

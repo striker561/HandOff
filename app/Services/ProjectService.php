@@ -13,7 +13,9 @@ use Illuminate\Validation\ValidationException;
 
 class ProjectService extends BaseCRUDService
 {
-    public function __construct(private ClientService $clients) {}
+    public function __construct(private ClientService $clients)
+    {
+    }
 
     protected function getModel(): string
     {
@@ -41,6 +43,14 @@ class ProjectService extends BaseCRUDService
         $query = $this->applyFilters($query, $filters);
 
         return $this->paginateQuery($query, $filters);
+    }
+
+    public function findProject(string $uniqueId): ?Project
+    {
+        return Project::query()
+            ->with('client')
+            ->where('unique_id', $uniqueId)
+            ->first();
     }
 
     public function createProject(CreateProjectData $data, User $performedBy): Project

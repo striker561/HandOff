@@ -9,4 +9,3 @@
         </flux:table>
     </div>
 </div>
-ƒ

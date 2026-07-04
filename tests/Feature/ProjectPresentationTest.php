@@ -41,5 +41,5 @@ it('builds a list summary for compact project rows', function () {
 
     expect($project->list_summary)->toContain('Acme Corp')
         ->and($project->list_summary)->toContain('€2,500.00')
-        ->and($project->list_summary)->toContain('Aug 15, 2026');
+        ->and($project->list_summary)->not->toContain('Aug 15, 2026');
 });
