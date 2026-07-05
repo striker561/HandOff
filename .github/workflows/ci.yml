@@ -59,7 +59,7 @@ jobs:
 
       # ── PHPUnit (tests) ───────────────────────────────────────────────────
       - name: Install Node.js dependencies
-        run: npm ci --omit=optional --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
       - name: Build frontend assets
         run: npm run build
