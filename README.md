@@ -4,9 +4,23 @@
 
 # HandOff
 
-> A self-hosted client portal and project delivery management system
+> A self-hosted client portal and project delivery management system — currently in active development.
 
-**HandOff** helps agencies and freelancers manage client projects, track deliverables, store credentials securely, and maintain project communication — all in one place.
+**HandOff** helps agencies and freelancers manage client projects end-to-end: organize milestones, track deliverables, store credentials securely, schedule meetings, and maintain a complete audit trail — all in one place.
+
+### How It Works
+
+```
+Agency ──▶ Project ──▶ Milestones (sequential) ──▶ Deliverables (versioned files)
+                │
+                ├── Credentials (passwords, API keys, SSH keys)
+                ├── Meetings (notes, recording links)
+                └── Activity Log (complete audit trail)
+```
+
+The **agency** (admin) creates projects, invites **clients**, and manages all project data. Clients get a portal to view progress, download deliverables, and access shared credentials. Every action is logged and auditable.
+
+> **Status:** HandOff is under active development. The admin workspace is functional; the client portal is upcoming. See [CONTRIBUTING.md](CONTRIBUTING.md) to help build it.
 
 ## Features
 
@@ -22,22 +36,21 @@
 
 ### Prerequisites
 
-- PHP 8.4+
-- Composer
-- Node.js & NPM
-- PostgreSQL / MySQL / SQLite
+- **PHP 8.2+** with extensions: `bcmath`, `ctype`, `curl`, `dom`, `fileinfo`, `intl`, `json`, `mbstring`, `openssl`, `pcre`, `pdo`, `tokenizer`, `xml`
+- **Composer** 2.x
+- **Node.js** 18+ & NPM
+- **Database:** PostgreSQL (recommended), MySQL 8+, or SQLite
 
-### Setup
+### Quick Start
 
 ```bash
-# Clone repository
+# Clone and install
 git clone https://github.com/striker561/HandOff.git
 cd HandOff
-
-# Install and setup
 composer setup
 
-# Configure database in .env
+# Configure your database in .env
+# (composer setup copies .env.example if .env doesn't exist)
 DB_CONNECTION=pgsql
 DB_DATABASE=handoff
 DB_USERNAME=your_username
@@ -46,29 +59,63 @@ DB_PASSWORD=your_password
 # Seed sample data (optional)
 php artisan db:seed
 
-# Start development server
+# Start the development environment
 composer dev
+```
+
+`composer dev` starts four processes concurrently: PHP server, queue worker, log tail, and Vite dev server. Visit `http://localhost:8000`.
+
+### Running Tests & Quality Checks
+
+```bash
+# Run the full test suite
+composer test          # runs lint → static analysis → tests
+
+# Individual steps
+composer lint          # Pint code style fixer
+composer analyse       # PHPStan static analysis
+php artisan test       # Pest test suite (with --compact for CI)
 ```
 
 ## Tech Stack
 
-- Laravel 13
-- PHP 8.4
-- Tailwind CSS 4
-- Livewire 4 + Flux UI
-- PostgreSQL
+| Layer      | Technology                       |
+| ---------- | -------------------------------- |
+| Framework  | Laravel 13                       |
+| Language   | PHP 8.2+                         |
+| CSS        | Tailwind CSS 4                   |
+| UI         | Livewire 4 + Flux UI + Alpine.js |
+| Auth       | Laravel Fortify + Passkeys       |
+| Database   | PostgreSQL / MySQL / SQLite      |
+| Testing    | Pest 4 + PHPStan                 |
+| Code Style | Laravel Pint                     |
+
+## Documentation
+
+| Document                                 | Purpose                                              |
+| ---------------------------------------- | ---------------------------------------------------- |
+| [ARCHITECTURE.md](ARCHITECTURE.md)       | Codebase structure, layers, UI conventions, patterns |
+| [CONTRIBUTING.md](CONTRIBUTING.md)       | Development workflow, service patterns, code style   |
+| [SECURITY.md](SECURITY.md)               | Vulnerability reporting and security policy          |
+| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community guidelines                                 |
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/name`)
-3. Commit changes (`git commit -m 'Add feature'`)
-4. Push to branch (`git push origin feature/name`)
-5. Open a Pull Request
+We welcome contributors! See [CONTRIBUTING.md](CONTRIBUTING.md) for architecture details, service patterns, and development conventions.
+
+Quick start for contributors:
+
+```bash
+# Fork → clone → setup → branch → code → test → PR
+composer setup
+php artisan db:seed
+composer test          # make sure everything passes
+composer dev           # start hacking
+```
 
 ## License
 
-MIT License — see [LICENSE](LICENSE) file for details
+MIT License — see [LICENSE](LICENSE) file for details.
 
 ---
 

@@ -187,86 +187,34 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 # UI & View Conventions
 
-## Layouts
+> **Full UI architecture, component catalog, and conventions → [`ARCHITECTURE.md`](ARCHITECTURE.md).**
+> This section is a condensed reference for AI code generation. Humans should read ARCHITECTURE.md.
 
-- **Authenticated app:** `<x-layouts::app>` or Livewire `#[Layout('layouts.app')]`. Admin vs client chrome is resolved in [`resources/views/layouts/app.blade.php`](resources/views/layouts/app.blade.php).
-- **Sidebar nav:** add items in [`config/navigation.php`](config/navigation.php) — do not edit sidebar Blade for new routes.
-- **Guest/auth:** `<x-layouts::auth>` for Fortify pages under `resources/views/pages/auth/`.
-- **Clip-path surfaces:** reserve `handoff-clip-*` for auth, landing hero, and settings card — not scattered in the app shell.
+## Quick Reference for Code Generation
 
-## Components
+### Layouts
 
-- **Form primitives:** `x-ui.*` (`button`, `input`, `checkbox`, `divider`, `logo-mark`, `empty-state`, `modal-footer`, `page-header`, `data-table`) — branded HandOff controls.
-- **App chrome:** `x-sidebar.*` for sidebar footer/header pieces.
-- **`x-ui.page-header`** — page title + subtitle + actions bar. Props: `heading`, `subheading`, `actions` slot (search, buttons).
-- **`x-ui.modal-footer`** — use inside modal content divs instead of `x-slot name="footer"` (the Flux slot doesn't render in the free edition). Props: `align` (start/center/end, default: end).
-- **`x-ui.empty-state`** — reusable empty state with icon, heading, text, and `actions` slot. Use when a list has **no records** (outside the table).
-- **Shell/nav:** raw `flux:*` (sidebar, header, toast, modal). ponytail: don't rebuild what Flux already ships.
-- **Feature UI:** group under `components/{dashboard,marketing,settings}/` or `livewire/{domain}/` when routes exist.
+- Authenticated: `<x-layouts::app>` or `#[Layout('layouts.app')]`
+- Guest/auth: `<x-layouts::auth>` for Fortify pages under `resources/views/pages/auth/`
+- Sidebar nav: add items in `config/navigation.php` — do not edit sidebar Blade
 
-## Admin list pages
+### Components
 
-Admin index tables (clients, projects) live under `livewire/agency/` and `/agency/*` routes. **Admin** = agency operator in auth code; **agency** = the same workspace in URLs and component names. Portal/client lists may use a different pattern later.
+- Form primitives: `x-ui.button`, `x-ui.input`, `x-ui.checkbox`, `x-ui.modal-footer`, `x-ui.page-header`, `x-ui.data-table`, `x-ui.empty-state`
+- Modals: `flux:modal` + `x-ui.modal-footer` (NOT `x-slot name="footer"`)
+- Shell: `flux:sidebar`, `flux:header`, `flux:toast` — use raw Flux, don't rebuild
+- Feature UI: `components/{dashboard,marketing,settings}/` or `livewire/{domain}/`
 
-- **`x-ui.data-table`** — panel-wrapped `flux:table` with pagination. Pass `:paginate="$this->items"`.
-- **`x-ui.data-table.primary-cell`** — props: `title`, `meta` (mobile-only subline). Slots: `action` (view button, mobile-only, inline with title), `mobile` (badge under meta on mobile).
-- **`x-ui.data-table.action-cell`** — view/action column; visible from `sm` up only.
-- **`x-ui.data-table.view-button`** — standard agency row action (`icon="eye"`). Props: `wireClick`, `name`.
-- **`x-ui.data-table.empty`** — em dash for empty **cell** values inside a table row.
+### Mutation Pipeline
 
-**Mobile:** one column — title with inline action, meta line (`line-clamp-2`), status badge. No horizontal scroll.
+Livewire `Save{Domain}` → validate → `Save{Domain}Data::fromArray()` → `{Domain}Service::{create|update}*` → `{Domain}Event` → listeners
 
-**Desktop:** extra columns at `sm` (status, action), `md` (email/client, budget), `lg` (date).
+### Critical Patterns
 
-**Empty collection:** `x-ui.page-header` + `x-ui.empty-state` on admin **index** pages (`/agency/clients`, `/agency/projects`). Hub section tabs use [`x-agency.project-hub.section`](resources/views/components/agency/project-hub/section.blade.php) with in-panel `project-overview__empty` instead.
-
-## Mutation data (DTOs)
-
-Typed input objects live under `app/Data/{Domain}/`. **Read** payloads (e.g. `ProjectOverviewData`) are constructor-only; **write** payloads use `readonly`, `fromArray()`, and `toAttributes()` or explicit mapping in the service.
-
-**Naming:** admin mutations use **`Save{Thing}Data` + `Save{Thing}`** — one modal per domain; create + edit where admins manage records. **`SaveClient` is invite-only** (clients update their own profile in settings).
-
-**Mutation pipeline:** Livewire `Save{Domain}` → validate → `Save{Domain}Data::fromArray()` → `{Domain}Service::{create|update|schedule}*` → `{Domain}Event` → listeners (cache, activity, notifications).
-
-See [`ARCHITECTURE.md`](ARCHITECTURE.md) for terminology (admin vs agency routes) and the full layer diagram.
-
-## Authorization (admin)
-
-- **Page access:** `ensureAdmin` on `/agency/*` routes; hub adds `EnsureProjectAccess` (`ProjectPolicy::view` on the project).
-- **Livewire writes:** `$this->authorize()` on the action that mutates (`Save*::save()`, `approve()`, `ViewCredential::revealPassword()`). List components that only dispatch `open-save-*` rely on the modal to re-check — no separate authorize trait needed (`AuthorizesRequests` is on Livewire `Component`).
-- **Policies:** admin abilities often pass via `before()`; explicit Livewire checks remain for defense-in-depth and future client/portal access on the same models.
-
-## Admin project hub
-
-Project detail uses **controller-guarded pages** under `/agency/projects/{projectUniqueId}` (admin workspace; `ensureAdmin` on entry). Nested work has its own route; the tab bar reflects the active section. No models in route definitions.
-
-- **HTTP stack:** `ensureAdmin` → [`EnsureProjectAccess`](app/Http/Middleware/EnsureProjectAccess.php) → [`ProjectHubController`](app/Http/Controllers/Agency/Projects/ProjectHubController.php).
-    - Middleware loads the project via `ProjectService`, enforces `ProjectPolicy::view`, attaches `Project` to the request (`EnsureProjectAccess::PROJECT_ATTRIBUTE`).
-    - Controller reads the authorized project and returns Blade only.
-- **Routes:** `agency.projects.show`, `.milestones`, `.deliverables`, `.credentials`, `.meetings` — param is `{projectUniqueId}` (UUID string).
-- **Shell:** [`x-agency.project-hub.shell`](resources/views/components/agency/project-hub/shell.blade.php) — breadcrumbs, title, status badge inline with client meta, tab links (`wire:navigate`), open content slot (no clip-path card). Chrome only — no modals. Section pages use [`x-agency.project-hub.section`](resources/views/components/agency/project-hub/section.blade.php) (`handoff-panel` + `project-hub__section-header`; overview blocks reuse the same header styles via `project-overview__section-header`).
-- **Overview:** [`ProjectService::getProjectOverview()`](app/Services/ProjectService.php) — scalar stats cached 5 minutes (`ProjectOverviewStats`); milestone pipeline, recent deliverables, and next meeting load fresh. Cache bust via [`ForgetProjectOverviewCache`](app/Listeners/Projects/ForgetProjectOverviewCache.php) on deliverable/credential/meeting/milestone domain events. Progress is computed from completed milestones (`calculateProgress()`), not the `projects.progress_percentage` column.
-- **Modals:** unified `Save*` Livewire components per domain (`SaveProject`, `SaveMilestone`, …) opened via `open-save-*` events. `SaveClient` invites only. Credentials keep separate `ViewCredential` for reveal UX.
-- **List** (`ProjectsList`) → **flyout glance** (`ViewProject`) → **Open project** → hub overview page.
-- **Livewire** list/modal components receive `projectUniqueId` only — no `mount(Project)`. Mutations authorize on the action (`approve`, `create`, etc.).
-- Milestone → deliverables: link to `agency.projects.deliverables?milestone={id}`.
-
-## Livewire style
-
-- **Admin Livewire** — namespaces under `app/Livewire/Agency/` (agency = admin workspace in URLs/components):
-    - Root: `ProjectsList`, `SaveProject`, `ViewProject` (index + flyout)
-    - `Milestones/`, `Deliverables/`, `Credentials/`, `Meetings/` — list + `Save*` modal components per domain
-    - Blade tags: `agency.projects.milestones.milestones-list`, `agency.projects.credentials.save-credential`, etc.
-- **Admin clients** — `ClientsList`, `SaveClient` (invite), `ViewClient` under `app/Livewire/Agency/Clients/`.
-
-- **Volt** (`livewire/settings/profile.blade.php`): simple CRUD pages with little state.
-- **Class-based** (`app/Livewire/Settings/`): modals, `#[Locked]`, Fortify actions, security flows.
-- Avoid anonymous `new class extends Component` in Blade unless the UI is truly throwaway.
-
-## CSS
-
-- Brand tokens live in `@theme` / `:root` in `resources/css/app.css`.
-- Clip corners: `--handoff-clip-path-md` and `--handoff-clip-path-sm` — change once, applies everywhere.
-- `settings-layout__*` uses a separate BEM namespace for settings tabs/panel.
+- Hub Livewire receives `projectUniqueId` only — never `mount(Project $project)`
+- Admin Livewire under `app/Livewire/Agency/`; Blade tags use `agency.*` namespace
+- DTOs: `readonly` class, `fromArray()`, `toAttributes()`. Location: `app/Data/{Domain}/`
+- Authorization: `$this->authorize()` in `Save*::open()` and `Save*::save()`
+- CSS: brand tokens in `resources/css/app.css`; clip corners via `--handoff-clip-path-*`
 
 </laravel-boost-guidelines>
