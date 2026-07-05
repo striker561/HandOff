@@ -12,9 +12,9 @@ class UserPolicy
         return $user->role == AccountRole::ADMIN;
     }
 
-    public function view(User $user): bool
+    public function view(User $actor, User $client): bool
     {
-        return $user->role == AccountRole::ADMIN;
+        return $actor->isAdmin() && $client->isClient();
     }
 
     public function create(User $user): bool
@@ -24,9 +24,8 @@ class UserPolicy
 
     public function resendInvitation(User $actor, User $client): bool
     {
-        $isAdmin = (bool) ($actor->role == AccountRole::ADMIN);
-        $isClient = $client->role === AccountRole::CLIENT;
-
-        return $isAdmin && $isClient;
+        return $actor->isAdmin()
+            && $client->isClient()
+            && $client->email_verified_at === null;
     }
 }

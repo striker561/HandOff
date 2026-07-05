@@ -47,14 +47,12 @@ return [
                     [
                         'label' => 'Clients',
                         'icon' => 'users',
-                        'badge' => 'Soon',
-                        'disabled' => true,
+                        'route' => 'agency.clients.index',
                     ],
                     [
                         'label' => 'Projects',
                         'icon' => 'folder',
-                        'badge' => 'Soon',
-                        'disabled' => true,
+                        'route' => 'agency.projects.index',
                     ],
                 ],
             ],

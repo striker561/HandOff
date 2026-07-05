@@ -3,17 +3,26 @@
 namespace App\Models;
 
 use App\Enums\Milestone\MilestoneStatus;
+use App\Models\Concerns\BelongsToProject;
 use Database\Factories\MilestoneFactory;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Carbon;
 
 /**
+ * @property MilestoneStatus $status
+ * @property Carbon|null $due_date
  * @property-read Project|null $project
+ *
+ * @method static \Illuminate\Database\Eloquent\Builder<static> forProject(string $projectUniqueId)
  */
 class Milestone extends BaseModel
 {
+    use BelongsToProject;
+
     /** @use HasFactory<MilestoneFactory> */
     protected $fillable = [
         'project_unique_id',
@@ -67,5 +76,17 @@ class Milestone extends BaseModel
     public function activities(): MorphMany
     {
         return $this->morphMany(ActivityLog::class, 'subject', 'subject_type', 'subject_id', 'unique_id');
+    }
+
+    /**
+     * @return EloquentCollection<int, self>
+     */
+    public static function pipelineForProject(string $projectUniqueId): EloquentCollection
+    {
+        return Milestone::query()
+            ->forProject($projectUniqueId)
+            ->withCount('deliverables')
+            ->orderBy('order')
+            ->get();
     }
 }

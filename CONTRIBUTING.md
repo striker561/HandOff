@@ -2,7 +2,7 @@
 
 ## Architecture Overview
 
-HandOff uses a service-based architecture where **all business logic lives in services**, not controllers. Controllers are thin wrappers that validate input and call service methods.
+HandOff uses a service-based architecture where **all business logic lives in services**. The UI is **Livewire-first**: components validate input, authorize actions, and call service methods.
 
 ### Core Principles
 
@@ -24,9 +24,9 @@ Every user-triggered action dispatches a domain event that automatically:
 public function createClient(array $data, User $performedBy): User
 {
     $client = $this->create($data);
-    
+
     ClientEvent::dispatch($client, ClientAction::CREATED, $performedBy, []);
-    
+
     return $client;
 }
 
@@ -34,30 +34,64 @@ public function createClient(array $data, User $performedBy): User
 public function createClient(array $data, ?User $performedBy = null): User
 {
     $client = $this->create($data);
-    
+
     if ($performedBy) {  // This conditional is NOT allowed
         ClientEvent::dispatch($client, ClientAction::CREATED, $performedBy, []);
     }
-    
+
     return $client;
 }
 ```
 
-**Why:** If actor is optional, events/logs/notifications can be silently skipped. All routes use `auth:sanctum`, so `$request->user()` is always available in controllers.
+**Why:** If actor is optional, events/logs/notifications can be silently skipped. Authenticated Livewire actions always have `Auth::user()` available.
 
-**Controllers must pass the authenticated user:**
+**Livewire components must pass the authenticated user:**
 
 ```php
-public function store(StoreClientRequest $request): JsonResponse
+public function create(): void
 {
-    $client = $this->clients->createClient(
-        $request->validated(),
-        $request->user()  // Always pass authenticated user
-    );
-    
-    return APIResponse::created('Client created', new UserResource($client));
+    $this->authorize('create', User::class);
+
+    $validated = $this->validate([
+        'name' => ['required', 'string', 'min:2', 'max:120'],
+        'email' => ['required', 'email', 'max:190', 'unique:users,email'],
+    ]);
+
+    $this->clientService->createClient($validated, Auth::user());
+
+    $this->notifySuccess(__('Client invited.'));
+    $this->dispatch('client-created');
 }
 ```
+
+**Business rule failures in services** use `ValidationException::withMessages()` so Livewire renders field errors automatically:
+
+```php
+// ClientService
+private function fieldError(string $field, string $message): never
+{
+    throw ValidationException::withMessages([
+        $field => $message,
+    ]);
+}
+```
+
+No separate API response layer — services throw, Livewire displays.
+
+### Project hub pages (detail routes)
+
+Index pages (`clients`, `projects`) use `Route::view`. Project **detail sections** use a thin controller behind middleware:
+
+```text
+agency project hub routes
+  → ensureAdmin (role)
+  → ensureProjectAccess (ProjectService + ProjectPolicy::view → Project on request)
+  → ProjectHubController (view only)
+```
+
+- [`EnsureProjectAccess`](app/Http/Middleware/EnsureProjectAccess.php) resolves `{projectUniqueId}`, 404 if missing, `Gate::authorize('view', $project)`, sets request attribute `project`.
+- [`ProjectHubController`](app/Http/Controllers/Agency/Projects/ProjectHubController.php) reads the authorized project from the request and returns Blade.
+- Shared shell: `x-agency.project-hub.shell` (chrome only). Section pages mount their own modals via `<x-slot:modals>`. Livewire components receive `projectUniqueId` only; policy on mutations stays in Livewire actions.
 
 ## Service Pattern Overview
 
@@ -112,7 +146,7 @@ protected function sortableColumns(): array
 
 - `?search=keyword` - searches across all searchableColumns
 - `?status=active&type=client` - filters by exact matches
-- `?sort_by=created_at&sort_direction=desc` - sorts results
+- `?sort=created_at&direction=desc` - sorts results
 
 ### 3. Use Scoped Query Methods
 
@@ -122,15 +156,15 @@ protected function sortableColumns(): array
 public function getAll(array $filters = []): LengthAwarePaginator
 {
     $query = $this->model->query();
-    
+
     if (isset($filters['project_id'])) {
         $query->where('project_id', $filters['project_id']);
     }
-    
+
     if (isset($filters['status'])) {
         $query->where('status', $filters['status']);
     }
-    
+
     return $query->paginate($filters['per_page'] ?? 15);
 }
 ```
@@ -158,7 +192,7 @@ public function getMilestonesForProject(string $projectId, array $filters = []):
 
 - **Search**: `?search=keyword` - ILIKE across all searchableColumns
 - **Filters**: `?status=active&type=client` - exact matches on filterableColumns
-- **Sorting**: `?sort_by=name&sort_direction=asc`
+- **Sorting**: `?sort=name&direction=asc`
 - **Date ranges**: `?created_from=2026-01-01&created_to=2026-01-31`
 
 You don't write this logic - just define the columns.
@@ -196,19 +230,26 @@ public function createClient(array $data, User $performedBy): User
         'password' => Hash::make(Str::random(12)),
         'role' => AccountRole::CLIENT,
     ]);
-    
+
     ClientEvent::dispatch($client, ClientAction::CREATED, $performedBy, []);
-    
+
     return $client;
 }
 
 public function getClients(array $filters = []): LengthAwarePaginator
 {
-    $query = User::query()->where('role', AccountRole::CLIENT);
+    $query = User::query()->clients();
     $query = $this->applyFilters($query, $filters);
     return $this->paginateQuery($query);
 }
+
+public function findClient(string $uniqueId): ?User
+{
+    return User::query()->clients()->where('unique_id', $uniqueId)->first();
+}
 ```
+
+Reference Livewire UI: `app/Livewire/Agency/Clients/` (`ClientsList`, `SaveClient`, `ViewClient`).
 
 ### MilestoneService (Scoped Queries)
 
@@ -223,13 +264,13 @@ public function getMilestonesForProject(string $projectId, array $filters = []):
 public function updateStatus(Milestone $milestone, MilestoneStatus $status, User $performedBy): Milestone
 {
     $milestone->update(['status' => $status]);
-    
-    $action = $status === MilestoneStatus::COMPLETED 
-        ? MilestoneAction::COMPLETED 
+
+    $action = $status === MilestoneStatus::COMPLETED
+        ? MilestoneAction::COMPLETED
         : MilestoneAction::STATUS_CHANGED;
-    
+
     MilestoneEvent::dispatch($milestone, $action, $performedBy, []);
-    
+
     return $milestone->fresh();
 }
 ```
@@ -241,16 +282,16 @@ public function uploadFile(Deliverable $deliverable, UploadedFile $file, User $u
 {
     return DB::transaction(function () use ($deliverable, $file, $uploadedBy) {
         $path = $this->storage->putFileAs("deliverables/{$deliverable->project_unique_id}", $file, $filename);
-        
+
         $deliverableFile = DeliverableFile::create([...]);
-        
+
         DeliverableEvent::dispatch(
-            $deliverable, 
-            DeliverableAction::FILE_UPLOADED, 
+            $deliverable,
+            DeliverableAction::FILE_UPLOADED,
             $uploadedBy,
             ['file_unique_id' => $deliverableFile->unique_id]
         );
-        
+
         return $deliverableFile;
     });
 }
@@ -271,7 +312,7 @@ class DeliverableService extends BaseCRUDService
     {
         $this->storage = new StorageService('filesystems.deliverables_disk');
     }
-    
+
     public function uploadFile(Deliverable $deliverable, UploadedFile $file, User $uploadedBy): DeliverableFile
     {
         $path = $this->storage->putFileAs("deliverables/{$deliverable->project_unique_id}", $file, $filename);
@@ -309,7 +350,7 @@ public function uploadFile(Deliverable $deliverable, UploadedFile $file, User $u
         $path = $this->storage->putFileAs(...);
         $deliverableFile = DeliverableFile::create([...]);
         $deliverable->update(['version' => $nextVersion]);
-        
+
         return $deliverableFile;
     });
 }
@@ -346,11 +387,11 @@ public function getProjects(array $filters = []): LengthAwarePaginator
 public function createProject(array $data, ?User $performedBy = null): Project
 {
     $project = $this->create($data);
-    
+
     if ($performedBy) {
         ProjectEvent::dispatch($project, ProjectAction::CREATED, $performedBy, []);
     }
-    
+
     return $project;
 }
 ```
@@ -360,9 +401,9 @@ public function createProject(array $data, ?User $performedBy = null): Project
 public function createProject(array $data, User $performedBy): Project
 {
     $project = $this->create($data);
-    
+
     ProjectEvent::dispatch($project, ProjectAction::CREATED, $performedBy, []);
-    
+
     return $project;
 }
 ```
@@ -398,13 +439,14 @@ public function createProject(array $data): Project
 ```
 
 ```php
-// Good - validation in Form Request, service stays clean
-class CreateProjectRequest extends FormRequest
+// Good - input validation in Livewire, business rules in service
+public function create(): void
 {
-    public function rules(): array
-    {
-        return ['name' => 'required|string|max:255'];
-    }
+    $validated = $this->validate([
+        'name' => ['required', 'string', 'max:255'],
+    ]);
+
+    $this->projectService->createProject($validated, Auth::user());
 }
 
 public function createProject(array $data, User $performedBy): Project
@@ -417,7 +459,8 @@ public function createProject(array $data, User $performedBy): Project
 
 When in doubt, read the code:
 
-- **`ClientService`** - cleanest implementation with events
+- **`ClientService`** - cleanest implementation with events and `findClient()`
+- **`app/Livewire/Agency/Clients/`** - Livewire list, create modal, view flyout pattern
 - **`MilestoneService`** - scoped queries and status updates
 - **`DeliverableService`** - file operations + transactions
 - **`BaseCRUDService`** - filtering and pagination patterns

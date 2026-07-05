@@ -4,18 +4,28 @@ namespace App\Models;
 
 use App\Enums\Deliverable\DeliverableStatus;
 use App\Enums\Deliverable\DeliverableType;
+use App\Models\Concerns\BelongsToProject;
 use Database\Factories\DeliverableFactory;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Carbon;
 
 /**
+ * @property DeliverableType $type
+ * @property DeliverableStatus $status
+ * @property Carbon|null $due_date
  * @property-read Project|null $project
  * @property-read Milestone|null $milestone
+ *
+ * @method static \Illuminate\Database\Eloquent\Builder<static> forProject(string $projectUniqueId)
  */
 class Deliverable extends BaseModel
 {
+    use BelongsToProject;
+
     /** @use HasFactory<DeliverableFactory> */
     protected $fillable = [
         'project_unique_id',
@@ -88,5 +98,35 @@ class Deliverable extends BaseModel
     public function activities(): MorphMany
     {
         return $this->morphMany(ActivityLog::class, 'subject', 'subject_type', 'subject_id', 'unique_id');
+    }
+
+    /**
+     * @return object{total: int, approved: int}
+     */
+    public static function statusCountsForProject(string $projectUniqueId): object
+    {
+        $stats = static::query()
+            ->forProject($projectUniqueId)
+            ->selectRaw('COUNT(*) as total')
+            ->selectRaw('SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as approved', [DeliverableStatus::APPROVED->value])
+            ->first();
+
+        return (object) [
+            'total' => (int) ($stats->total ?? 0),
+            'approved' => (int) ($stats->approved ?? 0),
+        ];
+    }
+
+    /**
+     * @return EloquentCollection<int, self>
+     */
+    public static function recentForProject(string $projectUniqueId, int $limit = 5): EloquentCollection
+    {
+        return Deliverable::query()
+            ->forProject($projectUniqueId)
+            ->with('milestone:id,unique_id,name')
+            ->latest('updated_at')
+            ->limit($limit)
+            ->get();
     }
 }

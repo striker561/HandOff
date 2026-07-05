@@ -263,11 +263,16 @@
         @apply relative flex flex-col justify-center p-8 sm:p-10;
     }
 
+    .handoff-clip-form--compact {
+        @apply p-4 sm:p-5;
+    }
+
     .handoff-app {
         @apply bg-brand-950;
     }
 
-    .handoff-main {
+    .handoff-main[data-flux-main] {
+        @apply !p-4 md:!p-5 lg:!p-6;
         background-color: var(--color-canvas);
         background-image:
             radial-gradient(
@@ -503,15 +508,31 @@
     }
 
     .handoff-page {
-        @apply mx-auto flex w-full max-w-3xl flex-col gap-8 py-2;
+        @apply mx-auto flex w-full max-w-3xl flex-col gap-5 py-1;
     }
 
     .handoff-page--wide {
         @apply max-w-5xl;
     }
 
+    .handoff-page--hub {
+        @apply gap-4;
+    }
+
+    .handoff-page--hub .settings-layout__tabs {
+        @apply justify-start gap-1.5;
+    }
+
+    .handoff-page--hub .settings-layout__tab {
+        @apply px-3 py-1.5 text-xs sm:text-sm;
+    }
+
+    .handoff-page--hub .handoff-data-table {
+        @apply my-0;
+    }
+
     .handoff-page__header {
-        @apply flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between;
+        @apply flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between;
     }
 
     .handoff-page__header--stacked {
@@ -547,7 +568,30 @@
     }
 
     .handoff-panel__body {
-        @apply p-6 sm:p-8;
+        @apply p-4 sm:p-5;
+    }
+
+    .handoff-data-table ui-table-scroll-area {
+        @apply px-4 sm:px-6;
+    }
+
+    .handoff-data-table [data-flux-table] {
+        @apply w-full;
+    }
+
+    .handoff-data-table [data-flux-pagination],
+    .handoff-data-table flux-pagination {
+        @apply border-t border-brand-200/50 px-4 py-3 dark:border-brand-800/50 sm:px-6;
+    }
+
+    @media (max-width: 639px) {
+        .handoff-data-table [data-flux-table] {
+            white-space: normal;
+        }
+
+        .handoff-data-table [data-flux-cell]:first-child {
+            @apply w-full;
+        }
     }
 
     .handoff-panel__body--centered {
@@ -577,6 +621,103 @@
 
     .handoff-dashboard-callout {
         @apply border-brand-200/60 bg-brand-50/80 dark:border-brand-800/50 dark:bg-brand-950/60;
+    }
+
+    .project-overview {
+        @apply flex flex-col gap-4;
+    }
+
+    .project-overview__eyebrow {
+        @apply text-xs font-semibold uppercase tracking-wider text-brand-600/80 dark:text-brand-300/80;
+    }
+
+    .project-overview__progress-value {
+        @apply text-4xl font-bold tracking-tight text-brand-900 dark:text-brand-50 sm:text-5xl;
+    }
+
+    .project-overview__progress-bar {
+        @apply max-w-xl;
+    }
+
+    .project-overview__meta-grid {
+        @apply grid gap-4 sm:grid-cols-3 lg:min-w-72 lg:grid-cols-1 xl:min-w-80 xl:grid-cols-3;
+    }
+
+    .project-overview__meta-label {
+        @apply text-xs font-semibold uppercase tracking-wide text-brand-600/70 dark:text-brand-300/70;
+    }
+
+    .project-overview__meta-value {
+        @apply mt-1 text-sm font-medium text-brand-900 dark:text-brand-50;
+    }
+
+    .project-overview__stat-link {
+        @apply block rounded-2xl transition duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand-900/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:hover:shadow-black/30;
+    }
+
+    .project-overview__stat-hint {
+        @apply mt-0.5 text-xs text-brand-600/70 dark:text-brand-300/70;
+    }
+
+    .project-overview__grid {
+        @apply grid gap-4 lg:grid-cols-5;
+    }
+
+    .project-overview__pipeline {
+        @apply lg:col-span-3;
+    }
+
+    .project-overview__sidebar {
+        @apply flex flex-col gap-4 lg:col-span-2;
+    }
+
+    .project-overview__section-header,
+    .project-hub__section-header {
+        @apply flex items-center justify-between gap-3 border-b border-brand-200/50 px-4 py-3 dark:border-brand-800/50 sm:px-5;
+    }
+
+    .project-overview__pipeline-item {
+        @apply flex items-start gap-3 border-b border-brand-100/80 px-4 py-3 last:border-0 dark:border-brand-900/50 sm:px-5;
+    }
+
+    .project-overview__pipeline-item--active {
+        @apply bg-brand-50/50 dark:bg-brand-900/20;
+    }
+
+    .project-overview__pipeline-step {
+        @apply flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold;
+    }
+
+    .project-overview__pipeline-step--completed {
+        @apply bg-lime-100 text-lime-800 dark:bg-lime-900/50 dark:text-lime-200;
+    }
+
+    .project-overview__pipeline-step--in-progress {
+        @apply bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200;
+    }
+
+    .project-overview__pipeline-step--pending {
+        @apply bg-brand-100 text-brand-600 dark:bg-brand-900/50 dark:text-brand-300;
+    }
+
+    .project-overview__mini-progress {
+        @apply max-w-xs;
+    }
+
+    .project-overview__list-item {
+        @apply flex items-start justify-between gap-3 border-b border-brand-100/80 px-4 py-3 last:border-0 dark:border-brand-900/50 sm:px-5;
+    }
+
+    .project-overview__meeting {
+        @apply px-4 py-3 sm:px-5;
+    }
+
+    .project-overview__empty {
+        @apply px-4 py-8 text-center sm:px-5;
+    }
+
+    .project-overview__empty--compact {
+        @apply py-6;
     }
 
     /* settings-layout__* — BEM namespace for settings tabs/panel (isolated from handoff-page) */

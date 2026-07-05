@@ -5,9 +5,13 @@ namespace App\Services;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 abstract class BaseCRUDService
 {
+    /**
+     * @return class-string<Model>
+     */
     abstract protected function getModel(): string;
 
     public function getAll(array $filters = []): LengthAwarePaginator
@@ -40,8 +44,11 @@ abstract class BaseCRUDService
         // Apply search
         if (! empty($filters['search']) && ! empty($this->searchableColumns())) {
             $query->where(function ($q) use ($filters) {
+                // ILIKE on PostgreSQL (case-insensitive), LIKE on MySQL/SQLite (case-insensitive by default)
+                $operator = DB::getDriverName() === 'pgsql' ? 'ILIKE' : 'LIKE';
+
                 foreach ($this->searchableColumns() as $column) {
-                    $q->orWhere($column, 'LIKE', "%{$filters['search']}%");
+                    $q->orWhere($column, $operator, "%{$filters['search']}%");
                 }
             });
         }

@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
+use App\Data\Meetings\SaveMeetingData;
 use App\Enums\Meeting\MeetingAction;
-use App\Enums\Meeting\MeetingLocation;
 use App\Enums\Meeting\MeetingStatus;
 use App\Events\Meeting\MeetingEvent;
 use App\Models\Meeting;
@@ -33,21 +33,12 @@ class MeetingService extends BaseCRUDService
         return ['title', 'status', 'scheduled_at', 'created_at', 'updated_at'];
     }
 
-    public function scheduleMeeting(array $data, User $scheduler): Meeting
+    public function scheduleMeeting(SaveMeetingData $data, User $scheduler): Meeting
     {
         /** @var Meeting $meeting */
-        $meeting = Meeting::create([
-            'project_unique_id' => $data['project_unique_id'],
-            'deliverable_unique_id' => $data['deliverable_unique_id'] ?? null,
-            'scheduled_by_unique_id' => $scheduler->unique_id,
-            'title' => $data['title'],
-            'description' => $data['description'] ?? null,
-            'scheduled_at' => $data['scheduled_at'],
-            'duration_minutes' => $data['duration_minutes'] ?? 60,
-            'location' => $data['location'] ?? MeetingLocation::MEET,
+        $meeting = Meeting::create(array_merge($data->toCreateAttributes($scheduler->unique_id), [
             'status' => MeetingStatus::SCHEDULED,
-            'metadata' => $data['metadata'] ?? [],
-        ]);
+        ]));
 
         MeetingEvent::dispatch(
             $meeting,
@@ -57,6 +48,24 @@ class MeetingService extends BaseCRUDService
         );
 
         return $meeting;
+    }
+
+    public function updateMeeting(Meeting $meeting, SaveMeetingData $data, User $performedBy): Meeting
+    {
+        if ($meeting->status !== MeetingStatus::SCHEDULED) {
+            throw new \InvalidArgumentException('Only scheduled meetings can be edited.');
+        }
+
+        $meeting->update($data->toUpdateAttributes());
+
+        MeetingEvent::dispatch(
+            $meeting,
+            MeetingAction::UPDATED,
+            $performedBy,
+            []
+        );
+
+        return $meeting->fresh();
     }
 
     public function rescheduleMeeting(
@@ -131,7 +140,9 @@ class MeetingService extends BaseCRUDService
 
     public function getMeetingsForProject(string $projectUniqueId, array $filters = []): LengthAwarePaginator
     {
-        $query = Meeting::query()->where('project_unique_id', $projectUniqueId);
+        $query = Meeting::query()
+            ->where('project_unique_id', $projectUniqueId)
+            ->with('deliverable');
         $query = $this->applyFilters($query, $filters);
 
         return $this->paginateQuery($query, $filters);

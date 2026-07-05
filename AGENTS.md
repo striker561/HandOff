@@ -187,30 +187,34 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 # UI & View Conventions
 
-## Layouts
+> **Full UI architecture, component catalog, and conventions → [`ARCHITECTURE.md`](ARCHITECTURE.md).**
+> This section is a condensed reference for AI code generation. Humans should read ARCHITECTURE.md.
 
-- **Authenticated app:** `<x-layouts::app>` or Livewire `#[Layout('layouts.app')]`. Admin vs client chrome is resolved in [`resources/views/layouts/app.blade.php`](resources/views/layouts/app.blade.php).
-- **Sidebar nav:** add items in [`config/navigation.php`](config/navigation.php) — do not edit sidebar Blade for new routes.
-- **Guest/auth:** `<x-layouts::auth>` for Fortify pages under `resources/views/pages/auth/`.
-- **Clip-path surfaces:** reserve `handoff-clip-*` for auth, landing hero, and settings card — not scattered in the app shell.
+## Quick Reference for Code Generation
 
-## Components
+### Layouts
 
-- **Form primitives:** `x-ui.*` (`button`, `input`, `checkbox`, `divider`, `logo-mark`) — branded HandOff controls.
-- **App chrome:** `x-sidebar.*` for sidebar footer/header pieces.
-- **Shell/nav:** raw `flux:*` (sidebar, header, toast, modal). ponytail: don't rebuild what Flux already ships.
-- **Feature UI:** group under `components/{dashboard,marketing,settings}/` or `livewire/{domain}/` when routes exist.
+- Authenticated: `<x-layouts::app>` or `#[Layout('layouts.app')]`
+- Guest/auth: `<x-layouts::auth>` for Fortify pages under `resources/views/pages/auth/`
+- Sidebar nav: add items in `config/navigation.php` — do not edit sidebar Blade
 
-## Livewire style
+### Components
 
-- **Volt** (`livewire/settings/profile.blade.php`): simple CRUD pages with little state.
-- **Class-based** (`app/Livewire/Settings/`): modals, `#[Locked]`, Fortify actions, security flows.
-- Avoid anonymous `new class extends Component` in Blade unless the UI is truly throwaway.
+- Form primitives: `x-ui.button`, `x-ui.input`, `x-ui.checkbox`, `x-ui.modal-footer`, `x-ui.page-header`, `x-ui.data-table`, `x-ui.empty-state`
+- Modals: `flux:modal` + `x-ui.modal-footer` (NOT `x-slot name="footer"`)
+- Shell: `flux:sidebar`, `flux:header`, `flux:toast` — use raw Flux, don't rebuild
+- Feature UI: `components/{dashboard,marketing,settings}/` or `livewire/{domain}/`
 
-## CSS
+### Mutation Pipeline
 
-- Brand tokens live in `@theme` / `:root` in `resources/css/app.css`.
-- Clip corners: `--handoff-clip-path-md` and `--handoff-clip-path-sm` — change once, applies everywhere.
-- `settings-layout__*` uses a separate BEM namespace for settings tabs/panel.
+Livewire `Save{Domain}` → validate → `Save{Domain}Data::fromArray()` → `{Domain}Service::{create|update}*` → `{Domain}Event` → listeners
+
+### Critical Patterns
+
+- Hub Livewire receives `projectUniqueId` only — never `mount(Project $project)`
+- Admin Livewire under `app/Livewire/Agency/`; Blade tags use `agency.*` namespace
+- DTOs: `readonly` class, `fromArray()`, `toAttributes()`. Location: `app/Data/{Domain}/`
+- Authorization: `$this->authorize()` in `Save*::open()` and `Save*::save()`
+- CSS: brand tokens in `resources/css/app.css`; clip corners via `--handoff-clip-path-*`
 
 </laravel-boost-guidelines>
