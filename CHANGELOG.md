@@ -25,9 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Planned
 
-- Redesign for UX and UI consistency 
+- Redesign for UX and UI consistency
+- Multiple clients for one project
 - Client portal (client-facing views and routes)
 - File upload / approval workflows for deliverables
 - Email notifications
-- Two-factor authentication
-- Passkey support
+- Invoice and Receipt Future
+- Expenses and Break Down
