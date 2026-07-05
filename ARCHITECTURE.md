@@ -85,6 +85,37 @@ Route / Page Blade
 | **Service**    | Business rules, queries, mutations, domain events                     | `ProjectService`, `ClientService`, `MilestoneService`        |
 | **Events**     | Side effects decoupled from the caller                                | `ProjectEvent`, `ForgetProjectOverviewCache`                 |
 
+## Key Design Decisions
+
+These are choices that differ from "standard Laravel" and will surprise experienced devs if not documented upfront.
+
+### UUIDs as Primary Keys and Foreign Keys
+
+Every model uses `unique_id` (UUID v4) as its route key AND relationship foreign key. The auto-increment `id` column still exists on every table but is never exposed.
+
+**Why:**
+
+- Auto-increment IDs leak row counts via URLs (`/projects/42` reveals there are ≥42 projects).
+- UUIDs prevent enumeration attacks — an attacker cannot iterate over resource URLs.
+- Important for multi-tenant agency software where competitor intelligence is a concern.
+
+**ULIDs were considered** (shorter at 26 chars, time-sortable for better index performance) but UUID v4 won for ecosystem familiarity at this scale. Laravel supports both natively (`HasUlids` / `HasUuids`). See [`BaseModel`](app/Models/BaseModel.php) for the full rationale.
+
+**Key gotcha:** `Model::find($value)` will NOT find records by auto-increment `id`. Always use `where('unique_id', $value)` or rely on route model binding (which respects `getRouteKeyName()`).
+
+### Auto-Discovered Events (No EventServiceProvider)
+
+There is no `EventServiceProvider` or `$listen` array. Laravel 13 (and 11+) scans `app/Listeners/` and auto-wires events to listeners based on the type-hint in each listener's `handle()` method. This is idiomatic for Laravel ≥11.
+
+### Consolidated Event Listeners
+
+Instead of one listener per event type, two listeners handle all domains:
+
+- [`LogActivity`](app/Listeners/ActivityLog/LogActivity.php) — logs every domain event to the activity trail
+- [`NotifyOnDomainEvent`](app/Listeners/Notifications/NotifyOnDomainEvent.php) — routes notifications per domain/action
+
+This keeps the listener count low but uses a `match(true)` pattern that differs from typical Laravel projects. Domain-specific logic is in private methods on each listener.
+
 ## Mutation pattern (admin workspace)
 
 Every create/update flow follows the same pipeline (except **client invite** — create-only; clients edit their own profile):

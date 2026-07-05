@@ -146,7 +146,7 @@ protected function sortableColumns(): array
 
 - `?search=keyword` - searches across all searchableColumns
 - `?status=active&type=client` - filters by exact matches
-- `?sort_by=created_at&sort_direction=desc` - sorts results
+- `?sort=created_at&direction=desc` - sorts results
 
 ### 3. Use Scoped Query Methods
 
@@ -192,7 +192,7 @@ public function getMilestonesForProject(string $projectId, array $filters = []):
 
 - **Search**: `?search=keyword` - ILIKE across all searchableColumns
 - **Filters**: `?status=active&type=client` - exact matches on filterableColumns
-- **Sorting**: `?sort_by=name&sort_direction=asc`
+- **Sorting**: `?sort=name&direction=asc`
 - **Date ranges**: `?created_from=2026-01-01&created_to=2026-01-31`
 
 You don't write this logic - just define the columns.
