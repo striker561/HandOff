@@ -58,6 +58,12 @@ jobs:
         continue-on-error: false
 
       # ── PHPUnit (tests) ───────────────────────────────────────────────────
+      - name: Install Node.js dependencies
+        run: npm ci --omit=optional --no-audit --no-fund
+
+      - name: Build frontend assets
+        run: npm run build
+
       - name: Run database migrations
         run: php artisan migrate --force
 
