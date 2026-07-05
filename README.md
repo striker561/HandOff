@@ -2,6 +2,12 @@
   <img src="public/logo.png" alt="HandOff logo" width="120" />
 </p>
 
+<p align="center">
+  <a href="https://github.com/striker561/HandOff/actions/workflows/ci.yml"><img src="https://github.com/striker561/HandOff/actions/workflows/ci.yml/badge.svg" alt="CI status" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License" /></a>
+  <a href="https://php.net"><img src="https://img.shields.io/badge/php-8.2%2B-777bb3.svg" alt="PHP version" /></a>
+</p>
+
 # HandOff
 
 > A self-hosted client portal and project delivery management system — currently in active development.
@@ -51,6 +57,7 @@ composer setup
 
 # Configure your database in .env
 # (composer setup copies .env.example if .env doesn't exist)
+# See .env.example for all available options
 DB_CONNECTION=pgsql
 DB_DATABASE=handoff
 DB_USERNAME=your_username
