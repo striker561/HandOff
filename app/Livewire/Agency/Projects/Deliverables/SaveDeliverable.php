@@ -8,6 +8,7 @@ use App\Data\Deliverables\SaveDeliverableData;
 use App\Enums\Deliverable\DeliverableStatus;
 use App\Enums\Deliverable\DeliverableType;
 use App\Models\Deliverable;
+use App\Services\DeliverableFileService;
 use App\Services\DeliverableService;
 use App\Services\MilestoneService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -48,11 +49,14 @@ class SaveDeliverable extends Component
 
     private DeliverableService $deliverableService;
 
+    private DeliverableFileService $deliverableFileService;
+
     private MilestoneService $milestoneService;
 
-    public function boot(DeliverableService $deliverableService, MilestoneService $milestoneService): void
+    public function boot(DeliverableService $deliverableService, DeliverableFileService $deliverableFileService, MilestoneService $milestoneService): void
     {
         $this->deliverableService = $deliverableService;
+        $this->deliverableFileService = $deliverableFileService;
         $this->milestoneService = $milestoneService;
     }
 
@@ -163,7 +167,7 @@ class SaveDeliverable extends Component
             'due_date' => ['nullable', 'date'],
         ];
 
-        $currentType = $this->currentType;
+        $currentType = $this->currentType();
 
         if ($currentType?->isFileBased() && ! $this->isEditing()) {
             $rules['file'] = ['nullable', 'file', 'max:10240'];
@@ -212,7 +216,7 @@ class SaveDeliverable extends Component
             $deliverable = $this->deliverableService->createDeliverable($data, Auth::user());
 
             if ($this->file !== null) {
-                $this->deliverableService->uploadFile($deliverable, $this->file, Auth::user());
+                $this->deliverableFileService->uploadFile($deliverable, $this->file, Auth::user());
             }
 
             $this->notifySuccess(__('Deliverable created.'));

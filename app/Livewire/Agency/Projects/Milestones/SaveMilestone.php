@@ -117,7 +117,7 @@ class SaveMilestone extends Component
             'due_date' => ['nullable', 'date'],
         ];
 
-        if (! $this->isStatusLocked) {
+        if (! $this->isStatusLocked()) {
             $rules['status'] = [
                 'required',
                 'string',
@@ -132,7 +132,7 @@ class SaveMilestone extends Component
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
             'due_date' => $validated['due_date'] ?? null,
-            'status' => $this->isStatusLocked ? null : $validated['status'],
+            'status' => $this->isStatusLocked() ? null : $validated['status'],
         ]);
 
         if ($this->isEditing()) {
