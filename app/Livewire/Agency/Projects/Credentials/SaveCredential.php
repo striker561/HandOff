@@ -95,7 +95,7 @@ class SaveCredential extends Component
             return;
         }
 
-        if ($this->isEditing) {
+        if ($this->isEditing()) {
             $credential = $this->findCredential($this->uniqueId, $this->projectUniqueId);
 
             if ($credential === null) {
@@ -115,7 +115,7 @@ class SaveCredential extends Component
             return;
         }
 
-        $passwordRules = $this->isEditing
+        $passwordRules = $this->isEditing()
             ? ['nullable', 'string', 'min:1', 'max:1000']
             : ['required', 'string', 'min:1', 'max:1000'];
 
@@ -138,7 +138,7 @@ class SaveCredential extends Component
             'notes' => $validated['notes'] ?? null,
         ]);
 
-        if ($this->isEditing) {
+        if ($this->isEditing()) {
             $credential = $this->findCredential($this->uniqueId, $this->projectUniqueId);
             $this->credentialService->updateCredential($credential, $data, Auth::user());
             $this->notifySuccess(__('Credential updated.'));

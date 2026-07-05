@@ -112,7 +112,7 @@ class SaveProject extends Component
             $this->client_unique_id = $project->client_unique_id;
             $this->name = $project->name;
             $this->description = $project->description ?? '';
-            $this->budget = $project->budget;
+            $this->budget = $project->budget !== null ? (string) $project->budget : null;
             $this->currency = $project->currency->value;
             $this->start_date = $project->start_date?->format('Y-m-d');
             $this->due_date = $project->due_date?->format('Y-m-d');
@@ -126,7 +126,7 @@ class SaveProject extends Component
 
     public function selectClient(string $uniqueId): void
     {
-        $client = $this->clients->firstWhere('unique_id', $uniqueId)
+        $client = $this->clients()->firstWhere('unique_id', $uniqueId)
             ?? $this->clientService->findClient($uniqueId);
 
         if ($client === null) {
@@ -151,7 +151,7 @@ class SaveProject extends Component
 
     public function save(): void
     {
-        if ($this->isEditing) {
+        if ($this->isEditing()) {
             $project = $this->findProject($this->uniqueId);
 
             if ($project === null) {
@@ -184,7 +184,7 @@ class SaveProject extends Component
 
         $data = SaveProjectData::fromArray($validated);
 
-        if ($this->isEditing) {
+        if ($this->isEditing()) {
             $project = $this->findProject($this->uniqueId);
             $this->projectService->updateProject($project, $data, Auth::user());
             $this->notifySuccess(__('Project updated.'));

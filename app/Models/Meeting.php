@@ -12,9 +12,13 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 /**
+ * @property MeetingLocation $location
+ * @property MeetingStatus $status
+ * @property Carbon|null $scheduled_at
  * @property-read Project|null $project
  * @property-read Deliverable|null $deliverable
  *

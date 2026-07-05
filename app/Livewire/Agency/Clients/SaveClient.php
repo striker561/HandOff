@@ -39,7 +39,7 @@ class SaveClient extends Component
     {
         $this->authorize('create', User::class);
 
-        if (!$this->attemptRateLimitedAction('save-client', maxAttempts: 3, decaySeconds: 60)) {
+        if (! $this->attemptRateLimitedAction('save-client', maxAttempts: 3, decaySeconds: 60)) {
             $this->notifyWarning(__('Too many attempts. Please try again in a minute.'), duration: 8000);
 
             return;

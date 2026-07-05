@@ -123,7 +123,7 @@ class SaveDeliverable extends Component
             return;
         }
 
-        if ($this->isEditing) {
+        if ($this->isEditing()) {
             $deliverable = $this->findDeliverable($this->uniqueId, $this->projectUniqueId);
 
             if ($deliverable === null) {
@@ -151,7 +151,7 @@ class SaveDeliverable extends Component
             'due_date' => ['nullable', 'date'],
         ];
 
-        if (! $this->isEditing) {
+        if (! $this->isEditing()) {
             $rules['file'] = ['nullable', 'file', 'max:10240'];
         }
 
@@ -167,7 +167,7 @@ class SaveDeliverable extends Component
             'due_date' => $validated['due_date'] ?? null,
         ]);
 
-        if ($this->isEditing) {
+        if ($this->isEditing()) {
             $deliverable = $this->findDeliverable($this->uniqueId, $this->projectUniqueId);
             $this->deliverableService->updateDeliverable($deliverable, $data, Auth::user());
             $this->notifySuccess(__('Deliverable updated.'));

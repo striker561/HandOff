@@ -16,7 +16,7 @@ use App\Models\Milestone;
 use App\Models\Project;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\ValidationException;
 
@@ -101,13 +101,17 @@ class ProjectService extends BaseCRUDService
 
     public function calculateProgress(Project $project): float
     {
-        return $this->calculateProgressFromMilestones($project->milestones);
+        $milestones = Milestone::query()
+            ->where('project_unique_id', $project->unique_id)
+            ->get();
+
+        return $this->calculateProgressFromMilestones($milestones);
     }
 
     /**
-     * @param  Collection<int, Milestone>  $milestones
+     * @param  EloquentCollection<int, Milestone>  $milestones
      */
-    public function calculateProgressFromMilestones(Collection $milestones): float
+    public function calculateProgressFromMilestones(EloquentCollection $milestones): float
     {
         if ($milestones->isEmpty()) {
             return 0.0;

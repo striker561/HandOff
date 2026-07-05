@@ -6,13 +6,17 @@ use App\Enums\Deliverable\DeliverableStatus;
 use App\Enums\Deliverable\DeliverableType;
 use App\Models\Concerns\BelongsToProject;
 use Database\Factories\DeliverableFactory;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Illuminate\Support\Collection;
+use Illuminate\Support\Carbon;
 
 /**
+ * @property DeliverableType $type
+ * @property DeliverableStatus $status
+ * @property Carbon|null $due_date
  * @property-read Project|null $project
  * @property-read Milestone|null $milestone
  *
@@ -114,11 +118,11 @@ class Deliverable extends BaseModel
     }
 
     /**
-     * @return Collection<int, self>
+     * @return EloquentCollection<int, self>
      */
-    public static function recentForProject(string $projectUniqueId, int $limit = 5): Collection
+    public static function recentForProject(string $projectUniqueId, int $limit = 5): EloquentCollection
     {
-        return static::query()
+        return Deliverable::query()
             ->forProject($projectUniqueId)
             ->with('milestone:id,unique_id,name')
             ->latest('updated_at')

@@ -77,7 +77,7 @@ class SaveMilestone extends Component
             return;
         }
 
-        if ($this->isEditing) {
+        if ($this->isEditing()) {
             $milestone = $this->findMilestone($this->uniqueId, $this->projectUniqueId);
 
             if ($milestone === null) {
@@ -110,7 +110,7 @@ class SaveMilestone extends Component
             'due_date' => $validated['due_date'] ?? null,
         ]);
 
-        if ($this->isEditing) {
+        if ($this->isEditing()) {
             $milestone = $this->findMilestone($this->uniqueId, $this->projectUniqueId);
             $this->milestoneService->updateMilestone($milestone, $data, Auth::user());
             $this->notifySuccess(__('Milestone updated.'));

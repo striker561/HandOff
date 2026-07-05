@@ -129,7 +129,7 @@ class SaveMeeting extends Component
             return;
         }
 
-        if ($this->isEditing) {
+        if ($this->isEditing()) {
             $meeting = $this->findMeeting($this->uniqueId, $this->projectUniqueId);
 
             if ($meeting === null) {
@@ -151,7 +151,7 @@ class SaveMeeting extends Component
 
         $scheduledAtRules = ['required', 'date'];
 
-        if (! $this->isEditing) {
+        if (! $this->isEditing()) {
             $scheduledAtRules[] = 'after:now';
         } elseif ($this->scheduled_at !== $this->originalScheduledAt) {
             $scheduledAtRules[] = 'after:now';
@@ -176,7 +176,7 @@ class SaveMeeting extends Component
             'location' => $validated['location'],
         ]);
 
-        if ($this->isEditing) {
+        if ($this->isEditing()) {
             $meeting = $this->findMeeting($this->uniqueId, $this->projectUniqueId);
             $this->meetingService->updateMeeting($meeting, $data, Auth::user());
             $this->notifySuccess(__('Meeting updated.'));

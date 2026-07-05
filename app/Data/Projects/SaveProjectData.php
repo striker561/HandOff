@@ -27,9 +27,7 @@ readonly class SaveProjectData
             clientUniqueId: $data['client_unique_id'],
             name: $data['name'],
             description: $data['description'] ?? null,
-            budget: isset($data['budget']) && $data['budget'] !== '' && $data['budget'] !== null
-            ? (string) $data['budget']
-            : null,
+            budget: filled($data['budget'] ?? null) ? (string) $data['budget'] : null,
             currency: ProjectCurrency::from($data['currency']),
             startDate: $data['start_date'] ?? null,
             dueDate: $data['due_date'] ?? null,

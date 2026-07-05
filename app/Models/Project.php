@@ -10,8 +10,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Carbon;
 
 /**
+ * @property ProjectCurrency $currency
+ * @property ProjectStatus $status
+ * @property Carbon|null $start_date
+ * @property Carbon|null $due_date
+ * @property string|null $budget
  * @property-read User|null $client
  * @property-read string|null $formatted_budget
  * @property-read string|null $formatted_due_date
@@ -113,7 +119,11 @@ class Project extends BaseModel
 
     protected function clientDisplayName(): Attribute
     {
-        return Attribute::get(fn (): string => $this->client?->name ?? __('Unknown'));
+        return Attribute::get(function (): string {
+            $client = $this->client;
+
+            return $client !== null ? $client->name : __('Unknown');
+        });
     }
 
     protected function listSummary(): Attribute

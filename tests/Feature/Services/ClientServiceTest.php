@@ -87,6 +87,6 @@ it('resends invitation for unverified clients', function () {
 it('rejects resend for verified clients', function () {
     $client = User::factory()->create(['role' => AccountRole::CLIENT]);
 
-    expect(fn() => $this->service->resendInvitation($client, $this->admin))
+    expect(fn () => $this->service->resendInvitation($client, $this->admin))
         ->toThrow(ValidationException::class);
 });

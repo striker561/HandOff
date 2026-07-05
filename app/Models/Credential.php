@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 /**
+ * @property CredentialType $type
  * @property-read Project|null $project
  *
  * @method static \Illuminate\Database\Eloquent\Builder<static> forProject(string $projectUniqueId)

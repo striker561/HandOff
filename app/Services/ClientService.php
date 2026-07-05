@@ -7,8 +7,9 @@ use App\Enums\User\AccountRole;
 use App\Enums\User\ClientAction;
 use App\Events\User\ClientEvent;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
@@ -48,26 +49,28 @@ class ClientService extends BaseCRUDService
     }
 
     /**
-     * @return Collection<int, User>
+     * @return EloquentCollection<int, User>
      */
-    public function searchClientsForSelect(string $search, int $limit = 10): Collection
+    public function searchClientsForSelect(string $search, int $limit = 10): EloquentCollection
     {
         $search = trim($search);
 
         if ($search === '') {
-            return collect();
+            return new EloquentCollection;
         }
 
+        /** @var Builder<User> $query */
         $query = User::query()->clients();
-        $query = $this->applyFilters($query, [
+        $this->applyFilters($query, [
             'search' => $search,
             'sort' => 'name',
             'direction' => 'asc',
         ]);
 
         return $query
+            ->select(['unique_id', 'name', 'email'])
             ->limit(min($limit, 25))
-            ->get(['unique_id', 'name', 'email']);
+            ->get();
     }
 
     public function createClient(SaveClientData $data, User $performedBy): User
