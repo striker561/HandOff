@@ -100,3 +100,44 @@ it('allows admins to upload files only for agency editable deliverables', functi
     [DeliverableStatus::IN_REVIEW, false],
     [DeliverableStatus::APPROVED, false],
 ]);
+
+it('allows admins and project clients to view deliverables', function () {
+    $deliverable = deliverableForProject($this->project, DeliverableStatus::DRAFT);
+
+    expect(Gate::forUser($this->admin)->allows('view', $deliverable))->toBeTrue()
+        ->and(Gate::forUser($this->client)->allows('view', $deliverable))->toBeTrue();
+});
+
+it('denies clients from viewing deliverables outside their project', function () {
+    $deliverable = deliverableForProject($this->project, DeliverableStatus::DRAFT);
+
+    expect(Gate::forUser($this->otherClient)->allows('view', $deliverable))->toBeFalse();
+});
+
+it('allows admins to create deliverables on a project', function () {
+    expect(Gate::forUser($this->admin)->allows('create', [Deliverable::class, $this->project]))->toBeTrue();
+});
+
+it('denies clients from creating deliverables', function () {
+    expect(Gate::forUser($this->client)->allows('create', [Deliverable::class, $this->project]))->toBeFalse();
+});
+
+it('denies deleting deliverables for everyone', function () {
+    $deliverable = deliverableForProject($this->project, DeliverableStatus::DRAFT);
+
+    expect(Gate::forUser($this->admin)->allows('delete', $deliverable))->toBeFalse()
+        ->and(Gate::forUser($this->client)->allows('delete', $deliverable))->toBeFalse();
+});
+
+it('denies manual status changes for everyone including admins', function () {
+    $deliverable = deliverableForProject($this->project, DeliverableStatus::DRAFT);
+
+    expect(Gate::forUser($this->admin)->allows('changeStatus', $deliverable))->toBeFalse()
+        ->and(Gate::forUser($this->client)->allows('changeStatus', $deliverable))->toBeFalse();
+});
+
+it('denies clients from submitting deliverables for review', function () {
+    $deliverable = deliverableForProject($this->project, DeliverableStatus::DRAFT);
+
+    expect(Gate::forUser($this->client)->allows('submitForReview', $deliverable))->toBeFalse();
+});
