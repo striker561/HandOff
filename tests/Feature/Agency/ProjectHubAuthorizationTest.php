@@ -140,27 +140,27 @@ describe('credentials', function () {
     it('allows admins to reveal passwords via view modal', function () {
         $credential = Credential::factory()->create([
             'project_unique_id' => $this->project->unique_id,
-            'password' => Crypt::encryptString('vault-secret'),
+            'password' => 'vault-secret',
         ]);
 
         Livewire::actingAs($this->admin)
             ->test(ViewCredential::class)
             ->call('open', uniqueId: $credential->unique_id, projectUniqueId: $this->project->unique_id)
-            ->call('revealPassword')
-            ->assertSet('passwordRevealed', true)
+            ->call('revealDetails')
+            ->assertSet('detailsRevealed', true)
             ->assertSet('revealedPassword', 'vault-secret');
     });
 
     it('forbids clients from revealing passwords via view modal', function () {
         $credential = Credential::factory()->create([
             'project_unique_id' => $this->project->unique_id,
-            'password' => Crypt::encryptString('vault-secret'),
+            'password' => 'vault-secret',
         ]);
 
         Livewire::actingAs($this->client)
             ->test(ViewCredential::class)
             ->call('open', uniqueId: $credential->unique_id, projectUniqueId: $this->project->unique_id)
-            ->call('revealPassword')
+            ->call('revealDetails')
             ->assertForbidden();
     });
 });

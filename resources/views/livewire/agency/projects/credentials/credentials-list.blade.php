@@ -1,7 +1,7 @@
 <div>
     <x-agency.project-hub.section :heading="__('Credentials')" flush>
         <x-slot:description>
-            {{ __('Shared logins and access your client needs after handoff.') }}
+            {{ __('Shared logins and access your client needs after handoff. Sensitive fields stay encrypted until revealed.') }}
         </x-slot:description>
         <x-slot:actions>
             <x-ui.button wire:click="openSaveCredential" icon="plus" class="sm:!w-auto">
@@ -22,8 +22,7 @@
                 <flux:table.columns>
                     <flux:table.column>{{ __('Name') }}</flux:table.column>
                     <flux:table.column class="hidden sm:table-cell">{{ __('Type') }}</flux:table.column>
-                    <flux:table.column class="hidden md:table-cell">{{ __('Username') }}</flux:table.column>
-                    <flux:table.column class="hidden lg:table-cell">{{ __('URL') }}</flux:table.column>
+                    <flux:table.column class="hidden md:table-cell">{{ __('Last accessed') }}</flux:table.column>
                     <flux:table.column class="handoff-data-table__action hidden sm:table-cell">
                         <span class="sr-only">{{ __('Actions') }}</span>
                     </flux:table.column>
@@ -32,7 +31,7 @@
                 <flux:table.rows>
                     @foreach ($this->credentials as $credential)
                         <flux:table.row :key="$credential->unique_id">
-                            <x-ui.data-table.primary-cell :title="$credential->name" :meta="$credential->username ?? ($credential->url ? parse_url($credential->url, PHP_URL_HOST) : __('No username'))"
+                            <x-ui.data-table.primary-cell :title="$credential->name" :meta="$credential->type->label()"
                                 wire-click="viewCredential('{{ $credential->unique_id }}')">
                                 <x-slot:mobile>
                                     <flux:badge :color="$credential->type->badgeColor()" size="sm">
@@ -54,18 +53,7 @@
                             </flux:table.cell>
 
                             <flux:table.cell class="hidden md:table-cell">
-                                {{ $credential->username ?? __('No username') }}
-                            </flux:table.cell>
-
-                            <flux:table.cell class="hidden lg:table-cell">
-                                @if ($credential->url)
-                                    <a href="{{ $credential->url }}" target="_blank" rel="noopener noreferrer"
-                                        class="truncate text-brand-600 hover:underline dark:text-brand-400">
-                                        {{ $credential->url }}
-                                    </a>
-                                @else
-                                    <span class="text-sm text-zinc-400 dark:text-zinc-500">{{ __('No link') }}</span>
-                                @endif
+                                {{ $credential->last_accessed_at?->diffForHumans() ?? __('Never') }}
                             </flux:table.cell>
 
                             <x-ui.data-table.action-cell>

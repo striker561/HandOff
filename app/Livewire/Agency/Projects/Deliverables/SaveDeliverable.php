@@ -25,6 +25,15 @@ use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
 
+/**
+ * @property-read int $deliverableMaxFiles
+ * @property-read bool $showFileUploader
+ * @property-read bool $canUploadDeliverableFile
+ * @property-read bool $isEditing
+ * @property-read LengthAwarePaginator $milestones
+ * @property-read Collection<int, DeliverableType> $deliverableTypes
+ * @property-read ?DeliverableType $currentType
+ */
 class SaveDeliverable extends Component
 {
     use AuthorizesProjectHubResources, WithActionRateLimiting, WithFileUploads, WithNotifications;
@@ -185,7 +194,7 @@ class SaveDeliverable extends Component
         unset($this->pendingDeliverableFiles[$index]);
         $this->pendingDeliverableFiles = array_values($this->pendingDeliverableFiles);
         $this->fileUploaderState['pending'] = $this->pendingDeliverableFiles;
-        $this->resetValidation('pendingDeliverableFiles', 'pendingDeliverableFiles.*');
+        $this->resetValidation(['pendingDeliverableFiles', 'pendingDeliverableFiles.*']);
     }
 
     public function updatedType(): void
@@ -206,7 +215,14 @@ class SaveDeliverable extends Component
             $this->content = '';
         }
 
-        $this->resetValidation('link', 'content', 'pendingDeliverableFiles', 'pendingDeliverableFiles.*', 'fileUploaderState.pending', 'fileUploaderState.pending.*');
+        $this->resetValidation([
+            'link',
+            'content',
+            'pendingDeliverableFiles',
+            'pendingDeliverableFiles.*',
+            'fileUploaderState.pending',
+            'fileUploaderState.pending.*',
+        ]);
     }
 
     #[Computed]

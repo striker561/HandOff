@@ -3,6 +3,7 @@
 namespace App\Data\Credentials;
 
 use App\Enums\Credential\CredentialType;
+use SensitiveParameter;
 
 readonly class SaveCredentialData
 {
@@ -10,9 +11,13 @@ readonly class SaveCredentialData
         public string $projectUniqueId,
         public string $name,
         public CredentialType $type,
+        #[SensitiveParameter]
         public ?string $username,
+        #[SensitiveParameter]
         public ?string $password,
+        #[SensitiveParameter]
         public ?string $url,
+        #[SensitiveParameter]
         public ?string $notes,
         public array $metadata = [],
     ) {}
@@ -37,14 +42,14 @@ readonly class SaveCredentialData
     /**
      * @return array<string, mixed>
      */
-    public function toCreateAttributes(string $encryptedPassword): array
+    public function toCreateAttributes(): array
     {
         return [
             'project_unique_id' => $this->projectUniqueId,
             'name' => $this->name,
             'type' => $this->type,
             'username' => $this->username,
-            'password' => $encryptedPassword,
+            'password' => $this->password,
             'url' => $this->url,
             'notes' => $this->notes,
             'metadata' => $this->metadata,

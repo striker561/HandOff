@@ -9,7 +9,7 @@ use App\Events\Credential\CredentialEvent;
 use App\Models\Credential;
 use App\Models\User;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Carbon;
 
 class CredentialService extends BaseCRUDService
 {
@@ -20,7 +20,7 @@ class CredentialService extends BaseCRUDService
 
     protected function searchableColumns(): array
     {
-        return ['name', 'username', 'url'];
+        return ['name'];
     }
 
     protected function filterableColumns(): array
@@ -48,9 +48,7 @@ class CredentialService extends BaseCRUDService
         }
 
         /** @var Credential $credential */
-        $credential = $this->create($data->toCreateAttributes(
-            $this->encryptPassword($data->password)
-        ));
+        $credential = $this->create($data->toCreateAttributes());
 
         CredentialEvent::dispatch(
             $credential,
@@ -67,7 +65,7 @@ class CredentialService extends BaseCRUDService
         $updateData = $data->toUpdateAttributes();
 
         if ($data->password !== null) {
-            $updateData['password'] = $this->encryptPassword($data->password);
+            $updateData['password'] = $data->password;
         }
 
         $credential->update($updateData);
@@ -84,16 +82,41 @@ class CredentialService extends BaseCRUDService
 
     public function getCredentialsForProject(string $projectUniqueId, array $filters = []): LengthAwarePaginator
     {
-        $query = Credential::query()->where('project_unique_id', $projectUniqueId);
+        $query = Credential::query()
+            ->where('project_unique_id', $projectUniqueId)
+            ->select([
+                'unique_id',
+                'project_unique_id',
+                'name',
+                'type',
+                'metadata',
+                'last_accessed_at',
+                'created_at',
+                'updated_at',
+            ]);
         $query = $this->applyFilters($query, $filters);
 
         return $this->paginateQuery($query, $filters);
     }
 
+    /**
+     * @return array{
+     *     unique_id: string,
+     *     name: string,
+     *     type: string,
+     *     username: string|null,
+     *     password: string,
+     *     url: string|null,
+     *     notes: string|null,
+     *     last_accessed_at: Carbon|null,
+     *     accessed_by: string
+     * }
+     */
     public function revealCredential(Credential $credential, User $user): array
     {
-        // Track access
         $credential->update(['last_accessed_at' => now()]);
+
+        $credential = $credential->fresh();
 
         CredentialEvent::dispatch(
             $credential,
@@ -107,25 +130,11 @@ class CredentialService extends BaseCRUDService
             'name' => $credential->name,
             'type' => $credential->type instanceof CredentialType ? $credential->type->value : $credential->type,
             'username' => $credential->username,
-            'password' => $this->decryptPassword($credential),
+            'password' => $credential->password ?? '',
             'url' => $credential->url,
             'notes' => $credential->notes,
             'last_accessed_at' => $credential->last_accessed_at,
             'accessed_by' => $user->name,
         ];
-    }
-
-    private function encryptPassword(string $password): string
-    {
-        return Crypt::encryptString($password);
-    }
-
-    private function decryptPassword(Credential $credential): string
-    {
-        try {
-            return Crypt::decryptString($credential->password);
-        } catch (\Exception $e) {
-            throw new \RuntimeException('Failed to decrypt credential password');
-        }
     }
 }

@@ -6,6 +6,12 @@ use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
+/**
+ * @property-read string $uploadLimitLabel
+ * @property-read string $uploadErrorMessage
+ * @property-read bool $hasExistingItems
+ * @property-read bool $hasPendingItems
+ */
 class FileUploader extends Component
 {
     use WithFileUploads;
@@ -90,7 +96,7 @@ class FileUploader extends Component
     {
         unset($this->state['pending'][$index]);
         $this->state['pending'] = array_values($this->state['pending']);
-        $this->resetValidation('state.pending', 'state.pending.*');
+        $this->resetValidation(['state.pending', 'state.pending.*']);
 
         $this->dispatch('file-uploader-updated', state: $this->state);
     }

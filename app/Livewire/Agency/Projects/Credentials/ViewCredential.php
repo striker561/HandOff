@@ -30,6 +30,8 @@ class ViewCredential extends Component
     #[Locked]
     public string $typeBadgeColor = 'gray';
 
+    public bool $detailsRevealed = false;
+
     #[Locked]
     public ?string $username = null;
 
@@ -38,8 +40,6 @@ class ViewCredential extends Component
 
     #[Locked]
     public ?string $notes = null;
-
-    public bool $passwordRevealed = false;
 
     #[Locked]
     public ?string $revealedPassword = null;
@@ -71,16 +71,12 @@ class ViewCredential extends Component
         $this->name = $credential->name;
         $this->typeLabel = $credential->type->label();
         $this->typeBadgeColor = $credential->type->badgeColor();
-        $this->username = $credential->username;
-        $this->url = $credential->url;
-        $this->notes = $credential->notes;
-        $this->passwordRevealed = false;
-        $this->revealedPassword = null;
+        $this->resetSensitiveDetails();
 
         $this->modal('view-credential')->show();
     }
 
-    public function revealPassword(): void
+    public function revealDetails(): void
     {
         if ($this->uniqueId === null || $this->projectUniqueId === null) {
             return;
@@ -101,7 +97,10 @@ class ViewCredential extends Component
 
         $data = $this->credentialService->revealCredential($credential, Auth::user());
 
-        $this->passwordRevealed = true;
+        $this->detailsRevealed = true;
+        $this->username = $data['username'];
+        $this->url = $data['url'];
+        $this->notes = $data['notes'];
         $this->revealedPassword = $data['password'];
     }
 
@@ -111,9 +110,12 @@ class ViewCredential extends Component
             return;
         }
 
+        $uniqueId = $this->uniqueId;
+        $projectUniqueId = $this->projectUniqueId;
+
         $this->close();
 
-        $this->dispatch('open-save-credential', projectUniqueId: $this->projectUniqueId, uniqueId: $this->uniqueId)
+        $this->dispatch('open-save-credential', projectUniqueId: $projectUniqueId, uniqueId: $uniqueId)
             ->to(SaveCredential::class);
     }
 
@@ -124,13 +126,18 @@ class ViewCredential extends Component
         $this->name = '';
         $this->typeLabel = '';
         $this->typeBadgeColor = 'gray';
+        $this->resetSensitiveDetails();
+
+        $this->modal('view-credential')->close();
+    }
+
+    private function resetSensitiveDetails(): void
+    {
+        $this->detailsRevealed = false;
         $this->username = null;
         $this->url = null;
         $this->notes = null;
-        $this->passwordRevealed = false;
         $this->revealedPassword = null;
-
-        $this->modal('view-credential')->close();
     }
 
     public function render()

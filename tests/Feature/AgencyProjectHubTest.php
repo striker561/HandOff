@@ -22,7 +22,6 @@ use App\Models\Milestone;
 use App\Models\Project;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -313,25 +312,53 @@ it('creates an encrypted credential', function () {
     $credential = Credential::query()->where('name', 'Staging Login')->first();
 
     expect($credential)->not->toBeNull();
-    expect($credential->password)->not->toBe('secret-password');
-    expect(Crypt::decryptString($credential->password))->toBe('secret-password');
+    expect($credential->password)->toBe('secret-password');
+    expect($credential->getRawOriginal('password'))->not->toBe('secret-password');
 });
 
-it('reveals a credential password on demand', function () {
+it('reveals encrypted credential details on demand', function () {
     $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
     $client = User::factory()->create(['role' => AccountRole::CLIENT]);
     $project = Project::factory()->create(['client_unique_id' => $client->unique_id]);
     $credential = Credential::factory()->create([
         'project_unique_id' => $project->unique_id,
-        'password' => Crypt::encryptString('vault-secret'),
+        'username' => 'vault-user',
+        'password' => 'vault-secret',
+        'url' => 'https://vault.example.com',
+        'notes' => 'Rotate quarterly',
     ]);
 
     Livewire::actingAs($admin)
         ->test(ViewCredential::class)
         ->call('open', uniqueId: $credential->unique_id, projectUniqueId: $project->unique_id)
-        ->call('revealPassword')
-        ->assertSet('passwordRevealed', true)
-        ->assertSet('revealedPassword', 'vault-secret');
+        ->assertSet('detailsRevealed', false)
+        ->call('revealDetails')
+        ->assertSet('detailsRevealed', true)
+        ->assertSet('username', 'vault-user')
+        ->assertSet('revealedPassword', 'vault-secret')
+        ->assertSet('url', 'https://vault.example.com')
+        ->assertSet('notes', 'Rotate quarterly');
+});
+
+it('opens save modal when editing from view modal', function () {
+    $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
+    $client = User::factory()->create(['role' => AccountRole::CLIENT]);
+    $project = Project::factory()->create(['client_unique_id' => $client->unique_id]);
+    $credential = Credential::factory()->create([
+        'project_unique_id' => $project->unique_id,
+        'name' => 'Production Login',
+    ]);
+
+    Livewire::actingAs($admin)
+        ->test(ViewCredential::class)
+        ->call('open', uniqueId: $credential->unique_id, projectUniqueId: $project->unique_id)
+        ->call('edit')
+        ->assertDispatched('open-save-credential', projectUniqueId: $project->unique_id, uniqueId: $credential->unique_id);
+
+    Livewire::actingAs($admin)
+        ->test(SaveCredential::class)
+        ->call('open', projectUniqueId: $project->unique_id, uniqueId: $credential->unique_id)
+        ->assertSet('name', 'Production Login');
 });
 
 it('schedules a meeting for a project', function () {
@@ -810,7 +837,7 @@ it('updates a credential from the save modal without changing password', functio
     $credential = Credential::factory()->create([
         'project_unique_id' => $project->unique_id,
         'name' => 'Old Credential',
-        'password' => Crypt::encryptString('unchanged-secret'),
+        'password' => 'unchanged-secret',
     ]);
 
     Livewire::actingAs($admin)
@@ -822,7 +849,7 @@ it('updates a credential from the save modal without changing password', functio
         ->assertDispatched('credential-updated');
 
     expect($credential->fresh()->name)->toBe('Updated Credential');
-    expect(Crypt::decryptString($credential->fresh()->password))->toBe('unchanged-secret');
+    expect($credential->fresh()->password)->toBe('unchanged-secret');
 });
 
 it('updates a scheduled meeting from the save modal', function () {

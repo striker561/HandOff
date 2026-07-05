@@ -7,6 +7,7 @@ use App\Enums\Deliverable\DeliverableAction;
 use App\Enums\Deliverable\DeliverableStatus;
 use App\Events\Deliverable\DeliverableEvent;
 use App\Models\Deliverable;
+use App\Models\DeliverableFile;
 use App\Models\User;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -194,6 +195,7 @@ class DeliverableService extends BaseCRUDService
 
     public function deleteDeliverable(Deliverable $deliverable, User $performedBy): bool
     {
+        /** @var DeliverableFile $file */
         foreach ($deliverable->files as $file) {
             $this->deliverableFileService->deleteFile($file, $performedBy);
         }
