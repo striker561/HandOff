@@ -54,3 +54,7 @@ it('allows admins to reveal credential passwords', function () {
 it('denies clients from revealing credential passwords', function () {
     expect(Gate::forUser($this->client)->allows('reveal', $this->credential))->toBeFalse();
 });
+
+it('denies clients from revealing credentials outside their project', function () {
+    expect(Gate::forUser($this->otherClient)->allows('reveal', $this->credential))->toBeFalse();
+});

@@ -236,7 +236,7 @@ Section list components follow the same `{domain}-created` / `{domain}-updated` 
 3. Dispatch `{Thing}Event` on mutation
 4. Add `Save{Thing}` Livewire with `open-save-{thing}` + `save()`
 5. Wire list empty states and edit actions to dispatch the open event
-6. Add policy tests in `tests/Feature/Policies/` and project hub authorization coverage in `ProjectHubAuthorizationTest`
+6. Add policy tests in `tests/Feature/Policies/` and project hub authorization coverage in `tests/Feature/Agency/ProjectHub/*HubAuthorizationTest.php`
 7. Add Pest feature tests for Livewire save flows and service DTO tests
 8. Register cache/event listeners if the domain affects project overview stats
 

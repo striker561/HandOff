@@ -518,7 +518,7 @@ public function submitForReview(Deliverable $deliverable, User $performedBy): De
 }
 ```
 
-Add policy tests in `tests/Feature/Policies/` and project hub authorization tests in `tests/Feature/Agency/ProjectHubAuthorizationTest.php` when adding new abilities or section list actions.
+Add policy tests in `tests/Feature/Policies/` and project hub authorization tests in `tests/Feature/Agency/ProjectHub/*HubAuthorizationTest.php` when adding new abilities or section list actions.
 
 ## Reference Files
 
@@ -530,6 +530,6 @@ When in doubt, read the code:
 - **`DeliverableService`** - file operations, deliverable lifecycle, milestone sync via `MilestoneService::syncFromDeliverables()`
 - **`AuthorizesProjectHubResources`** - project-scoped modal and section list authorization helpers
 - **`tests/Feature/Policies/`** - policy unit coverage per domain
-- **`tests/Feature/Agency/ProjectHubAuthorizationTest.php`** - Livewire enforces policies end-to-end
+- **`tests/Feature/Agency/ProjectHub/`** — per-domain hub Livewire tests (`*HubTest.php`) and Livewire policy enforcement (`*HubAuthorizationTest.php`)
 - **`BaseCRUDService`** - filtering and pagination patterns
 - **`NotifyOnDomainEvent`** - consolidated listener routing

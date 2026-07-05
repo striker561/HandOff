@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `BaseCRUDService` with standardized filtering, search, and pagination
 - `AuthorizesProjectHubResources` trait for project hub Save\* modals and section list row actions
 - Scoped service finders (`findDeliverableForProject`, `findCredentialForProject`, etc.)
-- Policy tests under `tests/Feature/Policies/` and project hub authorization tests (`ProjectHubAuthorizationTest`)
+- Policy tests under `tests/Feature/Policies/` and per-domain project hub authorization tests (`tests/Feature/Agency/ProjectHub/*HubAuthorizationTest.php`)
 - `composer setup` one-command install
 - `composer dev` concurrent development server
 - Pest test suite with policy and project hub authorization coverage
