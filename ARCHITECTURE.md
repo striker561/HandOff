@@ -170,9 +170,9 @@ Every create/update flow follows the same pipeline (except **client invite** —
 ## Authorization
 
 - **Route level:** `ensureAdmin` on all `/agency/*` routes; hub adds project access middleware
-- **Livewire writes:** `$this->authorize()` in `Save*::open()` and `Save*::save()` (and inline actions like `approve()`, `revealPassword()`)
-- **Policies:** admin abilities often short-circuit in `before()`; explicit Livewire checks remain for defense in depth
-- List components that only dispatch `open-save-*` rely on the modal to re-check — no duplicate authorize trait
+- **Save\* modals** can use `$this->authorize()` directly (standard Livewire). For hub resources, the [`AuthorizesProjectHubResources`](app/Concerns/AuthorizesProjectHubResources.php) trait wraps the common "find + authorize + return null" pattern — `viewHubResource()` on open, `authorizeHubResource('update', ...)` / `authorizeHubResourceCreate()` on save. Finders are passed as first-class callables from each service (`$this->credentialService->findCredentialForProject(...)`).
+- **List components** that only dispatch `open-save-*` rely on the modal to re-check — no duplicate authorize call needed.
+- **Policies** use explicit checks per ability (no `before()` gate) — admins and clients have distinct permissions, especially on deliverable workflows (admins submit for review, clients approve/reject).
 
 ## UI components
 
@@ -289,8 +289,9 @@ Typed input objects live under `app/Data/{Domain}/`.
 ### Authorization (Admin)
 
 - **Page access:** `ensureAdmin` on `/agency/*` routes; hub adds `EnsureProjectAccess` (`ProjectPolicy::view` on the project).
-- **Livewire writes:** `$this->authorize()` on the action that mutates (`Save*::save()`, `approve()`, `ViewCredential::revealPassword()`). List components that only dispatch `open-save-*` rely on the modal to re-check — no separate authorize trait needed (`AuthorizesRequests` is on Livewire `Component`).
-- **Policies:** admin abilities often pass via `before()`; explicit Livewire checks remain for defense-in-depth and future client/portal access on the same models.
+- **Save\* modals** can use `$this->authorize()` directly (standard Livewire). For hub resources, the [`AuthorizesProjectHubResources`](app/Concerns/AuthorizesProjectHubResources.php) trait wraps the common "find + authorize + return null" pattern — `viewHubResource()` on open, `authorizeHubResource('update', ...)` / `authorizeHubResourceCreate()` on save.
+- **List components** that only dispatch `open-save-*` rely on the modal to re-check — no duplicate authorize call needed.
+- **Policies** use explicit checks per ability (no `before()` gate) — admins and clients have distinct permissions, especially on deliverable workflows (admins submit for review, clients approve/reject).
 
 ### Admin Project Hub (Full Detail)
 

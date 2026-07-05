@@ -7,8 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
+### Changed
 
+- **Deliverable review workflow:** agency submits deliverables for review (`draft`/`rejected` → `in_review`); only the project's client can approve or reject while `in_review`. Admins cannot approve or reject.
+- **Agency edit lock:** deliverables in `in_review` or `approved` cannot be edited or receive file uploads by agency users.
+- **Authorization at the edge:** policies enforce who can act; services perform state transitions only (no duplicate auth guards in services).
+- **Hub Livewire pattern:** lists dispatch modals or handle row actions directly; Save\* modals authorize on open (`view`) and save (`create`/`update`).
+- **Milestone completion:** all milestone status writes go through `MilestoneService::updateStatus()`; deliverable changes trigger `syncFromDeliverables()` synchronously (not via listeners).
 - Initial admin workspace: projects, clients, milestones, deliverables, credentials, meetings
 - Service-based architecture with typed DTOs (`Save{Domain}Data`)
 - Domain event system with consolidated listeners for activity logging and notifications
@@ -27,8 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Redesign for UX and UI consistency
 - Multiple clients for one project
-- Client portal (client-facing views and routes)
-- File upload / approval workflows for deliverables
+- Client portal (client-facing views and routes, including approve/reject UI)
 - Email notifications
 - Invoice and Receipt Future
 - Expenses and Break Down

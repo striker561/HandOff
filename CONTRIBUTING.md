@@ -217,6 +217,32 @@ return $query->get();  // No pagination
 return $query->paginate(15);  // Duplicates logic
 ```
 
+### 6. Add Scoped Finder Methods
+
+Hub resources live under `/agency/projects/{projectUniqueId}/…`. Each service provides a scoped finder that scopes queries to a project:
+
+```php
+public function findCredentialForProject(string $uniqueId, string $projectUniqueId): ?Credential
+{
+    return Credential::query()
+        ->where('unique_id', $uniqueId)
+        ->where('project_unique_id', $projectUniqueId)
+        ->first();
+}
+```
+
+These are passed as callables to the `AuthorizesProjectHubResources` trait in Save\* Livewire components:
+
+```php
+// In SaveCredential::save():
+$credential = $this->authorizeHubResource(
+    'update',
+    $this->uniqueId,
+    $this->projectUniqueId,
+    $this->credentialService->findCredentialForProject(...),
+);
+```
+
 ## Real-World Examples
 
 ### ClientService (Standard CRUD with Events)
