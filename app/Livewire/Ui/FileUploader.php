@@ -25,6 +25,8 @@ class FileUploader extends Component
 
     public bool $canUpload = true;
 
+    public bool $hideUploadInput = false;
+
     public int $maxUploadKilobytes;
 
     public int $maxFiles;
@@ -48,9 +50,11 @@ class FileUploader extends Component
         array $state = [],
         ?int $maxUploadKilobytes = null,
         ?int $maxFiles = null,
+        bool $hideUploadInput = false,
     ): void {
         $this->maxUploadKilobytes = $maxUploadKilobytes ?? self::defaultMaxUploadKilobytes();
         $this->maxFiles = $maxFiles ?? self::defaultMaxFiles();
+        $this->hideUploadInput = $hideUploadInput;
         $this->state = $this->normalizeState($state);
     }
 
@@ -100,20 +104,23 @@ class FileUploader extends Component
     #[Computed]
     public function uploadErrorMessage(): string
     {
-        $message = $this->getErrorBag()->first('state.pending')
-            ?: $this->getErrorBag()->first('state.pending.*');
+        foreach ($this->getErrorBag()->getMessages() as $key => $messages) {
+            if (! str_starts_with($key, 'state.pending')) {
+                continue;
+            }
 
-        if ($message === '') {
-            return '';
+            $message = $messages[0] ?? '';
+
+            if ($message !== '' && str_contains(strtolower($message), 'failed to upload')) {
+                return __('Upload failed. Ensure each file is under :limit and try again.', [
+                    'limit' => $this->uploadLimitLabel,
+                ]);
+            }
+
+            return $message;
         }
 
-        if (str_contains(strtolower($message), 'failed to upload')) {
-            return __('Upload failed. Ensure each file is under :limit and try again.', [
-                'limit' => $this->uploadLimitLabel,
-            ]);
-        }
-
-        return $message;
+        return '';
     }
 
     #[Computed]
@@ -145,6 +152,45 @@ class FileUploader extends Component
         }
 
         return $kilobytes.' KB';
+    }
+
+    /**
+     * @return array<string, list<string>>
+     */
+    public static function rulesForPendingUploads(
+        array $state,
+        string $prefix = 'pendingUploads',
+        ?int $maxFiles = null,
+        ?int $maxKilobytes = null,
+    ): array {
+        $maxFiles ??= self::defaultMaxFiles();
+        $maxKilobytes ??= self::defaultMaxUploadKilobytes();
+        $remaining = max(0, $maxFiles - count($state['existing'] ?? []));
+
+        return [
+            $prefix => ['array', 'max:'.$remaining],
+            "{$prefix}.*" => ['file', 'max:'.$maxKilobytes],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function messagesForPendingUploads(
+        string $prefix = 'pendingUploads',
+        ?int $maxFiles = null,
+        ?int $maxKilobytes = null,
+    ): array {
+        $maxFiles ??= self::defaultMaxFiles();
+        $maxKilobytes ??= self::defaultMaxUploadKilobytes();
+
+        return [
+            "{$prefix}.max" => __('You can attach up to :count files.', ['count' => $maxFiles]),
+            "{$prefix}.*.file" => __('Only valid files are allowed.'),
+            "{$prefix}.*.max" => __('Each file must be :limit or smaller.', [
+                'limit' => self::formatKilobytesLabel($maxKilobytes),
+            ]),
+        ];
     }
 
     /**

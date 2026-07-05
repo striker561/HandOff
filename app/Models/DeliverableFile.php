@@ -48,4 +48,34 @@ class DeliverableFile extends BaseModel
     {
         return $this->belongsTo(User::class, 'uploaded_by_unique_id', 'unique_id');
     }
+
+    public function mimeTypeValue(): string
+    {
+        $mime = $this->getAttributes()['mime_type'] ?? null;
+
+        if ($mime instanceof MimeType) {
+            return $mime->value;
+        }
+
+        if ($mime instanceof \BackedEnum) {
+            return $mime->value;
+        }
+
+        return (string) ($mime ?? 'application/octet-stream');
+    }
+
+    public function isPreviewableImage(): bool
+    {
+        return str_starts_with($this->mimeTypeValue(), 'image/');
+    }
+
+    public function showUrl(string $projectUniqueId, string $disposition = 'inline'): string
+    {
+        return route('projects.deliverables.files.show', [
+            'projectUniqueId' => $projectUniqueId,
+            'deliverableUniqueId' => $this->deliverable_unique_id,
+            'fileUniqueId' => $this->unique_id,
+            'disposition' => $disposition,
+        ]);
+    }
 }

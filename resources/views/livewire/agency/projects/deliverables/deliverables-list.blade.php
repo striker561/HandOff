@@ -133,7 +133,7 @@
                     <ul class="handoff-hint-disclosure__list">
                         <li>{{ __('Draft and rejected deliverables can be edited, deleted, and re-submitted.') }}</li>
                         <li>{{ __('Submit for review when ready — the client is notified and editing locks until they respond.') }}</li>
-                        <li>{{ __('In review and approved deliverables are locked as the audit record.') }}</li>
+                        <li>{{ __('In review and approved deliverables are locked as the audit record, but you can still view what was submitted.') }}</li>
                     </ul>
                 </x-ui.hint-disclosure>
             </div>

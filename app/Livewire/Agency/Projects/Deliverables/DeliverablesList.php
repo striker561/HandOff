@@ -53,6 +53,12 @@ class DeliverablesList extends Component
             ->to(SaveDeliverable::class);
     }
 
+    public function viewDeliverable(string $uniqueId): void
+    {
+        $this->dispatch('open-save-deliverable', projectUniqueId: $this->projectUniqueId, uniqueId: $uniqueId)
+            ->to(SaveDeliverable::class);
+    }
+
     public function confirmSubmitForReview(string $uniqueId): void
     {
         $this->submittingUniqueId = $uniqueId;

@@ -10,7 +10,17 @@ class DeliverableFilePolicy
 {
     public function download(User $user, DeliverableFile $file): bool
     {
-        return $user->isAdmin() || $this->canAccessProject($user, $file->deliverable?->project);
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        $deliverable = $file->deliverable;
+
+        if ($deliverable === null || ! $this->canAccessProject($user, $deliverable->project)) {
+            return false;
+        }
+
+        return $deliverable->status->isClientFileAccessible();
     }
 
     public function delete(User $user, DeliverableFile $file): bool

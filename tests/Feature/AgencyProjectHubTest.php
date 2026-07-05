@@ -521,7 +521,7 @@ it('uploads files when creating a file-based deliverable', function () {
         ->set('name', 'Wireframes PDF')
         ->set('type', DeliverableType::DESIGN->value)
         ->set('milestone_unique_id', $milestone->unique_id)
-        ->set('fileUploaderState.pending', [$file])
+        ->set('pendingDeliverableFiles', [$file])
         ->call('save')
         ->assertHasNoErrors()
         ->assertDispatched('deliverable-created');
@@ -669,6 +669,22 @@ it('allows admins to delete rejected deliverables from the list', function () {
     expect(Deliverable::query()->where('unique_id', $deliverable->unique_id)->exists())->toBeFalse();
 });
 
+it('shows pending design images in the deliverable modal', function () {
+    $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
+    $client = User::factory()->create(['role' => AccountRole::CLIENT]);
+    $project = Project::factory()->create(['client_unique_id' => $client->unique_id]);
+    $milestone = Milestone::factory()->create(['project_unique_id' => $project->unique_id, 'order' => 1]);
+    $file = UploadedFile::fake()->image('design.jpg', 800, 600);
+
+    Livewire::actingAs($admin)
+        ->test(SaveDeliverable::class)
+        ->call('open', projectUniqueId: $project->unique_id, milestoneUniqueId: $milestone->unique_id)
+        ->set('type', DeliverableType::DESIGN->value)
+        ->set('pendingDeliverableFiles', [$file])
+        ->assertSee('design.jpg')
+        ->assertSee(__('New uploads'));
+});
+
 it('clears a pending file upload from the uploader', function () {
     $file = UploadedFile::fake()->create('draft.pdf', 128, 'application/pdf');
 
@@ -695,11 +711,76 @@ it('allows opening but forbids saving an in-review deliverable', function () {
         ->test(SaveDeliverable::class)
         ->call('open', projectUniqueId: $project->unique_id, uniqueId: $deliverable->unique_id)
         ->assertSet('name', 'Locked Deliverable')
+        ->assertSet('readOnly', true)
+        ->assertSee(__('View Deliverable'))
         ->set('name', 'Should Not Save')
         ->call('save')
-        ->assertForbidden();
+        ->assertSet('name', 'Should Not Save');
 
     expect($deliverable->fresh()->name)->toBe('Locked Deliverable');
+});
+
+it('shows a view action for in-review deliverables on the list', function () {
+    $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
+    $client = User::factory()->create(['role' => AccountRole::CLIENT]);
+    $project = Project::factory()->create(['client_unique_id' => $client->unique_id]);
+    $milestone = Milestone::factory()->create(['project_unique_id' => $project->unique_id, 'order' => 1]);
+    Deliverable::factory()->create([
+        'project_unique_id' => $project->unique_id,
+        'milestone_unique_id' => $milestone->unique_id,
+        'created_by_unique_id' => $admin->unique_id,
+        'name' => 'Submitted Asset',
+        'status' => DeliverableStatus::IN_REVIEW,
+    ]);
+
+    $html = Livewire::actingAs($admin)
+        ->test(DeliverablesList::class, ['projectUniqueId' => $project->unique_id])
+        ->html();
+
+    expect($html)
+        ->toContain('wire:click="viewDeliverable')
+        ->not->toContain('wire:click="editDeliverable');
+});
+
+it('allows admins to view in-review deliverable files with preview links', function () {
+    Storage::fake('deliverables');
+
+    $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
+    $client = User::factory()->create(['role' => AccountRole::CLIENT]);
+    $project = Project::factory()->create(['client_unique_id' => $client->unique_id]);
+    $milestone = Milestone::factory()->create(['project_unique_id' => $project->unique_id, 'order' => 1]);
+    $deliverable = Deliverable::factory()->create([
+        'project_unique_id' => $project->unique_id,
+        'milestone_unique_id' => $milestone->unique_id,
+        'created_by_unique_id' => $admin->unique_id,
+        'name' => 'Design Pack',
+        'type' => DeliverableType::DESIGN,
+        'status' => DeliverableStatus::IN_REVIEW,
+    ]);
+
+    $path = "deliverables/{$project->unique_id}/hero.jpg";
+    Storage::disk('deliverables')->put($path, 'fake-image-content');
+
+    $file = DeliverableFile::factory()->create([
+        'deliverable_unique_id' => $deliverable->unique_id,
+        'uploaded_by_unique_id' => $admin->unique_id,
+        'original_filename' => 'hero.jpg',
+        'file_path' => $path,
+        'mime_type' => 'image/jpeg',
+    ]);
+
+    Livewire::actingAs($admin)
+        ->test(SaveDeliverable::class)
+        ->call('open', projectUniqueId: $project->unique_id, uniqueId: $deliverable->unique_id)
+        ->assertSet('readOnly', true)
+        ->assertSee('hero.jpg')
+        ->assertSee(__('Open in new tab'))
+        ->assertSee($file->showUrl($project->unique_id));
+
+    $this->actingAs($admin)
+        ->get($file->showUrl($project->unique_id))
+        ->assertOk()
+        ->assertHeader('content-type', 'image/jpeg');
 });
 
 it('forbids submitting an in-review deliverable for review again', function () {

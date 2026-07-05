@@ -92,6 +92,19 @@ class DeliverableFileService
             ->get();
     }
 
+    public function findFileForDeliverableInProject(
+        string $fileUniqueId,
+        string $deliverableUniqueId,
+        string $projectUniqueId,
+    ): ?DeliverableFile {
+        return DeliverableFile::query()
+            ->where('unique_id', $fileUniqueId)
+            ->whereHas('deliverable', fn ($query) => $query
+                ->where('unique_id', $deliverableUniqueId)
+                ->where('project_unique_id', $projectUniqueId))
+            ->first();
+    }
+
     public function getLatestFile(string $deliverableUniqueId): ?DeliverableFile
     {
         return $this->getActiveFiles($deliverableUniqueId)->last();
@@ -105,12 +118,35 @@ class DeliverableFileService
             ->toArray();
     }
 
-    public function downloadFile(DeliverableFile $file, User $downloadedBy): ?StreamedResponse
+    public function streamFile(DeliverableFile $file, User $downloadedBy, bool $inline = true): ?StreamedResponse
     {
         if (! $this->disk()->exists($file->file_path)) {
             return null;
         }
 
+        $this->recordFileAccess($file, $downloadedBy);
+
+        return $this->disk()->response(
+            $file->file_path,
+            $file->original_filename,
+            [
+                'Content-Type' => $file->mimeTypeValue(),
+                'Content-Disposition' => sprintf(
+                    '%s; filename="%s"',
+                    $inline ? 'inline' : 'attachment',
+                    addcslashes($file->original_filename, '"\\'),
+                ),
+            ],
+        );
+    }
+
+    public function downloadFile(DeliverableFile $file, User $downloadedBy): ?StreamedResponse
+    {
+        return $this->streamFile($file, $downloadedBy, inline: false);
+    }
+
+    private function recordFileAccess(DeliverableFile $file, User $downloadedBy): void
+    {
         $this->trackDownload($file);
 
         /** @var Deliverable|null $deliverable */
@@ -126,8 +162,6 @@ class DeliverableFileService
                 ]
             );
         }
-
-        return $this->disk()->download($file->file_path, $file->original_filename);
     }
 
     public function deleteFile(DeliverableFile $file, User $deletedBy): bool

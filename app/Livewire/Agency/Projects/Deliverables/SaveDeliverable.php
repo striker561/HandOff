@@ -22,6 +22,7 @@ use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
 
 class SaveDeliverable extends Component
@@ -33,6 +34,15 @@ class SaveDeliverable extends Component
 
     #[Locked]
     public ?string $uniqueId = null;
+
+    #[Locked]
+    public bool $readOnly = false;
+
+    #[Locked]
+    public string $statusLabel = '';
+
+    #[Locked]
+    public string $statusBadgeColor = 'gray';
 
     public string $name = '';
 
@@ -58,6 +68,13 @@ class SaveDeliverable extends Component
     ];
 
     public int $fileUploaderKey = 0;
+
+    /**
+     * Top-level uploads on the parent avoid Flux/Livewire morph issues in modals.
+     *
+     * @var list<TemporaryUploadedFile>
+     */
+    public array $pendingDeliverableFiles = [];
 
     public string $link = '';
 
@@ -94,7 +111,10 @@ class SaveDeliverable extends Component
     {
         $this->projectUniqueId = $projectUniqueId;
         $this->uniqueId = $uniqueId;
-        $this->reset('name', 'description', 'due_date', 'link', 'content');
+        $this->readOnly = false;
+        $this->statusLabel = '';
+        $this->statusBadgeColor = 'gray';
+        $this->reset('name', 'description', 'due_date', 'link', 'content', 'pendingDeliverableFiles');
         $this->fileUploaderState = $this->emptyFileUploaderState();
         $this->fileUploaderKey++;
         $this->milestone_unique_id = $milestoneUniqueId ?? '';
@@ -121,6 +141,9 @@ class SaveDeliverable extends Component
             $this->due_date = $deliverable->due_date?->format('Y-m-d');
             $this->link = $deliverable->metadata['link'] ?? '';
             $this->content = $deliverable->metadata['content'] ?? '';
+            $this->statusLabel = $deliverable->status->label();
+            $this->statusBadgeColor = $deliverable->status->badgeColor();
+            $this->readOnly = ! $deliverable->status->isAgencyEditable();
             $this->loadExistingFiles($deliverable);
         }
 
@@ -130,7 +153,39 @@ class SaveDeliverable extends Component
     #[On('file-uploader-updated')]
     public function syncFileUploaderState(array $state): void
     {
-        $this->fileUploaderState = $state;
+        $this->fileUploaderState['existing'] = $state['existing'] ?? [];
+        $this->fileUploaderState['removed_ids'] = $state['removed_ids'] ?? [];
+    }
+
+    public function updatedPendingDeliverableFiles(): void
+    {
+        if ($this->pendingDeliverableFiles === []) {
+            $this->fileUploaderState['pending'] = [];
+
+            return;
+        }
+
+        $this->validate(
+            FileUploader::rulesForPendingUploads(
+                $this->fileUploaderState,
+                'pendingDeliverableFiles',
+                maxFiles: $this->deliverableMaxFiles,
+            ),
+            FileUploader::messagesForPendingUploads(
+                'pendingDeliverableFiles',
+                maxFiles: $this->deliverableMaxFiles,
+            ),
+        );
+
+        $this->fileUploaderState['pending'] = $this->pendingDeliverableFiles;
+    }
+
+    public function removePendingDeliverableFile(int $index): void
+    {
+        unset($this->pendingDeliverableFiles[$index]);
+        $this->pendingDeliverableFiles = array_values($this->pendingDeliverableFiles);
+        $this->fileUploaderState['pending'] = $this->pendingDeliverableFiles;
+        $this->resetValidation('pendingDeliverableFiles', 'pendingDeliverableFiles.*');
     }
 
     public function updatedType(): void
@@ -139,6 +194,7 @@ class SaveDeliverable extends Component
 
         if (! $type?->isFileBased()) {
             $this->fileUploaderState = $this->emptyFileUploaderState();
+            $this->pendingDeliverableFiles = [];
             $this->fileUploaderKey++;
         }
 
@@ -150,7 +206,7 @@ class SaveDeliverable extends Component
             $this->content = '';
         }
 
-        $this->resetValidation('link', 'content', 'fileUploaderState.pending', 'fileUploaderState.pending.*');
+        $this->resetValidation('link', 'content', 'pendingDeliverableFiles', 'pendingDeliverableFiles.*', 'fileUploaderState.pending', 'fileUploaderState.pending.*');
     }
 
     #[Computed]
@@ -216,7 +272,7 @@ class SaveDeliverable extends Component
 
     public function save(): void
     {
-        if ($this->projectUniqueId === null) {
+        if ($this->projectUniqueId === null || $this->readOnly) {
             return;
         }
 
@@ -258,9 +314,9 @@ class SaveDeliverable extends Component
         if ($currentType?->isFileBased() && $this->fileUploaderState['pending'] !== []) {
             $rules = array_merge(
                 $rules,
-                FileUploader::rulesForState(
+                FileUploader::rulesForPendingUploads(
                     $this->fileUploaderState,
-                    'fileUploaderState',
+                    'pendingDeliverableFiles',
                     maxFiles: $this->deliverableMaxFiles,
                 ),
             );
@@ -281,7 +337,7 @@ class SaveDeliverable extends Component
         $validated = $this->validate(
             $rules,
             $currentType?->isFileBased()
-            ? FileUploader::messagesForState('fileUploaderState', maxFiles: $this->deliverableMaxFiles)
+            ? FileUploader::messagesForPendingUploads('pendingDeliverableFiles', maxFiles: $this->deliverableMaxFiles)
             : [],
         );
 
@@ -316,7 +372,7 @@ class SaveDeliverable extends Component
             $this->notifySuccess(__('Deliverable created.'));
         }
 
-        $this->reset('name', 'description', 'milestone_unique_id', 'due_date', 'link', 'content', 'uniqueId');
+        $this->reset('name', 'description', 'milestone_unique_id', 'due_date', 'link', 'content', 'uniqueId', 'pendingDeliverableFiles');
         $this->fileUploaderState = $this->emptyFileUploaderState();
         $this->type = DeliverableType::FILE->value;
 
@@ -371,6 +427,10 @@ class SaveDeliverable extends Component
                 'id' => $file->unique_id,
                 'label' => $file->original_filename,
                 'size' => $file->file_size,
+                'mime_type' => $file->mimeTypeValue(),
+                'preview_url' => $file->showUrl($this->projectUniqueId),
+                'download_url' => $file->showUrl($this->projectUniqueId, 'attachment'),
+                'is_image' => $file->isPreviewableImage(),
             ])
             ->values()
             ->all();

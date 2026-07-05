@@ -64,9 +64,12 @@ describe('deliverables', function () {
             ->test(SaveDeliverable::class)
             ->call('open', projectUniqueId: $this->project->unique_id, uniqueId: $deliverable->unique_id)
             ->assertSet('name', $deliverable->name)
+            ->assertSet('readOnly', true)
             ->set('name', 'Blocked Update')
             ->call('save')
-            ->assertForbidden();
+            ->assertHasNoErrors();
+
+        expect($deliverable->fresh()->name)->toBe($deliverable->name);
     });
 
     it('forbids resubmitting in-review deliverables from the list', function () {

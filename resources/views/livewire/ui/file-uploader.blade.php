@@ -8,25 +8,27 @@
         <flux:callout variant="danger" icon="x-circle" :heading="$this->uploadErrorMessage" />
     @endif
 
-    <div class="space-y-1">
-        <flux:heading size="sm">{{ $heading ?? __('Files') }}</flux:heading>
-        @if ($description)
-            <flux:text class="text-zinc-500 dark:text-zinc-400">{{ $description }}</flux:text>
-        @endif
-    </div>
+    @if ($heading || !$hideUploadInput)
+        <div class="space-y-1">
+            <flux:heading size="sm">{{ $heading ?? __('Files') }}</flux:heading>
+            @if ($description)
+                <flux:text class="text-zinc-500 dark:text-zinc-400">{{ $description }}</flux:text>
+            @endif
+        </div>
+    @endif
 
-    @if ($canUpload)
+    @if ($canUpload && !$hideUploadInput)
         <div class="space-y-3 rounded-lg border border-dashed border-zinc-300 bg-zinc-50/50 p-4 dark:border-zinc-600 dark:bg-zinc-900/30"
             x-data="{ progress: 0 }" x-on:livewire-upload-start="progress = 0" x-on:livewire-upload-finish="progress = 0"
             x-on:livewire-upload-error="progress = 0" x-on:livewire-upload-cancel="progress = 0"
             x-on:livewire-upload-progress="progress = $event.detail.progress">
-            <flux:field>
-                <flux:label>{{ $uploadLabel ?? __('Upload files') }}</flux:label>
+            <div class="space-y-2">
+                <label class="handoff-label">{{ $uploadLabel ?? __('Upload files') }}</label>
                 <input type="file" wire:model="state.pending" multiple @class([
-                    'mt-1 block w-full text-sm text-zinc-500 file:mr-4 file:rounded-md file:border-0 file:bg-brand-500 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-brand-600 dark:text-zinc-400',
+                    'block w-full text-sm text-zinc-500 file:mr-4 file:rounded-md file:border-0 file:bg-brand-500 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-brand-600 dark:text-zinc-400',
                     'rounded-md border border-red-500' => $errors->has('state.pending') || $errors->has('state.pending.*'),
                 ]) />
-            </flux:field>
+            </div>
 
             <flux:text class="text-xs text-zinc-500 dark:text-zinc-400">
                 {{ __('Up to :count files, :limit each.', ['count' => $maxFiles, 'limit' => $this->uploadLimitLabel]) }}
@@ -79,7 +81,7 @@
         </div>
     @endif
 
-    @if ($pendingItems !== [] && $canUpload)
+    @if ($pendingItems !== [] && $canUpload && !$hideUploadInput)
         <div class="space-y-4 border-t border-zinc-200 pt-6 dark:border-zinc-700">
             <flux:heading size="sm">{{ __('New uploads') }}</flux:heading>
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -109,7 +111,7 @@
         </div>
     @endif
 
-    @if ($existingItems === [] && $pendingItems === [] && $canUpload)
+    @if ($existingItems === [] && $pendingItems === [] && $canUpload && !$hideUploadInput)
         <x-ui.empty-state compact icon="document-arrow-up" :heading="$emptyHeading ?? __('No files selected')"
             :text="$emptyText ?? __('Choose one or more files to upload.')" />
     @endif

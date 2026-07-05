@@ -41,4 +41,9 @@ enum DeliverableStatus: string
     {
         return $this === self::IN_REVIEW;
     }
+
+    public function isClientFileAccessible(): bool
+    {
+        return in_array($this, [self::IN_REVIEW, self::APPROVED], true);
+    }
 }
