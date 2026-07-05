@@ -31,7 +31,7 @@ class CredentialsList extends Component
         $this->resetPage();
     }
 
-    public function openCreateCredential(): void
+    public function openSaveCredential(): void
     {
         $this->dispatch('open-save-credential', projectUniqueId: $this->projectUniqueId)
             ->to(SaveCredential::class);

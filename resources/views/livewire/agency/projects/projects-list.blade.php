@@ -4,7 +4,7 @@
             <flux:input wire:model.live.debounce.300ms="search" placeholder="{{ __('Search projects…') }}"
                 icon="magnifying-glass" class="w-full sm:max-w-xs" />
 
-            <x-ui.button wire:click="openSaveProject" icon="plus" class="!w-auto shrink-0">
+            <x-ui.button wire:click="openSaveProject" icon="plus" class="shrink-0 sm:!w-auto">
                 {{ __('Create') }}
             </x-ui.button>
         </x-slot:actions>
@@ -28,23 +28,20 @@
                     class="hidden lg:table-cell">
                     {{ __('Due') }}
                 </flux:table.column>
-                <flux:table.column class="handoff-data-table__action hidden w-12 sm:table-cell sm:w-16">
-                    <span class="sr-only">{{ __('Actions') }}</span>
-                </flux:table.column>
             </flux:table.columns>
 
             <flux:table.rows>
                 @foreach ($this->projects as $project)
                     <flux:table.row :key="$project->unique_id">
-                        <x-ui.data-table.primary-cell :title="$project->name" :meta="$project->list_summary">
-                            <x-slot:action>
-                                <x-ui.data-table.view-button wire-click="viewProject('{{ $project->unique_id }}')"
-                                    :name="$project->name" />
-                            </x-slot:action>
+                        <x-ui.data-table.primary-cell :title="$project->name"
+                            wire-click="viewProject('{{ $project->unique_id }}')">
                             <x-slot:mobile>
-                                <flux:badge :color="$project->status->badgeColor()" size="sm">
-                                    {{ $project->status->label() }}
-                                </flux:badge>
+                                <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                    <span class="text-sm font-normal text-zinc-500">{{ $project->client_display_name }}</span>
+                                    <flux:badge :color="$project->status->badgeColor()" size="sm">
+                                        {{ $project->status->label() }}
+                                    </flux:badge>
+                                </div>
                             </x-slot:mobile>
                         </x-ui.data-table.primary-cell>
 
@@ -67,13 +64,8 @@
                         </flux:table.cell>
 
                         <flux:table.cell class="hidden lg:table-cell">
-                            {{ $project->formatted_due_date ?? __('No date') }}
+                            {{ $project->formatted_due_date ?? __('No due date') }}
                         </flux:table.cell>
-
-                        <x-ui.data-table.action-cell>
-                            <x-ui.data-table.view-button wire-click="viewProject('{{ $project->unique_id }}')"
-                                :name="$project->name" />
-                        </x-ui.data-table.action-cell>
                     </flux:table.row>
                 @endforeach
             </flux:table.rows>

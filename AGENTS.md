@@ -201,6 +201,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 ### Components
 
 - Form primitives: `x-ui.button`, `x-ui.input`, `x-ui.checkbox`, `x-ui.modal-footer`, `x-ui.page-header`, `x-ui.data-table`, `x-ui.empty-state`
+- Hub row actions: `x-ui.button icon-only` (primary clip-path). Hub empties: `x-ui.empty-state compact`
 - Modals: `flux:modal` + `x-ui.modal-footer` (NOT `x-slot name="footer"`)
 - Shell: `flux:sidebar`, `flux:header`, `flux:toast` — use raw Flux, don't rebuild
 - Feature UI: `components/{dashboard,marketing,settings}/` or `livewire/{domain}/`

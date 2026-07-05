@@ -1,1 +1,1 @@
-<span class="text-zinc-300 dark:text-zinc-600">&mdash;</span>
+<span class="text-sm text-zinc-400 dark:text-zinc-500">{{ $slot->isEmpty() ? __('Not set') : $slot }}</span>

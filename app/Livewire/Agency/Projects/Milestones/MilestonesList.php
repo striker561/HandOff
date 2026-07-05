@@ -30,7 +30,7 @@ class MilestonesList extends Component
         $this->resetPage();
     }
 
-    public function openCreateMilestone(): void
+    public function openSaveMilestone(): void
     {
         $this->dispatch('open-save-milestone', projectUniqueId: $this->projectUniqueId)
             ->to(SaveMilestone::class);

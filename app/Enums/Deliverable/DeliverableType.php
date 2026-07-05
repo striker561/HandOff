@@ -26,4 +26,18 @@ enum DeliverableType: string
             self::RESEARCH => __('Research'),
         };
     }
+
+    public function icon(): string
+    {
+        return match ($this) {
+            self::FILE => 'document',
+            self::LINK => 'link',
+            self::TEXT => 'document-text',
+            self::CODE => 'code-bracket',
+            self::SCOPE => 'clipboard-document-list',
+            self::OTHER => 'cube',
+            self::DESIGN => 'paint-brush',
+            self::RESEARCH => 'magnifying-glass',
+        };
+    }
 }

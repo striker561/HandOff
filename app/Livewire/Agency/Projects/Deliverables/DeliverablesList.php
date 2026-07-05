@@ -3,6 +3,7 @@
 namespace App\Livewire\Agency\Projects\Deliverables;
 
 use App\Models\Deliverable;
+use App\Models\Milestone;
 use App\Services\DeliverableService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
@@ -34,7 +35,7 @@ class DeliverablesList extends Component
         $this->resetPage();
     }
 
-    public function openCreateDeliverable(): void
+    public function openSaveDeliverable(): void
     {
         $this->dispatch('open-save-deliverable', projectUniqueId: $this->projectUniqueId, milestoneUniqueId: $this->milestoneUniqueId)
             ->to(SaveDeliverable::class);
@@ -74,6 +75,14 @@ class DeliverablesList extends Component
         $this->deliverableService->rejectDeliverable($deliverable, Auth::user());
 
         $this->dispatch('deliverable-created');
+    }
+
+    #[Computed]
+    public function hasMilestones(): bool
+    {
+        return Milestone::query()
+            ->where('project_unique_id', $this->projectUniqueId)
+            ->exists();
     }
 
     #[Computed]

@@ -57,6 +57,31 @@ it('loads the project milestones page for admins', function () {
         ->assertSeeLivewire(MilestonesList::class);
 });
 
+it('shows guided empty state on milestones tab when none exist', function () {
+    $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
+    $client = User::factory()->create(['role' => AccountRole::CLIENT]);
+    $project = Project::factory()->create(['client_unique_id' => $client->unique_id]);
+
+    $this->actingAs($admin)
+        ->get(route('agency.projects.milestones', ['projectUniqueId' => $project->unique_id]))
+        ->assertSuccessful()
+        ->assertSee(__('No milestones yet'))
+        ->assertSee(__('Phases of the handoff'))
+        ->assertSee(__('Add milestone'));
+});
+
+it('shows milestones-first empty state on deliverables tab when no milestones exist', function () {
+    $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
+    $client = User::factory()->create(['role' => AccountRole::CLIENT]);
+    $project = Project::factory()->create(['client_unique_id' => $client->unique_id]);
+
+    $this->actingAs($admin)
+        ->get(route('agency.projects.deliverables', ['projectUniqueId' => $project->unique_id]))
+        ->assertSuccessful()
+        ->assertSee(__('Add milestones first'))
+        ->assertSee(__('Go to milestones'));
+});
+
 it('forbids client users from project hub pages', function () {
     $client = User::factory()->create(['role' => AccountRole::CLIENT]);
     $project = Project::factory()->create(['client_unique_id' => $client->unique_id]);
@@ -218,6 +243,29 @@ it('filters deliverables by milestone in livewire list', function () {
         ])
         ->assertSee('Alpha Deliverable')
         ->assertDontSee('Beta Deliverable');
+});
+
+it('renders mobile row actions on deliverables list', function () {
+    $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
+    $client = User::factory()->create(['role' => AccountRole::CLIENT]);
+    $project = Project::factory()->create(['client_unique_id' => $client->unique_id]);
+    $milestone = Milestone::factory()->create(['project_unique_id' => $project->unique_id, 'order' => 1]);
+    Deliverable::factory()->create([
+        'project_unique_id' => $project->unique_id,
+        'milestone_unique_id' => $milestone->unique_id,
+        'created_by_unique_id' => $admin->unique_id,
+        'name' => 'Mobile Actions Deliverable',
+        'status' => DeliverableStatus::DRAFT,
+    ]);
+
+    $html = Livewire::actingAs($admin)
+        ->test(DeliverablesList::class, ['projectUniqueId' => $project->unique_id])
+        ->html();
+
+    expect($html)
+        ->toContain('wire:click="editDeliverable')
+        ->toContain('wire:click="approve')
+        ->toContain('wire:click="reject');
 });
 
 it('approves a deliverable from the list', function () {
