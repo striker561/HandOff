@@ -32,6 +32,14 @@ class MilestoneService extends BaseCRUDService
         return ['name', 'order', 'due_date', 'created_at', 'updated_at', 'completed_at'];
     }
 
+    public function findMilestoneForProject(string $uniqueId, string $projectUniqueId): ?Milestone
+    {
+        return Milestone::query()
+            ->where('unique_id', $uniqueId)
+            ->where('project_unique_id', $projectUniqueId)
+            ->first();
+    }
+
     public function createOrderedMilestone(SaveMilestoneData $data, User $performedBy): Milestone
     {
         /** @var Milestone $milestone */

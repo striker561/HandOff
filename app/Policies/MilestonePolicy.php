@@ -8,29 +8,24 @@ use App\Models\User;
 
 class MilestonePolicy
 {
-    public function before(User $user, string $ability): ?bool
-    {
-        return $user->isAdmin() ? true : null;
-    }
-
     public function viewAny(User $user): bool
     {
-        return $user->isClient();
+        return $user->isAdmin() || $user->isClient();
     }
 
     public function view(User $user, Milestone $milestone): bool
     {
-        return $this->canAccessProject($user, $milestone->project);
+        return $user->isAdmin() || $this->canAccessProject($user, $milestone->project);
     }
 
     public function create(User $user, Project $project): bool
     {
-        return false;
+        return $user->isAdmin();
     }
 
     public function update(User $user, Milestone $milestone): bool
     {
-        return false;
+        return $user->isAdmin();
     }
 
     public function delete(User $user, Milestone $milestone): bool
@@ -40,12 +35,12 @@ class MilestonePolicy
 
     public function updateStatus(User $user, Milestone $milestone): bool
     {
-        return false;
+        return $user->isAdmin();
     }
 
     public function reorder(User $user, Project $project): bool
     {
-        return false;
+        return $user->isAdmin();
     }
 
     private function canAccessProject(User $user, ?Project $project): bool

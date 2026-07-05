@@ -33,6 +33,14 @@ class MeetingService extends BaseCRUDService
         return ['title', 'status', 'scheduled_at', 'created_at', 'updated_at'];
     }
 
+    public function findMeetingForProject(string $uniqueId, string $projectUniqueId): ?Meeting
+    {
+        return Meeting::query()
+            ->where('unique_id', $uniqueId)
+            ->where('project_unique_id', $projectUniqueId)
+            ->first();
+    }
+
     public function scheduleMeeting(SaveMeetingData $data, User $scheduler): Meeting
     {
         /** @var Meeting $meeting */

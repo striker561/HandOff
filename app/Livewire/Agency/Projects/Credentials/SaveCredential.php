@@ -2,12 +2,14 @@
 
 namespace App\Livewire\Agency\Projects\Credentials;
 
+use App\Concerns\AuthorizesProjectHubResources;
 use App\Concerns\WithActionRateLimiting;
 use App\Concerns\WithNotifications;
 use App\Data\Credentials\SaveCredentialData;
 use App\Enums\Credential\CredentialType;
 use App\Models\Credential;
 use App\Services\CredentialService;
+use App\Services\ProjectService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -18,7 +20,7 @@ use Livewire\Component;
 
 class SaveCredential extends Component
 {
-    use WithActionRateLimiting, WithNotifications;
+    use AuthorizesProjectHubResources, WithActionRateLimiting, WithNotifications;
 
     #[Locked]
     public ?string $projectUniqueId = null;
@@ -40,9 +42,12 @@ class SaveCredential extends Component
 
     private CredentialService $credentialService;
 
-    public function boot(CredentialService $credentialService): void
+    private ProjectService $projectService;
+
+    public function boot(CredentialService $credentialService, ProjectService $projectService): void
     {
         $this->credentialService = $credentialService;
+        $this->projectService = $projectService;
     }
 
     #[Computed]
@@ -60,24 +65,24 @@ class SaveCredential extends Component
         $this->type = CredentialType::LOGIN->value;
         $this->resetValidation();
 
-        if ($uniqueId !== null) {
-            $credential = $this->findCredential($uniqueId, $projectUniqueId);
+        $credential = $this->viewHubResource(
+            $uniqueId,
+            $projectUniqueId,
+            $this->credentialService->findCredentialForProject(...),
+        );
 
-            if ($credential === null) {
-                $this->notifyError(__('Credential not found.'));
+        if ($uniqueId !== null && $credential === null) {
+            $this->notifyError(__('Credential not found.'));
 
-                return;
-            }
+            return;
+        }
 
-            $this->authorize('update', $credential);
-
+        if ($credential instanceof Credential) {
             $this->name = $credential->name;
             $this->type = $credential->type->value;
             $this->username = $credential->username ?? '';
             $this->url = $credential->url ?? '';
             $this->notes = $credential->notes ?? '';
-        } else {
-            $this->authorize('create', Credential::class);
         }
 
         $this->modal('save-credential')->show();
@@ -95,18 +100,23 @@ class SaveCredential extends Component
             return;
         }
 
+        $credential = null;
+
         if ($this->isEditing()) {
-            $credential = $this->findCredential($this->uniqueId, $this->projectUniqueId);
+            $credential = $this->authorizeHubResource(
+                'update',
+                $this->uniqueId,
+                $this->projectUniqueId,
+                $this->credentialService->findCredentialForProject(...),
+            );
 
             if ($credential === null) {
                 $this->notifyError(__('Credential not found.'));
 
                 return;
             }
-
-            $this->authorize('update', $credential);
-        } else {
-            $this->authorize('create', Credential::class);
+        } elseif (! $this->authorizeHubResourceCreate(Credential::class, $this->projectUniqueId, $this->projectService)) {
+            return;
         }
 
         if (! $this->attemptRateLimitedAction('save-credential', maxAttempts: 10, decaySeconds: 60)) {
@@ -139,7 +149,6 @@ class SaveCredential extends Component
         ]);
 
         if ($this->isEditing()) {
-            $credential = $this->findCredential($this->uniqueId, $this->projectUniqueId);
             $this->credentialService->updateCredential($credential, $data, Auth::user());
             $this->notifySuccess(__('Credential updated.'));
             $this->dispatch('credential-updated');
@@ -153,14 +162,6 @@ class SaveCredential extends Component
         $this->type = CredentialType::LOGIN->value;
 
         $this->modal('save-credential')->close();
-    }
-
-    private function findCredential(string $uniqueId, string $projectUniqueId): ?Credential
-    {
-        return Credential::query()
-            ->where('unique_id', $uniqueId)
-            ->where('project_unique_id', $projectUniqueId)
-            ->first();
     }
 
     public function render()

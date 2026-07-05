@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Agency\Projects\Credentials;
 
+use App\Concerns\AuthorizesProjectHubResources;
 use App\Concerns\WithNotifications;
 use App\Models\Credential;
 use App\Services\CredentialService;
@@ -12,7 +13,7 @@ use Livewire\Component;
 
 class ViewCredential extends Component
 {
-    use WithNotifications;
+    use AuthorizesProjectHubResources, WithNotifications;
 
     #[Locked]
     public ?string $uniqueId = null;
@@ -53,15 +54,17 @@ class ViewCredential extends Component
     #[On('open-credential-view')]
     public function open(string $uniqueId, string $projectUniqueId): void
     {
-        $credential = $this->findCredential($uniqueId, $projectUniqueId);
+        $credential = $this->viewHubResource(
+            $uniqueId,
+            $projectUniqueId,
+            $this->credentialService->findCredentialForProject(...),
+        );
 
-        if ($credential === null) {
+        if (! $credential instanceof Credential) {
             $this->notifyError(__('Credential not found.'));
 
             return;
         }
-
-        $this->authorize('view', $credential);
 
         $this->uniqueId = $credential->unique_id;
         $this->projectUniqueId = $projectUniqueId;
@@ -83,15 +86,18 @@ class ViewCredential extends Component
             return;
         }
 
-        $credential = $this->findCredential($this->uniqueId, $this->projectUniqueId);
+        $credential = $this->authorizeHubResource(
+            'reveal',
+            $this->uniqueId,
+            $this->projectUniqueId,
+            $this->credentialService->findCredentialForProject(...),
+        );
 
-        if ($credential === null) {
+        if (! $credential instanceof Credential) {
             $this->notifyError(__('Credential not found.'));
 
             return;
         }
-
-        $this->authorize('view', $credential);
 
         $data = $this->credentialService->revealCredential($credential, Auth::user());
 
@@ -125,14 +131,6 @@ class ViewCredential extends Component
         $this->revealedPassword = null;
 
         $this->modal('view-credential')->close();
-    }
-
-    private function findCredential(string $uniqueId, string $projectUniqueId): ?Credential
-    {
-        return Credential::query()
-            ->where('unique_id', $uniqueId)
-            ->where('project_unique_id', $projectUniqueId)
-            ->first();
     }
 
     public function render()

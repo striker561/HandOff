@@ -31,4 +31,14 @@ enum DeliverableStatus: string
             self::IN_REVIEW => 'amber',
         };
     }
+
+    public function isAgencyEditable(): bool
+    {
+        return in_array($this, [self::DRAFT, self::REJECTED], true);
+    }
+
+    public function isClientReviewable(): bool
+    {
+        return $this === self::IN_REVIEW;
+    }
 }

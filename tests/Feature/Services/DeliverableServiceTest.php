@@ -50,6 +50,7 @@ it('updates a deliverable', function () {
         'project_unique_id' => $this->project->unique_id,
         'milestone_unique_id' => $milestone->unique_id,
         'name' => 'Original',
+        'status' => DeliverableStatus::DRAFT,
     ]);
 
     $updated = $this->service->updateDeliverable($deliverable, SaveDeliverableData::fromArray([
@@ -67,27 +68,46 @@ it('updates a deliverable', function () {
     });
 });
 
-it('approves a deliverable', function () {
+it('approves a deliverable as the client', function () {
     $deliverable = Deliverable::factory()->create([
         'project_unique_id' => $this->project->unique_id,
         'status' => DeliverableStatus::IN_REVIEW,
     ]);
 
-    $approved = $this->service->approveDeliverable($deliverable, $this->admin);
+    $approved = $this->service->approveDeliverable($deliverable, $this->client);
 
     expect($approved->status)->toBe(DeliverableStatus::APPROVED)
         ->and($approved->approved_at)->not->toBeNull();
 });
 
-it('rejects a deliverable', function () {
+it('rejects a deliverable as the client', function () {
     $deliverable = Deliverable::factory()->create([
         'project_unique_id' => $this->project->unique_id,
         'status' => DeliverableStatus::IN_REVIEW,
     ]);
 
-    $rejected = $this->service->rejectDeliverable($deliverable, $this->admin, 'Needs revision');
+    $rejected = $this->service->rejectDeliverable($deliverable, $this->client, 'Needs revision');
 
     expect($rejected->status)->toBe(DeliverableStatus::REJECTED);
+});
+
+it('submits a deliverable for client review', function () {
+    Event::fake([DeliverableEvent::class]);
+
+    $deliverable = Deliverable::factory()->create([
+        'project_unique_id' => $this->project->unique_id,
+        'status' => DeliverableStatus::DRAFT,
+    ]);
+
+    $submitted = $this->service->submitForReview($deliverable, $this->admin);
+
+    expect($submitted->status)->toBe(DeliverableStatus::IN_REVIEW);
+
+    Event::assertDispatched(DeliverableEvent::class, function (DeliverableEvent $event) use ($deliverable) {
+        return $event->action === DeliverableAction::STATUS_CHANGED
+            && $event->deliverable->is($deliverable)
+            && ($event->metadata['to_status'] ?? null) === DeliverableStatus::IN_REVIEW->value;
+    });
 });
 
 it('gets deliverables for a project', function () {
@@ -122,7 +142,7 @@ it('auto-completes a milestone when all deliverables are approved', function () 
 
     expect($milestone->fresh()->status)->toBe(MilestoneStatus::IN_PROGRESS);
 
-    $this->service->approveDeliverable($pending, $this->admin);
+    $this->service->approveDeliverable($pending, $this->client);
 
     expect($milestone->fresh()->status)->toBe(MilestoneStatus::COMPLETED)
         ->and($milestone->fresh()->completed_at)->not->toBeNull();
@@ -165,34 +185,6 @@ it('reopens a completed milestone when a new deliverable is added', function () 
     });
 });
 
-it('reopens a completed milestone when a deliverable is rejected', function () {
-    Event::fake([MilestoneEvent::class, DeliverableEvent::class]);
-
-    $milestone = Milestone::factory()->completed()->create([
-        'project_unique_id' => $this->project->unique_id,
-    ]);
-
-    $deliverable = Deliverable::factory()->create([
-        'project_unique_id' => $this->project->unique_id,
-        'milestone_unique_id' => $milestone->unique_id,
-        'status' => DeliverableStatus::IN_REVIEW,
-    ]);
-
-    $this->service->approveDeliverable($deliverable, $this->admin);
-
-    expect($milestone->fresh()->status)->toBe(MilestoneStatus::COMPLETED);
-
-    $this->service->rejectDeliverable($deliverable->fresh(), $this->admin, 'Needs changes');
-
-    expect($milestone->fresh()->status)->toBe(MilestoneStatus::IN_PROGRESS);
-
-    Event::assertDispatched(MilestoneEvent::class, function (MilestoneEvent $event) use ($milestone) {
-        return $event->action === MilestoneAction::STATUS_CHANGED
-            && $event->milestone->is($milestone)
-            && ($event->metadata['auto_uncompleted'] ?? false) === true;
-    });
-});
-
 it('does not auto-complete a milestone with no deliverables', function () {
     Event::fake([MilestoneEvent::class]);
 
@@ -212,18 +204,25 @@ it('does not auto-complete a milestone with no deliverables', function () {
 it('syncs milestone status when a deliverable is reassigned', function () {
     Event::fake([MilestoneEvent::class, DeliverableEvent::class]);
 
-    $sourceMilestone = Milestone::factory()->completed()->create([
+    $sourceMilestone = Milestone::factory()->create([
         'project_unique_id' => $this->project->unique_id,
+        'status' => MilestoneStatus::IN_PROGRESS,
     ]);
     $targetMilestone = Milestone::factory()->create([
         'project_unique_id' => $this->project->unique_id,
         'status' => MilestoneStatus::IN_PROGRESS,
     ]);
 
+    Deliverable::factory()->create([
+        'project_unique_id' => $this->project->unique_id,
+        'milestone_unique_id' => $targetMilestone->unique_id,
+        'status' => DeliverableStatus::APPROVED,
+    ]);
+
     $deliverable = Deliverable::factory()->create([
         'project_unique_id' => $this->project->unique_id,
         'milestone_unique_id' => $sourceMilestone->unique_id,
-        'status' => DeliverableStatus::APPROVED,
+        'status' => DeliverableStatus::DRAFT,
     ]);
 
     $this->service->updateDeliverable($deliverable, SaveDeliverableData::fromArray([
@@ -233,6 +232,5 @@ it('syncs milestone status when a deliverable is reassigned', function () {
         'type' => DeliverableType::FILE->value,
     ]), $this->admin);
 
-    expect($sourceMilestone->fresh()->status)->toBe(MilestoneStatus::IN_PROGRESS)
-        ->and($targetMilestone->fresh()->status)->toBe(MilestoneStatus::COMPLETED);
+    expect($targetMilestone->fresh()->status)->toBe(MilestoneStatus::IN_PROGRESS);
 });

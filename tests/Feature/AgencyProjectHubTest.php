@@ -265,11 +265,12 @@ it('renders mobile row actions on deliverables list', function () {
 
     expect($html)
         ->toContain('wire:click="editDeliverable')
-        ->toContain('wire:click="approve')
-        ->toContain('wire:click="reject');
+        ->toContain('wire:click="submitForReview')
+        ->not->toContain('wire:click="approve')
+        ->not->toContain('wire:click="reject');
 });
 
-it('approves a deliverable from the list', function () {
+it('submits a deliverable for review from the list', function () {
     $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
     $client = User::factory()->create(['role' => AccountRole::CLIENT]);
     $project = Project::factory()->create(['client_unique_id' => $client->unique_id]);
@@ -283,10 +284,9 @@ it('approves a deliverable from the list', function () {
 
     Livewire::actingAs($admin)
         ->test(DeliverablesList::class, ['projectUniqueId' => $project->unique_id])
-        ->call('approve', $deliverable->unique_id)
-        ->assertDispatched('deliverable-created');
+        ->call('submitForReview', uniqueId: $deliverable->unique_id);
 
-    expect($deliverable->fresh()->status)->toBe(DeliverableStatus::APPROVED);
+    expect($deliverable->fresh()->status)->toBe(DeliverableStatus::IN_REVIEW);
 });
 
 it('creates an encrypted credential', function () {
@@ -440,6 +440,7 @@ it('updates a deliverable from the save modal', function () {
         'created_by_unique_id' => $admin->unique_id,
         'name' => 'Old Deliverable',
         'type' => DeliverableType::FILE,
+        'status' => DeliverableStatus::DRAFT,
     ]);
 
     Livewire::actingAs($admin)
@@ -451,6 +452,50 @@ it('updates a deliverable from the save modal', function () {
         ->assertDispatched('deliverable-created');
 
     expect($deliverable->fresh()->name)->toBe('Updated Deliverable');
+});
+
+it('allows opening but forbids saving an in-review deliverable', function () {
+    $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
+    $client = User::factory()->create(['role' => AccountRole::CLIENT]);
+    $project = Project::factory()->create(['client_unique_id' => $client->unique_id]);
+    $milestone = Milestone::factory()->create(['project_unique_id' => $project->unique_id, 'order' => 1]);
+    $deliverable = Deliverable::factory()->create([
+        'project_unique_id' => $project->unique_id,
+        'milestone_unique_id' => $milestone->unique_id,
+        'created_by_unique_id' => $admin->unique_id,
+        'name' => 'Locked Deliverable',
+        'status' => DeliverableStatus::IN_REVIEW,
+    ]);
+
+    Livewire::actingAs($admin)
+        ->test(SaveDeliverable::class)
+        ->call('open', projectUniqueId: $project->unique_id, uniqueId: $deliverable->unique_id)
+        ->assertSet('name', 'Locked Deliverable')
+        ->set('name', 'Should Not Save')
+        ->call('save')
+        ->assertForbidden();
+
+    expect($deliverable->fresh()->name)->toBe('Locked Deliverable');
+});
+
+it('forbids submitting an in-review deliverable for review again', function () {
+    $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
+    $client = User::factory()->create(['role' => AccountRole::CLIENT]);
+    $project = Project::factory()->create(['client_unique_id' => $client->unique_id]);
+    $milestone = Milestone::factory()->create(['project_unique_id' => $project->unique_id, 'order' => 1]);
+    $deliverable = Deliverable::factory()->create([
+        'project_unique_id' => $project->unique_id,
+        'milestone_unique_id' => $milestone->unique_id,
+        'created_by_unique_id' => $admin->unique_id,
+        'status' => DeliverableStatus::IN_REVIEW,
+    ]);
+
+    Livewire::actingAs($admin)
+        ->test(DeliverablesList::class, ['projectUniqueId' => $project->unique_id])
+        ->call('submitForReview', uniqueId: $deliverable->unique_id)
+        ->assertForbidden();
+
+    expect($deliverable->fresh()->status)->toBe(DeliverableStatus::IN_REVIEW);
 });
 
 it('updates a credential from the save modal without changing password', function () {

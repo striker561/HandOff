@@ -1,7 +1,7 @@
 <div>
     <x-agency.project-hub.section :heading="__('Deliverables')" flush>
         <x-slot:description>
-            {{ __('Files and assets tied to milestones — approve when ready for your client.') }}
+            {{ __('Files and assets tied to milestones — submit for client review when ready.') }}
         </x-slot:description>
         <x-slot:actions>
             @if ($this->hasMilestones)

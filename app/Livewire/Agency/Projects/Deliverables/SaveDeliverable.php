@@ -2,15 +2,16 @@
 
 namespace App\Livewire\Agency\Projects\Deliverables;
 
+use App\Concerns\AuthorizesProjectHubResources;
 use App\Concerns\WithActionRateLimiting;
 use App\Concerns\WithNotifications;
 use App\Data\Deliverables\SaveDeliverableData;
-use App\Enums\Deliverable\DeliverableStatus;
 use App\Enums\Deliverable\DeliverableType;
 use App\Models\Deliverable;
 use App\Services\DeliverableFileService;
 use App\Services\DeliverableService;
 use App\Services\MilestoneService;
+use App\Services\ProjectService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -23,7 +24,7 @@ use Livewire\WithFileUploads;
 
 class SaveDeliverable extends Component
 {
-    use WithActionRateLimiting, WithFileUploads, WithNotifications;
+    use AuthorizesProjectHubResources, WithActionRateLimiting, WithFileUploads, WithNotifications;
 
     #[Locked]
     public ?string $projectUniqueId = null;
@@ -53,11 +54,18 @@ class SaveDeliverable extends Component
 
     private MilestoneService $milestoneService;
 
-    public function boot(DeliverableService $deliverableService, DeliverableFileService $deliverableFileService, MilestoneService $milestoneService): void
-    {
+    private ProjectService $projectService;
+
+    public function boot(
+        DeliverableService $deliverableService,
+        DeliverableFileService $deliverableFileService,
+        MilestoneService $milestoneService,
+        ProjectService $projectService,
+    ): void {
         $this->deliverableService = $deliverableService;
         $this->deliverableFileService = $deliverableFileService;
         $this->milestoneService = $milestoneService;
+        $this->projectService = $projectService;
     }
 
     #[Computed]
@@ -76,23 +84,19 @@ class SaveDeliverable extends Component
         $this->type = DeliverableType::FILE->value;
         $this->resetValidation();
 
-        if ($uniqueId !== null) {
-            $deliverable = $this->findDeliverable($uniqueId, $projectUniqueId);
+        $deliverable = $this->viewHubResource(
+            $uniqueId,
+            $projectUniqueId,
+            $this->deliverableService->findDeliverableForProject(...),
+        );
 
-            if ($deliverable === null) {
-                $this->notifyError(__('Deliverable not found.'));
+        if ($uniqueId !== null && $deliverable === null) {
+            $this->notifyError(__('Deliverable not found.'));
 
-                return;
-            }
+            return;
+        }
 
-            if ($deliverable->status === DeliverableStatus::APPROVED) {
-                $this->notifyError(__('Approved deliverables cannot be edited.'));
-
-                return;
-            }
-
-            $this->authorize('update', $deliverable);
-
+        if ($deliverable instanceof Deliverable) {
             $this->name = $deliverable->name;
             $this->description = $deliverable->description ?? '';
             $this->type = $deliverable->type->value;
@@ -100,8 +104,6 @@ class SaveDeliverable extends Component
             $this->due_date = $deliverable->due_date?->format('Y-m-d');
             $this->link = $deliverable->metadata['link'] ?? '';
             $this->content = $deliverable->metadata['content'] ?? '';
-        } else {
-            $this->authorize('create', Deliverable::class);
         }
 
         $this->modal('save-deliverable')->show();
@@ -139,18 +141,23 @@ class SaveDeliverable extends Component
             return;
         }
 
+        $deliverable = null;
+
         if ($this->isEditing()) {
-            $deliverable = $this->findDeliverable($this->uniqueId, $this->projectUniqueId);
+            $deliverable = $this->authorizeHubResource(
+                'update',
+                $this->uniqueId,
+                $this->projectUniqueId,
+                $this->deliverableService->findDeliverableForProject(...),
+            );
 
             if ($deliverable === null) {
                 $this->notifyError(__('Deliverable not found.'));
 
                 return;
             }
-
-            $this->authorize('update', $deliverable);
-        } else {
-            $this->authorize('create', Deliverable::class);
+        } elseif (! $this->authorizeHubResourceCreate(Deliverable::class, $this->projectUniqueId, $this->projectService)) {
+            return;
         }
 
         if (! $this->attemptRateLimitedAction('save-deliverable', maxAttempts: 10, decaySeconds: 60)) {
@@ -209,13 +216,13 @@ class SaveDeliverable extends Component
         ]);
 
         if ($this->isEditing()) {
-            $deliverable = $this->findDeliverable($this->uniqueId, $this->projectUniqueId);
             $this->deliverableService->updateDeliverable($deliverable, $data, Auth::user());
             $this->notifySuccess(__('Deliverable updated.'));
         } else {
             $deliverable = $this->deliverableService->createDeliverable($data, Auth::user());
 
             if ($this->file !== null) {
+                $this->authorize('uploadFile', $deliverable);
                 $this->deliverableFileService->uploadFile($deliverable, $this->file, Auth::user());
             }
 
@@ -228,14 +235,6 @@ class SaveDeliverable extends Component
         $this->modal('save-deliverable')->close();
 
         $this->dispatch('deliverable-created');
-    }
-
-    private function findDeliverable(string $uniqueId, string $projectUniqueId): ?Deliverable
-    {
-        return Deliverable::query()
-            ->where('unique_id', $uniqueId)
-            ->where('project_unique_id', $projectUniqueId)
-            ->first();
     }
 
     public function render()

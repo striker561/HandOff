@@ -2,6 +2,8 @@
 
 namespace App\Livewire\Agency\Projects\Deliverables;
 
+use App\Concerns\AuthorizesProjectHubResources;
+use App\Concerns\WithNotifications;
 use App\Models\Deliverable;
 use App\Models\Milestone;
 use App\Services\DeliverableService;
@@ -15,7 +17,7 @@ use Livewire\WithPagination;
 
 class DeliverablesList extends Component
 {
-    use WithPagination;
+    use AuthorizesProjectHubResources, WithNotifications, WithPagination;
 
     #[Locked]
     public string $projectUniqueId;
@@ -47,34 +49,26 @@ class DeliverablesList extends Component
             ->to(SaveDeliverable::class);
     }
 
-    public function approve(string $uniqueId): void
+    public function submitForReview(string $uniqueId): void
     {
-        $deliverable = $this->findDeliverable($uniqueId);
+        $deliverable = $this->authorizeHubResource(
+            'submitForReview',
+            $uniqueId,
+            $this->projectUniqueId,
+            $this->deliverableService->findDeliverableForProject(...),
+        );
 
-        if ($deliverable === null) {
+        if (! $deliverable instanceof Deliverable) {
+            $this->notifyError(__('Deliverable not found.'));
+
             return;
         }
 
-        $this->authorize('update', $deliverable);
+        $this->deliverableService->submitForReview($deliverable, Auth::user());
 
-        $this->deliverableService->approveDeliverable($deliverable, Auth::user());
+        $this->notifySuccess(__('Deliverable submitted for client review.'));
 
-        $this->dispatch('deliverable-created');
-    }
-
-    public function reject(string $uniqueId): void
-    {
-        $deliverable = $this->findDeliverable($uniqueId);
-
-        if ($deliverable === null) {
-            return;
-        }
-
-        $this->authorize('update', $deliverable);
-
-        $this->deliverableService->rejectDeliverable($deliverable, Auth::user());
-
-        $this->dispatch('deliverable-created');
+        $this->resetPage();
     }
 
     #[Computed]
@@ -99,14 +93,6 @@ class DeliverablesList extends Component
         }
 
         return $this->deliverableService->getDeliverablesForProject($this->projectUniqueId, $filters);
-    }
-
-    private function findDeliverable(string $uniqueId): ?Deliverable
-    {
-        return Deliverable::query()
-            ->where('unique_id', $uniqueId)
-            ->where('project_unique_id', $this->projectUniqueId)
-            ->first();
     }
 
     public function render()

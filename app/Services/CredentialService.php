@@ -33,6 +33,14 @@ class CredentialService extends BaseCRUDService
         return ['name', 'type', 'created_at', 'updated_at', 'last_accessed_at'];
     }
 
+    public function findCredentialForProject(string $uniqueId, string $projectUniqueId): ?Credential
+    {
+        return Credential::query()
+            ->where('unique_id', $uniqueId)
+            ->where('project_unique_id', $projectUniqueId)
+            ->first();
+    }
+
     public function createCredential(SaveCredentialData $data, User $performedBy): Credential
     {
         if ($data->password === null) {

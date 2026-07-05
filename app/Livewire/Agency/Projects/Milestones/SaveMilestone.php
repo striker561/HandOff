@@ -2,12 +2,14 @@
 
 namespace App\Livewire\Agency\Projects\Milestones;
 
+use App\Concerns\AuthorizesProjectHubResources;
 use App\Concerns\WithActionRateLimiting;
 use App\Concerns\WithNotifications;
 use App\Data\Milestones\SaveMilestoneData;
 use App\Enums\Milestone\MilestoneStatus;
 use App\Models\Milestone;
 use App\Services\MilestoneService;
+use App\Services\ProjectService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
@@ -17,7 +19,7 @@ use Livewire\Component;
 
 class SaveMilestone extends Component
 {
-    use WithActionRateLimiting, WithNotifications;
+    use AuthorizesProjectHubResources, WithActionRateLimiting, WithNotifications;
 
     #[Locked]
     public ?string $projectUniqueId = null;
@@ -35,9 +37,12 @@ class SaveMilestone extends Component
 
     private MilestoneService $milestoneService;
 
-    public function boot(MilestoneService $milestoneService): void
+    private ProjectService $projectService;
+
+    public function boot(MilestoneService $milestoneService, ProjectService $projectService): void
     {
         $this->milestoneService = $milestoneService;
+        $this->projectService = $projectService;
     }
 
     #[Computed]
@@ -61,24 +66,24 @@ class SaveMilestone extends Component
         $this->reset('name', 'description', 'due_date', 'status');
         $this->resetValidation();
 
-        if ($uniqueId !== null) {
-            $milestone = $this->findMilestone($uniqueId, $projectUniqueId);
+        $milestone = $this->viewHubResource(
+            $uniqueId,
+            $projectUniqueId,
+            $this->milestoneService->findMilestoneForProject(...),
+        );
 
-            if ($milestone === null) {
-                $this->notifyError(__('Milestone not found.'));
+        if ($uniqueId !== null && $milestone === null) {
+            $this->notifyError(__('Milestone not found.'));
 
-                return;
-            }
+            return;
+        }
 
-            $this->authorize('update', $milestone);
-
+        if ($milestone instanceof Milestone) {
             $this->name = $milestone->name;
             $this->description = $milestone->description ?? '';
             $this->due_date = $milestone->due_date?->format('Y-m-d');
             $this->status = $milestone->status->value;
         } else {
-            $this->authorize('create', Milestone::class);
-
             $this->status = MilestoneStatus::PENDING->value;
         }
 
@@ -91,18 +96,23 @@ class SaveMilestone extends Component
             return;
         }
 
+        $milestone = null;
+
         if ($this->isEditing()) {
-            $milestone = $this->findMilestone($this->uniqueId, $this->projectUniqueId);
+            $milestone = $this->authorizeHubResource(
+                'update',
+                $this->uniqueId,
+                $this->projectUniqueId,
+                $this->milestoneService->findMilestoneForProject(...),
+            );
 
             if ($milestone === null) {
                 $this->notifyError(__('Milestone not found.'));
 
                 return;
             }
-
-            $this->authorize('update', $milestone);
-        } else {
-            $this->authorize('create', Milestone::class);
+        } elseif (! $this->authorizeHubResourceCreate(Milestone::class, $this->projectUniqueId, $this->projectService)) {
+            return;
         }
 
         if (! $this->attemptRateLimitedAction('save-milestone', maxAttempts: 10, decaySeconds: 60)) {
@@ -136,7 +146,6 @@ class SaveMilestone extends Component
         ]);
 
         if ($this->isEditing()) {
-            $milestone = $this->findMilestone($this->uniqueId, $this->projectUniqueId);
             $this->milestoneService->updateMilestone($milestone, $data, Auth::user());
             $this->notifySuccess(__('Milestone updated.'));
         } else {
@@ -149,14 +158,6 @@ class SaveMilestone extends Component
         $this->modal('save-milestone')->close();
 
         $this->dispatch('milestone-created');
-    }
-
-    private function findMilestone(string $uniqueId, string $projectUniqueId): ?Milestone
-    {
-        return Milestone::query()
-            ->where('unique_id', $uniqueId)
-            ->where('project_unique_id', $projectUniqueId)
-            ->first();
     }
 
     public function render()

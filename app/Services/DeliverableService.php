@@ -38,6 +38,14 @@ class DeliverableService extends BaseCRUDService
         return ['name', 'status', 'type', 'order', 'version', 'due_date', 'created_at', 'updated_at', 'approved_at'];
     }
 
+    public function findDeliverableForProject(string $uniqueId, string $projectUniqueId): ?Deliverable
+    {
+        return Deliverable::query()
+            ->where('unique_id', $uniqueId)
+            ->where('project_unique_id', $projectUniqueId)
+            ->first();
+    }
+
     public function createDeliverable(SaveDeliverableData $data, User $performedBy): Deliverable
     {
         $nextOrder = $this->getNextOrder(
@@ -159,6 +167,25 @@ class DeliverableService extends BaseCRUDService
             $rejectedBy,
             [
                 'feedback' => $feedback,
+            ]
+        );
+
+        return $updated;
+    }
+
+    public function submitForReview(Deliverable $deliverable, User $performedBy): Deliverable
+    {
+        $fromStatus = $deliverable->status;
+
+        $updated = $this->changeStatus($deliverable, DeliverableStatus::IN_REVIEW, $performedBy);
+
+        DeliverableEvent::dispatch(
+            $updated,
+            DeliverableAction::STATUS_CHANGED,
+            $performedBy,
+            [
+                'from_status' => $fromStatus->value,
+                'to_status' => DeliverableStatus::IN_REVIEW->value,
             ]
         );
 
