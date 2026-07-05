@@ -5,18 +5,14 @@ namespace App\Services;
 use App\Data\Deliverables\SaveDeliverableData;
 use App\Enums\Deliverable\DeliverableAction;
 use App\Enums\Deliverable\DeliverableStatus;
-use App\Enums\Milestone\MilestoneAction;
-use App\Enums\Milestone\MilestoneStatus;
 use App\Events\Deliverable\DeliverableEvent;
-use App\Events\Milestone\MilestoneEvent;
 use App\Models\Deliverable;
-use App\Models\Milestone;
 use App\Models\User;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class DeliverableService extends BaseCRUDService
 {
-    public function __construct() {}
+    public function __construct(private MilestoneService $milestoneService) {}
 
     protected function getModel(): string
     {
@@ -59,7 +55,7 @@ class DeliverableService extends BaseCRUDService
             'version' => 1,
         ]));
 
-        $this->updateMilestoneOnDeliverableChange($deliverable, $performedBy);
+        $this->syncMilestoneForDeliverable($deliverable, $performedBy);
 
         DeliverableEvent::dispatch(
             $deliverable,
@@ -81,16 +77,17 @@ class DeliverableService extends BaseCRUDService
 
         if ($previousMilestoneUniqueId !== $deliverable->milestone_unique_id) {
             if ($previousMilestoneUniqueId !== null) {
-                $previousMilestone = Milestone::query()
-                    ->where('unique_id', $previousMilestoneUniqueId)
-                    ->first();
+                $previousMilestone = $this->milestoneService->findMilestoneForProject(
+                    $previousMilestoneUniqueId,
+                    $deliverable->project_unique_id,
+                );
 
                 if ($previousMilestone !== null) {
-                    $this->syncMilestoneStatus($previousMilestone, $performedBy);
+                    $this->milestoneService->syncFromDeliverables($previousMilestone, $performedBy);
                 }
             }
 
-            $this->updateMilestoneOnDeliverableChange($deliverable, $performedBy);
+            $this->syncMilestoneForDeliverable($deliverable, $performedBy);
         }
 
         DeliverableEvent::dispatch(
@@ -138,7 +135,7 @@ class DeliverableService extends BaseCRUDService
 
         $deliverable = $deliverable->fresh();
 
-        $this->updateMilestoneOnDeliverableChange($deliverable, $performedBy);
+        $this->syncMilestoneForDeliverable($deliverable, $performedBy);
 
         return $deliverable;
     }
@@ -192,51 +189,15 @@ class DeliverableService extends BaseCRUDService
         return $updated;
     }
 
-    private function updateMilestoneOnDeliverableChange(Deliverable $deliverable, User $performedBy): void
+    private function syncMilestoneForDeliverable(Deliverable $deliverable, User $performedBy): void
     {
-        /** @var Milestone|null $milestone */
         $milestone = $deliverable->milestone;
 
         if ($milestone === null) {
             return;
         }
 
-        $this->syncMilestoneStatus($milestone, $performedBy);
-    }
-
-    private function syncMilestoneStatus(Milestone $milestone, User $performedBy): void
-    {
-        $hasDeliverables = $milestone->deliverables()->exists();
-
-        $allApproved = $hasDeliverables && $milestone->deliverables()
-            ->where('status', '!=', DeliverableStatus::APPROVED)
-            ->doesntExist();
-
-        if ($allApproved && ! $milestone->is_completed) {
-            $milestone->update([
-                'status' => MilestoneStatus::COMPLETED,
-                'completed_at' => now(),
-            ]);
-
-            MilestoneEvent::dispatch(
-                $milestone->fresh(),
-                MilestoneAction::COMPLETED,
-                $performedBy,
-                ['auto_completed' => true],
-            );
-        } elseif (! $allApproved && $milestone->is_completed) {
-            $milestone->update([
-                'status' => MilestoneStatus::IN_PROGRESS,
-                'completed_at' => null,
-            ]);
-
-            MilestoneEvent::dispatch(
-                $milestone->fresh(),
-                MilestoneAction::STATUS_CHANGED,
-                $performedBy,
-                ['auto_uncompleted' => true],
-            );
-        }
+        $this->milestoneService->syncFromDeliverables($milestone, $performedBy);
     }
 
     private function getNextOrder(string $projectUniqueId, ?string $milestoneUniqueId): int

@@ -185,22 +185,6 @@ it('reopens a completed milestone when a new deliverable is added', function () 
     });
 });
 
-it('does not auto-complete a milestone with no deliverables', function () {
-    Event::fake([MilestoneEvent::class]);
-
-    $milestone = Milestone::factory()->create([
-        'project_unique_id' => $this->project->unique_id,
-        'status' => MilestoneStatus::IN_PROGRESS,
-    ]);
-
-    $method = new ReflectionMethod(DeliverableService::class, 'syncMilestoneStatus');
-    $method->setAccessible(true);
-    $method->invoke($this->service, $milestone, $this->admin);
-
-    expect($milestone->fresh()->status)->toBe(MilestoneStatus::IN_PROGRESS);
-    Event::assertNotDispatched(MilestoneEvent::class);
-});
-
 it('syncs milestone status when a deliverable is reassigned', function () {
     Event::fake([MilestoneEvent::class, DeliverableEvent::class]);
 

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Data\Milestones\SaveMilestoneData;
+use App\Enums\Deliverable\DeliverableStatus;
 use App\Enums\Milestone\MilestoneAction;
 use App\Enums\Milestone\MilestoneStatus;
 use App\Events\Milestone\MilestoneEvent;
@@ -88,9 +89,15 @@ class MilestoneService extends BaseCRUDService
     public function updateStatus(
         Milestone $milestone,
         MilestoneStatus $status,
-        User $performedBy
+        User $performedBy,
+        array $metadata = [],
     ): Milestone {
         $fromStatus = $milestone->status;
+
+        if ($fromStatus === $status) {
+            return $milestone;
+        }
+
         $completedAt = $status === MilestoneStatus::COMPLETED ? now() : null;
         $milestone->update([
             'status' => $status,
@@ -102,16 +109,44 @@ class MilestoneService extends BaseCRUDService
             : MilestoneAction::STATUS_CHANGED;
 
         MilestoneEvent::dispatch(
-            $milestone,
+            $milestone->fresh(),
             $action,
             $performedBy,
-            [
-                'from_status' => $fromStatus instanceof MilestoneStatus ? $fromStatus->value : $fromStatus,
+            array_merge([
+                'from_status' => $fromStatus->value,
                 'to_status' => $status->value,
-            ]
+            ], $metadata),
         );
 
         return $milestone->fresh();
+    }
+
+    /**
+     * Reconcile milestone completion from its deliverables (auto-complete / auto-reopen).
+     */
+    public function syncFromDeliverables(Milestone $milestone, User $performedBy): void
+    {
+        $milestone = $milestone->fresh();
+
+        $hasDeliverables = $milestone->deliverables()->exists();
+
+        $allApproved = $hasDeliverables && $milestone->deliverables()
+            ->where('status', '!=', DeliverableStatus::APPROVED)
+            ->doesntExist();
+
+        if ($allApproved && ! $milestone->is_completed) {
+            $this->updateStatus($milestone, MilestoneStatus::COMPLETED, $performedBy, [
+                'auto_completed' => true,
+            ]);
+
+            return;
+        }
+
+        if (! $allApproved && $milestone->is_completed) {
+            $this->updateStatus($milestone, MilestoneStatus::IN_PROGRESS, $performedBy, [
+                'auto_uncompleted' => true,
+            ]);
+        }
     }
 
     public function reorder(
