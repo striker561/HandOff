@@ -32,10 +32,16 @@
                             </flux:text>
 
                             <div class="flex justify-center">
-                                <x-ui.button type="button" variant="outline" wire:click="disableTwoFactor" class="!w-auto">
-                                    {{ __('Disable 2FA') }}
-                                </x-ui.button>
+                                <flux:modal.trigger name="confirm-disable-2fa">
+                                    <x-ui.button type="button" variant="outline" class="!w-auto">
+                                        {{ __('Disable 2FA') }}
+                                    </x-ui.button>
+                                </flux:modal.trigger>
                             </div>
+
+                            <x-ui.confirm-modal name="confirm-disable-2fa" :heading="__('Disable two-factor authentication?')"
+                                :description="__('This will make your account less secure. You can re-enable two-factor authentication at any time.')" :confirm-label="__('Disable 2FA')"
+                                confirm-action="disableTwoFactor" />
 
                             <livewire:settings.two-factor.recovery-codes />
                         </div>

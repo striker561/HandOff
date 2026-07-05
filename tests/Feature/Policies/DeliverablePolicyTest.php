@@ -123,11 +123,28 @@ it('denies clients from creating deliverables', function () {
     expect(Gate::forUser($this->client)->allows('create', [Deliverable::class, $this->project]))->toBeFalse();
 });
 
-it('denies deleting deliverables for everyone', function () {
+it('allows admins to delete draft and rejected deliverables', function (DeliverableStatus $status) {
+    $deliverable = deliverableForProject($this->project, $status);
+
+    expect(Gate::forUser($this->admin)->allows('delete', $deliverable))->toBeTrue();
+})->with([
+    DeliverableStatus::DRAFT,
+    DeliverableStatus::REJECTED,
+]);
+
+it('denies deleting non-editable deliverables', function (DeliverableStatus $status) {
+    $deliverable = deliverableForProject($this->project, $status);
+
+    expect(Gate::forUser($this->admin)->allows('delete', $deliverable))->toBeFalse();
+})->with([
+    DeliverableStatus::IN_REVIEW,
+    DeliverableStatus::APPROVED,
+]);
+
+it('denies clients from deleting deliverables', function () {
     $deliverable = deliverableForProject($this->project, DeliverableStatus::DRAFT);
 
-    expect(Gate::forUser($this->admin)->allows('delete', $deliverable))->toBeFalse()
-        ->and(Gate::forUser($this->client)->allows('delete', $deliverable))->toBeFalse();
+    expect(Gate::forUser($this->client)->allows('delete', $deliverable))->toBeFalse();
 });
 
 it('denies manual status changes for everyone including admins', function () {
@@ -150,15 +167,18 @@ it('denies deleting deliverable files while in review', function (DeliverableSta
     DeliverableStatus::APPROVED,
 ]);
 
-it('allows admins to delete files on draft deliverables', function () {
-    $deliverable = deliverableForProject($this->project, DeliverableStatus::DRAFT);
+it('allows admins to delete files on agency editable deliverables', function (DeliverableStatus $status) {
+    $deliverable = deliverableForProject($this->project, $status);
     $file = DeliverableFile::factory()->create([
         'deliverable_unique_id' => $deliverable->unique_id,
         'uploaded_by_unique_id' => $this->admin->unique_id,
     ]);
 
     expect(Gate::forUser($this->admin)->allows('delete', $file))->toBeTrue();
-});
+})->with([
+    DeliverableStatus::DRAFT,
+    DeliverableStatus::REJECTED,
+]);
 
 it('denies clients from submitting deliverables for review', function () {
     $deliverable = deliverableForProject($this->project, DeliverableStatus::DRAFT);

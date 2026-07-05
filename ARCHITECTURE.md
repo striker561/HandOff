@@ -193,7 +193,7 @@ Policy abilities and UI gates follow [`DeliverableStatus`](app/Enums/Deliverable
 
 **Transitions:** `draft`/`rejected` → `in_review` (agency `submitForReview`); `in_review` → `approved` or `rejected` (client `approve`/`reject`). Milestone auto-complete/reopen runs via `MilestoneService::syncFromDeliverables()` after deliverable status changes.
 
-**Other abilities:** `create` — admin only. `view` / `downloadFile` — admin or client on the project. `delete` / `deleteFile` — denied for all roles (not implemented).
+**Other abilities:** `create` — admin only. `view` / `downloadFile` — admin or client on the project. `delete` / `deleteFile` — admin only while `draft` or `rejected` (`isAgencyEditable()`). Locked once submitted for review.
 
 ## UI components
 

@@ -135,10 +135,22 @@ class SaveDeliverable extends Component
 
     public function updatedType(): void
     {
-        if (! $this->currentType()?->isFileBased()) {
+        $type = $this->currentType();
+
+        if (! $type?->isFileBased()) {
             $this->fileUploaderState = $this->emptyFileUploaderState();
             $this->fileUploaderKey++;
         }
+
+        if (! $type?->isLink()) {
+            $this->link = '';
+        }
+
+        if (! $type?->isTextBased()) {
+            $this->content = '';
+        }
+
+        $this->resetValidation('link', 'content', 'fileUploaderState.pending', 'fileUploaderState.pending.*');
     }
 
     #[Computed]

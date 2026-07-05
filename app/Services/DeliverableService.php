@@ -12,7 +12,10 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class DeliverableService extends BaseCRUDService
 {
-    public function __construct(private MilestoneService $milestoneService) {}
+    public function __construct(
+        private MilestoneService $milestoneService,
+        private DeliverableFileService $deliverableFileService,
+    ) {}
 
     protected function getModel(): string
     {
@@ -187,6 +190,28 @@ class DeliverableService extends BaseCRUDService
         );
 
         return $updated;
+    }
+
+    public function deleteDeliverable(Deliverable $deliverable, User $performedBy): bool
+    {
+        foreach ($deliverable->files as $file) {
+            $this->deliverableFileService->deleteFile($file, $performedBy);
+        }
+
+        $deleted = (bool) $deliverable->delete();
+
+        if ($deleted) {
+            DeliverableEvent::dispatch(
+                $deliverable,
+                DeliverableAction::DELETED,
+                $performedBy,
+                []
+            );
+
+            $this->syncMilestoneForDeliverable($deliverable, $performedBy);
+        }
+
+        return $deleted;
     }
 
     private function syncMilestoneForDeliverable(Deliverable $deliverable, User $performedBy): void

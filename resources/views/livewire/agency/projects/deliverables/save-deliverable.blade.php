@@ -30,7 +30,7 @@
 
         <flux:field>
             <flux:label>{{ __('Type') }}</flux:label>
-            <flux:select wire:model="type">
+            <flux:select wire:model.live="type">
                 @foreach ($this->deliverableTypes as $deliverableType)
                     <flux:select.option value="{{ $deliverableType->value }}">{{ $deliverableType->label() }}
                     </flux:select.option>
@@ -53,18 +53,20 @@
 
         @php $currentType = $this->currentType; @endphp
 
-        @if ($this->showFileUploader)
-            <livewire:ui.file-uploader wire:key="file-uploader-{{ $fileUploaderKey }}" :state="$fileUploaderState"
-                :max-files="$this->deliverableMaxFiles" :can-upload="$this->canUploadDeliverableFile"
-                :description="$this->isEditing
+        @if ($currentType?->isFileBased())
+            <div wire:key="deliverable-field-files-{{ $type }}">
+                <livewire:ui.file-uploader wire:key="file-uploader-{{ $fileUploaderKey }}" :state="$fileUploaderState"
+                    :max-files="$this->deliverableMaxFiles" :can-upload="$this->canUploadDeliverableFile"
+                    :description="$this->isEditing
                 ? __('Add or remove files before saving.')
                 : __('Attach one or more files now or add them later before submitting for review.')"
-                :locked-message="__('File uploads are locked while this deliverable is in review or approved.')"
-                :empty-text="__('Choose one or more files to attach to this deliverable.')" />
+                    :locked-message="__('File uploads are locked while this deliverable is in review or approved.')"
+                    :empty-text="__('Choose one or more files to attach to this deliverable.')" />
+            </div>
         @endif
 
         @if ($currentType?->isLink())
-            <flux:field>
+            <flux:field wire:key="deliverable-field-link-{{ $type }}">
                 <flux:label>{{ __('URL') }}</flux:label>
                 <flux:input type="url" wire:model="link" placeholder="https://example.com/file.pdf" />
                 <flux:error name="link" />
@@ -72,7 +74,7 @@
         @endif
 
         @if ($currentType?->isTextBased())
-            <flux:field>
+            <flux:field wire:key="deliverable-field-content-{{ $type }}">
                 <flux:label>{{ __('Content') }}</flux:label>
                 <flux:textarea wire:model="content" rows="6" />
                 <flux:error name="content" />

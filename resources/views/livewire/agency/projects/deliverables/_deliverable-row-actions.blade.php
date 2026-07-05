@@ -4,7 +4,11 @@
     <x-ui.button icon="pencil-square" :icon-only="! $mobile" wire:click="editDeliverable('{{ $deliverable->unique_id }}')">
         {{ __('Edit') }}
     </x-ui.button>
-    <x-ui.button icon="paper-airplane" :icon-only="! $mobile" wire:click="submitForReview('{{ $deliverable->unique_id }}')">
+    <x-ui.button icon="paper-airplane" :icon-only="! $mobile"
+        wire:click="confirmSubmitForReview('{{ $deliverable->unique_id }}')">
         {{ __('Submit for review') }}
+    </x-ui.button>
+    <x-ui.button icon="trash" :icon-only="! $mobile" wire:click="confirmDeleteDeliverable('{{ $deliverable->unique_id }}')">
+        {{ __('Delete') }}
     </x-ui.button>
 @endif

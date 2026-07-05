@@ -17,8 +17,6 @@ class Passkeys extends Component
     #[Locked]
     public array $passkeys = [];
 
-    public bool $showDeleteModal = false;
-
     #[Locked]
     public ?int $deletingPasskeyId = null;
 
@@ -57,7 +55,7 @@ class Passkeys extends Component
         $passkey = Auth::user()->passkeys()->findOrFail($passkeyId);
         $this->deletingPasskeyId = $passkey->id;
         $this->deletingPasskeyName = $passkey->name;
-        $this->showDeleteModal = true;
+        $this->modal('delete-passkey-modal')->show();
     }
 
     public function deletePasskey(DeletePasskey $deletePasskey): void
@@ -74,9 +72,9 @@ class Passkeys extends Component
 
     public function closeDeleteModal(): void
     {
-        $this->showDeleteModal = false;
         $this->deletingPasskeyId = null;
         $this->deletingPasskeyName = '';
+        $this->modal('delete-passkey-modal')->close();
     }
 
     public function render()

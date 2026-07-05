@@ -80,29 +80,25 @@
                 </flux:table.rows>
             </x-ui.data-table>
 
+            <x-ui.confirm-modal
+                name="confirm-delete-milestone"
+                :heading="__('Delete milestone?')"
+                :description="__('This cannot be undone. Delete any deliverables linked to this milestone first.')"
+                :confirm-label="__('Delete')"
+                confirm-action="deleteMilestone"
+                cancel-action="cancelDeleteMilestone"
+            />
 
-            @php
-                $statusHelpLine = __('Agency sets milestones to :pending or :in_progress.', [
-                    'pending' => __('Pending'),
-                    'in_progress' => __('In progress'),
-                ]);
-            @endphp
-            <div x-data="{ open: false }" class="mb-4">
-                <button @click="open = !open" t y pe="button"
-                    class="text-brand-700/70 dark:text-brand-200/70 hover:text-brand-900 dark:hover:text-brand-50 flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-sm transition">
-                    <flux:icon.information-circle variant="mini" class="size-4 shrink-0" />
-                    <span>{{ __('How milestone status works') }}</span>
-
-                    <flux:icon.chevron-down variant="mini" class="ml-auto size-4 transition"
-                        x-bind:class="open && 'rotate-180'" />
-                </button>
-                <div x-show="open" x-transition
-                    class="text-brand-700/70 dark:text-brand-200/70 mt-2 space-y-1.5 rounded-lg border border-t-0 px-3 py-3 text-sm">
-                    <p>{{ $statusHelpLine }}</p>
-                    <p>{{ __('When all deliverables in a milestone are approved by the client, the milestone auto-completes.') }}
-                    </p>
-                    <p>{{ __('Adding a new deliverable to a completed milestone moves it back to in progress.') }}</p>
-                </div>
+            <div class="px-4 pb-4 sm:px-5">
+                <x-ui.hint-disclosure :heading="__('How milestones work')">
+                    <ul class="handoff-hint-disclosure__list">
+                        <li>{{ __('Set each phase to Pending or In progress. Completed is automatic.') }}</li>
+                        <li>{{ __('When every deliverable in a milestone is client-approved, the milestone completes.') }}</li>
+                        <li>{{ __('Adding a deliverable to a completed milestone moves it back to In progress.') }}</li>
+                        <li>{{ __('Due date can be changed until deliverables are linked to the milestone.') }}</li>
+                        <li>{{ __('Delete empty milestones from the row actions. Remove linked deliverables first.') }}</li>
+                    </ul>
+                </x-ui.hint-disclosure>
             </div>
         @endif
     </x-agency.project-hub.section>

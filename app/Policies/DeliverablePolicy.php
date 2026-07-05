@@ -42,7 +42,7 @@ class DeliverablePolicy
 
     public function delete(User $user, Deliverable $deliverable): bool
     {
-        return false;
+        return $user->isAdmin() && $deliverable->status->isAgencyEditable();
     }
 
     public function changeStatus(User $user, Deliverable $deliverable): bool

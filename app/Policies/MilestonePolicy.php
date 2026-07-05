@@ -30,7 +30,7 @@ class MilestonePolicy
 
     public function delete(User $user, Milestone $milestone): bool
     {
-        return false;
+        return $user->isAdmin() && $milestone->isDeletable();
     }
 
     public function updateStatus(User $user, Milestone $milestone): bool

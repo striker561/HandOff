@@ -109,6 +109,34 @@
                     @endforeach
                 </flux:table.rows>
             </x-ui.data-table>
+
+            <x-ui.confirm-modal
+                name="confirm-submit-deliverable"
+                :heading="__('Submit for client review?')"
+                :description="__('The client will be notified and can review this deliverable. You will not be able to edit it while it is under review.')"
+                :confirm-label="__('Submit for review')"
+                confirm-variant="primary"
+                confirm-action="submitForReview"
+                cancel-action="cancelSubmitForReview"
+            />
+
+            <x-ui.confirm-modal
+                name="confirm-delete-deliverable"
+                :heading="__('Delete deliverable?')"
+                :description="__('This cannot be undone. All attached files will be removed.')"
+                :confirm-label="__('Delete')"
+                confirm-action="deleteDeliverable"
+                cancel-action="cancelDeleteDeliverable"
+            />
+            <div class="px-4 pb-4 sm:px-5">
+                <x-ui.hint-disclosure :heading="__('How deliverables work')">
+                    <ul class="handoff-hint-disclosure__list">
+                        <li>{{ __('Draft and rejected deliverables can be edited, deleted, and re-submitted.') }}</li>
+                        <li>{{ __('Submit for review when ready — the client is notified and editing locks until they respond.') }}</li>
+                        <li>{{ __('In review and approved deliverables are locked as the audit record.') }}</li>
+                    </ul>
+                </x-ui.hint-disclosure>
+            </div>
         @endif
     </x-agency.project-hub.section>
 </div>

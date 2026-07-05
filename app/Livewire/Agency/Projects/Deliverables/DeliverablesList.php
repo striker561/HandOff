@@ -24,6 +24,10 @@ class DeliverablesList extends Component
 
     public ?string $milestoneUniqueId = null;
 
+    public ?string $submittingUniqueId = null;
+
+    public ?string $deletingUniqueId = null;
+
     private DeliverableService $deliverableService;
 
     public function boot(DeliverableService $deliverableService): void
@@ -49,8 +53,38 @@ class DeliverablesList extends Component
             ->to(SaveDeliverable::class);
     }
 
-    public function submitForReview(string $uniqueId): void
+    public function confirmSubmitForReview(string $uniqueId): void
     {
+        $this->submittingUniqueId = $uniqueId;
+        $this->modal('confirm-submit-deliverable')->show();
+    }
+
+    public function cancelSubmitForReview(): void
+    {
+        $this->submittingUniqueId = null;
+    }
+
+    public function confirmDeleteDeliverable(string $uniqueId): void
+    {
+        $this->deletingUniqueId = $uniqueId;
+        $this->modal('confirm-delete-deliverable')->show();
+    }
+
+    public function cancelDeleteDeliverable(): void
+    {
+        $this->deletingUniqueId = null;
+    }
+
+    public function submitForReview(?string $uniqueId = null): void
+    {
+        $uniqueId ??= $this->submittingUniqueId;
+        $this->submittingUniqueId = null;
+        $this->modal('confirm-submit-deliverable')->close();
+
+        if ($uniqueId === null) {
+            return;
+        }
+
         $deliverable = $this->authorizeHubResource(
             'submitForReview',
             $uniqueId,
@@ -67,6 +101,36 @@ class DeliverablesList extends Component
         $this->deliverableService->submitForReview($deliverable, Auth::user());
 
         $this->notifySuccess(__('Deliverable submitted for client review.'));
+
+        $this->resetPage();
+    }
+
+    public function deleteDeliverable(?string $uniqueId = null): void
+    {
+        $uniqueId ??= $this->deletingUniqueId;
+        $this->deletingUniqueId = null;
+        $this->modal('confirm-delete-deliverable')->close();
+
+        if ($uniqueId === null) {
+            return;
+        }
+
+        $deliverable = $this->authorizeHubResource(
+            'delete',
+            $uniqueId,
+            $this->projectUniqueId,
+            $this->deliverableService->findDeliverableForProject(...),
+        );
+
+        if (! $deliverable instanceof Deliverable) {
+            $this->notifyError(__('Deliverable not found.'));
+
+            return;
+        }
+
+        $this->deliverableService->deleteDeliverable($deliverable, Auth::user());
+
+        $this->notifySuccess(__('Deliverable deleted.'));
 
         $this->resetPage();
     }

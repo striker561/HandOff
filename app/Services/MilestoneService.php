@@ -60,7 +60,13 @@ class MilestoneService extends BaseCRUDService
 
     public function updateMilestone(Milestone $milestone, SaveMilestoneData $data, User $performedBy): Milestone
     {
-        $milestone->update($data->toUpdateAttributes());
+        $attributes = $data->toUpdateAttributes();
+
+        if ($milestone->isDueDateLocked()) {
+            unset($attributes['due_date']);
+        }
+
+        $milestone->update($attributes);
 
         if ($data->status !== null && $data->status !== $milestone->status) {
             return $this->updateStatus($milestone, $data->status, $performedBy);
@@ -147,6 +153,26 @@ class MilestoneService extends BaseCRUDService
                 'auto_uncompleted' => true,
             ]);
         }
+    }
+
+    public function deleteMilestone(Milestone $milestone, User $performedBy): bool
+    {
+        if (! $milestone->isDeletable()) {
+            return false;
+        }
+
+        $deleted = (bool) $milestone->delete();
+
+        if ($deleted) {
+            MilestoneEvent::dispatch(
+                $milestone,
+                MilestoneAction::DELETED,
+                $performedBy,
+                []
+            );
+        }
+
+        return $deleted;
     }
 
     public function reorder(

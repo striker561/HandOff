@@ -434,6 +434,53 @@ it('creates a milestone with the selected status', function () {
         ->toBe(MilestoneStatus::IN_PROGRESS);
 });
 
+it('allows admins to delete empty milestones from the list', function () {
+    $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
+    $client = User::factory()->create(['role' => AccountRole::CLIENT]);
+    $project = Project::factory()->create(['client_unique_id' => $client->unique_id]);
+    $milestone = Milestone::factory()->create([
+        'project_unique_id' => $project->unique_id,
+        'order' => 1,
+        'status' => MilestoneStatus::PENDING,
+    ]);
+
+    Livewire::actingAs($admin)
+        ->test(MilestonesList::class, ['projectUniqueId' => $project->unique_id])
+        ->call('deleteMilestone', uniqueId: $milestone->unique_id)
+        ->assertHasNoErrors();
+
+    expect(Milestone::query()->where('unique_id', $milestone->unique_id)->exists())->toBeFalse();
+});
+
+it('locks due date when editing a milestone with deliverables', function () {
+    $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
+    $client = User::factory()->create(['role' => AccountRole::CLIENT]);
+    $project = Project::factory()->create(['client_unique_id' => $client->unique_id]);
+    $milestone = Milestone::factory()->create([
+        'project_unique_id' => $project->unique_id,
+        'due_date' => now()->addDays(7),
+        'order' => 1,
+    ]);
+    Deliverable::factory()->create([
+        'project_unique_id' => $project->unique_id,
+        'milestone_unique_id' => $milestone->unique_id,
+    ]);
+
+    Livewire::actingAs($admin)
+        ->test(SaveMilestone::class)
+        ->call('open', projectUniqueId: $project->unique_id, uniqueId: $milestone->unique_id)
+        ->assertSet('dueDateLocked', true)
+        ->assertSee(__('Due date is fixed once deliverables are linked to this milestone.'))
+        ->set('due_date', now()->addDays(30)->format('Y-m-d'))
+        ->set('name', 'Renamed Phase')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $fresh = $milestone->fresh();
+    expect($fresh->name)->toBe('Renamed Phase')
+        ->and($fresh->due_date?->toDateString())->toBe($milestone->due_date?->toDateString());
+});
+
 it('updates a deliverable from the save modal', function () {
     $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
     $client = User::factory()->create(['role' => AccountRole::CLIENT]);
@@ -598,6 +645,28 @@ it('allows admins to delete deliverable files on draft deliverables', function (
         ->assertDispatched('deliverable-created');
 
     expect(DeliverableFile::query()->where('unique_id', $existing->unique_id)->exists())->toBeFalse();
+});
+
+it('allows admins to delete rejected deliverables from the list', function () {
+    Storage::fake('deliverables');
+
+    $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
+    $client = User::factory()->create(['role' => AccountRole::CLIENT]);
+    $project = Project::factory()->create(['client_unique_id' => $client->unique_id]);
+    $milestone = Milestone::factory()->create(['project_unique_id' => $project->unique_id, 'order' => 1]);
+    $deliverable = Deliverable::factory()->create([
+        'project_unique_id' => $project->unique_id,
+        'milestone_unique_id' => $milestone->unique_id,
+        'created_by_unique_id' => $admin->unique_id,
+        'status' => DeliverableStatus::REJECTED,
+    ]);
+
+    Livewire::actingAs($admin)
+        ->test(DeliverablesList::class, ['projectUniqueId' => $project->unique_id])
+        ->call('deleteDeliverable', uniqueId: $deliverable->unique_id)
+        ->assertHasNoErrors();
+
+    expect(Deliverable::query()->where('unique_id', $deliverable->unique_id)->exists())->toBeFalse();
 });
 
 it('clears a pending file upload from the uploader', function () {

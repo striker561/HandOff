@@ -1,6 +1,8 @@
 <?php
 
+use App\Enums\Milestone\MilestoneStatus;
 use App\Enums\User\AccountRole;
+use App\Models\Deliverable;
 use App\Models\Milestone;
 use App\Models\Project;
 use App\Models\User;
@@ -42,9 +44,27 @@ it('denies clients from updating milestones', function () {
     expect(Gate::forUser($this->client)->allows('update', $this->milestone))->toBeFalse();
 });
 
-it('denies deleting milestones for everyone', function () {
-    expect(Gate::forUser($this->admin)->allows('delete', $this->milestone))->toBeFalse()
-        ->and(Gate::forUser($this->client)->allows('delete', $this->milestone))->toBeFalse();
+it('allows admins to delete empty milestones that are not completed', function () {
+    expect(Gate::forUser($this->admin)->allows('delete', $this->milestone))->toBeTrue();
+});
+
+it('denies deleting milestones with deliverables', function () {
+    Deliverable::factory()->create([
+        'project_unique_id' => $this->project->unique_id,
+        'milestone_unique_id' => $this->milestone->unique_id,
+    ]);
+
+    expect(Gate::forUser($this->admin)->allows('delete', $this->milestone))->toBeFalse();
+});
+
+it('denies deleting completed milestones', function () {
+    $this->milestone->update(['status' => MilestoneStatus::COMPLETED]);
+
+    expect(Gate::forUser($this->admin)->allows('delete', $this->milestone))->toBeFalse();
+});
+
+it('denies clients from deleting milestones', function () {
+    expect(Gate::forUser($this->client)->allows('delete', $this->milestone))->toBeFalse();
 });
 
 it('allows admins to change milestone status and reorder', function () {

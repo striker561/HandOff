@@ -35,6 +35,8 @@ class SaveMilestone extends Component
 
     public string $status = '';
 
+    public bool $dueDateLocked = false;
+
     private MilestoneService $milestoneService;
 
     private ProjectService $projectService;
@@ -63,7 +65,7 @@ class SaveMilestone extends Component
     {
         $this->projectUniqueId = $projectUniqueId;
         $this->uniqueId = $uniqueId;
-        $this->reset('name', 'description', 'due_date', 'status');
+        $this->reset('name', 'description', 'due_date', 'status', 'dueDateLocked');
         $this->resetValidation();
 
         $milestone = $this->viewHubResource(
@@ -83,8 +85,10 @@ class SaveMilestone extends Component
             $this->description = $milestone->description ?? '';
             $this->due_date = $milestone->due_date?->format('Y-m-d');
             $this->status = $milestone->status->value;
+            $this->dueDateLocked = $milestone->isDueDateLocked();
         } else {
             $this->status = MilestoneStatus::PENDING->value;
+            $this->dueDateLocked = false;
         }
 
         $this->modal('save-milestone')->show();
@@ -153,7 +157,7 @@ class SaveMilestone extends Component
             $this->notifySuccess(__('Milestone created.'));
         }
 
-        $this->reset('name', 'description', 'due_date', 'status', 'uniqueId');
+        $this->reset('name', 'description', 'due_date', 'status', 'uniqueId', 'dueDateLocked');
 
         $this->modal('save-milestone')->close();
 

@@ -174,3 +174,67 @@ it('does nothing when milestone has no deliverables', function () {
     expect($milestone->fresh()->status)->toBe(MilestoneStatus::IN_PROGRESS);
     Event::assertNotDispatched(MilestoneEvent::class);
 });
+
+it('deletes an empty milestone that is not completed', function () {
+    Event::fake([MilestoneEvent::class]);
+
+    $milestone = Milestone::factory()->create([
+        'project_unique_id' => $this->project->unique_id,
+        'status' => MilestoneStatus::PENDING,
+    ]);
+
+    $deleted = $this->service->deleteMilestone($milestone, $this->admin);
+
+    expect($deleted)->toBeTrue()
+        ->and(Milestone::query()->where('unique_id', $milestone->unique_id)->exists())->toBeFalse();
+
+    Event::assertDispatched(MilestoneEvent::class, function (MilestoneEvent $event) use ($milestone) {
+        return $event->action === MilestoneAction::DELETED
+            && $event->milestone->is($milestone);
+    });
+});
+
+it('refuses to delete a milestone with deliverables', function () {
+    $milestone = Milestone::factory()->create([
+        'project_unique_id' => $this->project->unique_id,
+    ]);
+
+    Deliverable::factory()->create([
+        'project_unique_id' => $this->project->unique_id,
+        'milestone_unique_id' => $milestone->unique_id,
+    ]);
+
+    expect($this->service->deleteMilestone($milestone, $this->admin))->toBeFalse()
+        ->and(Milestone::query()->where('unique_id', $milestone->unique_id)->exists())->toBeTrue();
+});
+
+it('refuses to delete a completed milestone', function () {
+    $milestone = Milestone::factory()->completed()->create([
+        'project_unique_id' => $this->project->unique_id,
+    ]);
+
+    expect($this->service->deleteMilestone($milestone, $this->admin))->toBeFalse()
+        ->and(Milestone::query()->where('unique_id', $milestone->unique_id)->exists())->toBeTrue();
+});
+
+it('does not change due date when deliverables are linked', function () {
+    $milestone = Milestone::factory()->create([
+        'project_unique_id' => $this->project->unique_id,
+        'due_date' => now()->addDays(7)->toDateString(),
+    ]);
+
+    Deliverable::factory()->create([
+        'project_unique_id' => $this->project->unique_id,
+        'milestone_unique_id' => $milestone->unique_id,
+    ]);
+
+    $originalDueDate = $milestone->due_date?->toDateString();
+
+    $updated = $this->service->updateMilestone($milestone, SaveMilestoneData::fromArray([
+        'project_unique_id' => $this->project->unique_id,
+        'name' => 'Updated',
+        'due_date' => now()->addDays(30)->toDateString(),
+    ]), $this->admin);
+
+    expect($updated->due_date?->toDateString())->toBe($originalDueDate);
+});
