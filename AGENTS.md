@@ -204,9 +204,9 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - **Shell/nav:** raw `flux:*` (sidebar, header, toast, modal). ponytail: don't rebuild what Flux already ships.
 - **Feature UI:** group under `components/{dashboard,marketing,settings}/` or `livewire/{domain}/` when routes exist.
 
-## Agency list pages
+## Admin list pages
 
-Admin index tables (clients, projects) under `livewire/agency/`. Portal/client lists may use a different pattern later.
+Admin index tables (clients, projects) live under `livewire/agency/` and `/agency/*` routes. **Admin** = agency operator in auth code; **agency** = the same workspace in URLs and component names. Portal/client lists may use a different pattern later.
 
 - **`x-ui.data-table`** — panel-wrapped `flux:table` with pagination. Pass `:paginate="$this->items"`.
 - **`x-ui.data-table.primary-cell`** — props: `title`, `meta` (mobile-only subline). Slots: `action` (view button, mobile-only, inline with title), `mobile` (badge under meta on mobile).
@@ -218,29 +218,46 @@ Admin index tables (clients, projects) under `livewire/agency/`. Portal/client l
 
 **Desktop:** extra columns at `sm` (status, action), `md` (email/client, budget), `lg` (date).
 
-**Empty collection:** `x-ui.page-header` + `x-ui.empty-state` — not a table row.
+**Empty collection:** `x-ui.page-header` + `x-ui.empty-state` on admin **index** pages (`/agency/clients`, `/agency/projects`). Hub section tabs use [`x-agency.project-hub.section`](resources/views/components/agency/project-hub/section.blade.php) with in-panel `project-overview__empty` instead.
 
-## Agency project hub
+## Mutation data (DTOs)
 
-Project detail uses **controller-guarded pages** under `/agency/projects/{projectUniqueId}`. Nested work has its own route; the tab bar reflects the active section. No models in route definitions.
+Typed input objects live under `app/Data/{Domain}/`. **Read** payloads (e.g. `ProjectOverviewData`) are constructor-only; **write** payloads use `readonly`, `fromArray()`, and `toAttributes()` or explicit mapping in the service.
+
+**Naming:** admin mutations use **`Save{Thing}Data` + `Save{Thing}`** — one modal per domain; create + edit where admins manage records. **`SaveClient` is invite-only** (clients update their own profile in settings).
+
+**Mutation pipeline:** Livewire `Save{Domain}` → validate → `Save{Domain}Data::fromArray()` → `{Domain}Service::{create|update|schedule}*` → `{Domain}Event` → listeners (cache, activity, notifications).
+
+See [`ARCHITECTURE.md`](ARCHITECTURE.md) for terminology (admin vs agency routes) and the full layer diagram.
+
+## Authorization (admin)
+
+- **Page access:** `ensureAdmin` on `/agency/*` routes; hub adds `EnsureProjectAccess` (`ProjectPolicy::view` on the project).
+- **Livewire writes:** `$this->authorize()` on the action that mutates (`Save*::save()`, `approve()`, `ViewCredential::revealPassword()`). List components that only dispatch `open-save-*` rely on the modal to re-check — no separate authorize trait needed (`AuthorizesRequests` is on Livewire `Component`).
+- **Policies:** admin abilities often pass via `before()`; explicit Livewire checks remain for defense-in-depth and future client/portal access on the same models.
+
+## Admin project hub
+
+Project detail uses **controller-guarded pages** under `/agency/projects/{projectUniqueId}` (admin workspace; `ensureAdmin` on entry). Nested work has its own route; the tab bar reflects the active section. No models in route definitions.
 
 - **HTTP stack:** `ensureAdmin` → [`EnsureProjectAccess`](app/Http/Middleware/EnsureProjectAccess.php) → [`ProjectHubController`](app/Http/Controllers/Agency/Projects/ProjectHubController.php).
     - Middleware loads the project via `ProjectService`, enforces `ProjectPolicy::view`, attaches `Project` to the request (`EnsureProjectAccess::PROJECT_ATTRIBUTE`).
     - Controller reads the authorized project and returns Blade only.
 - **Routes:** `agency.projects.show`, `.milestones`, `.deliverables`, `.credentials`, `.meetings` — param is `{projectUniqueId}` (UUID string).
-- **Shell:** [`x-agency.project-hub.shell`](resources/views/components/agency/project-hub/shell.blade.php) — breadcrumbs, title, status badge inline with client meta, tab links (`wire:navigate`), content card. Pass `:content-panel="false"` on overview for the dashboard layout. Chrome only — no modals.
-- **Overview:** [`ProjectService::getProjectOverview()`](app/Services/ProjectService.php) — scalar stats cached 5 minutes (`ProjectOverviewStats`); milestone pipeline, recent deliverables, and next meeting load fresh. Cache bust via [`ForgetProjectOverviewCache`](app/Listeners/Projects/ForgetProjectOverviewCache.php) on deliverable/credential/meeting domain events. Progress is computed from completed milestones (`calculateProgress()`), not the `projects.progress_percentage` column.
-- **Modals:** mounted per section page via `<x-slot:modals>` on the shell (same pattern as [`pages/agency/projects.blade.php`](resources/views/pages/agency/projects.blade.php) list + create/view modals). Overview has none.
+- **Shell:** [`x-agency.project-hub.shell`](resources/views/components/agency/project-hub/shell.blade.php) — breadcrumbs, title, status badge inline with client meta, tab links (`wire:navigate`), open content slot (no clip-path card). Chrome only — no modals. Section pages use [`x-agency.project-hub.section`](resources/views/components/agency/project-hub/section.blade.php) (`handoff-panel` + `project-hub__section-header`; overview blocks reuse the same header styles via `project-overview__section-header`).
+- **Overview:** [`ProjectService::getProjectOverview()`](app/Services/ProjectService.php) — scalar stats cached 5 minutes (`ProjectOverviewStats`); milestone pipeline, recent deliverables, and next meeting load fresh. Cache bust via [`ForgetProjectOverviewCache`](app/Listeners/Projects/ForgetProjectOverviewCache.php) on deliverable/credential/meeting/milestone domain events. Progress is computed from completed milestones (`calculateProgress()`), not the `projects.progress_percentage` column.
+- **Modals:** unified `Save*` Livewire components per domain (`SaveProject`, `SaveMilestone`, …) opened via `open-save-*` events. `SaveClient` invites only. Credentials keep separate `ViewCredential` for reveal UX.
 - **List** (`ProjectsList`) → **flyout glance** (`ViewProject`) → **Open project** → hub overview page.
 - **Livewire** list/modal components receive `projectUniqueId` only — no `mount(Project)`. Mutations authorize on the action (`approve`, `create`, etc.).
 - Milestone → deliverables: link to `agency.projects.deliverables?milestone={id}`.
 
 ## Livewire style
 
-- **Agency projects** — group hub components by domain under `app/Livewire/Agency/Projects/`:
-    - Root: `ProjectsList`, `CreateProject`, `ViewProject` (index + flyout)
-    - `Milestones/`, `Deliverables/`, `Credentials/`, `Meetings/` — list + modal components per domain
-    - Blade tags: `agency.projects.milestones.milestones-list`, `agency.projects.credentials.create-credential`, etc.
+- **Admin Livewire** — namespaces under `app/Livewire/Agency/` (agency = admin workspace in URLs/components):
+    - Root: `ProjectsList`, `SaveProject`, `ViewProject` (index + flyout)
+    - `Milestones/`, `Deliverables/`, `Credentials/`, `Meetings/` — list + `Save*` modal components per domain
+    - Blade tags: `agency.projects.milestones.milestones-list`, `agency.projects.credentials.save-credential`, etc.
+- **Admin clients** — `ClientsList`, `SaveClient` (invite), `ViewClient` under `app/Livewire/Agency/Clients/`.
 
 - **Volt** (`livewire/settings/profile.blade.php`): simple CRUD pages with little state.
 - **Class-based** (`app/Livewire/Settings/`): modals, `#[Locked]`, Fortify actions, security flows.

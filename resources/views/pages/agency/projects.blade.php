@@ -3,6 +3,6 @@
         <livewire:agency.projects.projects-list />
     </div>
 
-    <livewire:agency.projects.create-project />
+    <livewire:agency.projects.save-project />
     <livewire:agency.projects.view-project />
 </x-layouts::app>

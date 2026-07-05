@@ -1,9 +1,13 @@
-<flux:modal name="create-project" flyout variant="floating" class="md:w-lg">
+<flux:modal name="save-project" flyout variant="floating" class="md:w-lg">
     <div class="space-y-6">
         <div>
-            <flux:heading size="lg">{{ __('Create Project') }}</flux:heading>
+            <flux:heading size="lg">
+                {{ $this->isEditing ? __('Edit Project') : __('Create Project') }}
+            </flux:heading>
             <flux:text class="mt-2">
-                {{ __('Set up a new project for a client. You can add milestones and deliverables later.') }}
+                {{ $this->isEditing
+    ? __('Update project details for this client.')
+    : __('Set up a new project for a client. You can add milestones and deliverables later.') }}
             </flux:text>
         </div>
 
@@ -57,7 +61,7 @@
 
         <flux:field>
             <flux:label>{{ __('Project name') }}</flux:label>
-            <flux:input wire:model="name" placeholder="{{ __('e.g. Website Redesign') }}" wire:keydown.enter="create" />
+            <flux:input wire:model="name" placeholder="{{ __('e.g. Website Redesign') }}" wire:keydown.enter="save" />
             <flux:error name="name" />
         </flux:field>
 
@@ -121,9 +125,11 @@
 
         <x-ui.modal-footer>
             <flux:modal.close>
-                <flux:button variant="filled">{{ __('Cancel') }}</flux:button>
+                <x-ui.button variant="secondary" class="!w-auto">{{ __('Cancel') }}</x-ui.button>
             </flux:modal.close>
-            <flux:button wire:click="create" variant="primary">{{ __('Create Project') }}</flux:button>
+            <x-ui.button wire:click="save" class="!w-auto">
+                {{ $this->isEditing ? __('Save changes') : __('Create Project') }}
+            </x-ui.button>
         </x-ui.modal-footer>
     </div>
 </flux:modal>

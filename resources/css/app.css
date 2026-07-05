@@ -671,7 +671,8 @@
         @apply flex flex-col gap-4 lg:col-span-2;
     }
 
-    .project-overview__section-header {
+    .project-overview__section-header,
+    .project-hub__section-header {
         @apply flex items-center justify-between gap-3 border-b border-brand-200/50 px-4 py-3 dark:border-brand-800/50 sm:px-5;
     }
 

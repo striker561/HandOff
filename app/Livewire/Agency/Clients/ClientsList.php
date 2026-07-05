@@ -59,6 +59,11 @@ class ClientsList extends Component
         }
     }
 
+    public function openSaveClient(): void
+    {
+        $this->dispatch('open-save-client')->to(SaveClient::class);
+    }
+
     public function viewClient(string $uniqueId): void
     {
         $this->dispatch('open-client-view', uniqueId: $uniqueId)->to(ViewClient::class);

@@ -5,7 +5,7 @@ namespace App\Data\Projects;
 use App\Enums\Project\ProjectCurrency;
 use App\Enums\Project\ProjectStatus;
 
-readonly class CreateProjectData
+readonly class SaveProjectData
 {
     public function __construct(
         public string $clientUniqueId,
@@ -40,7 +40,17 @@ readonly class CreateProjectData
     /**
      * @return array<string, mixed>
      */
-    public function toAttributes(): array
+    public function toCreateAttributes(): array
+    {
+        return array_merge($this->toUpdateAttributes(), [
+            'status' => ProjectStatus::PLANNING,
+        ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function toUpdateAttributes(): array
     {
         return [
             'client_unique_id' => $this->clientUniqueId,
@@ -51,7 +61,6 @@ readonly class CreateProjectData
             'start_date' => $this->startDate,
             'due_date' => $this->dueDate,
             'color' => $this->color,
-            'status' => ProjectStatus::PLANNING,
         ];
     }
 }

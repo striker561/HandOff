@@ -249,7 +249,7 @@ public function findClient(string $uniqueId): ?User
 }
 ```
 
-Reference Livewire UI: `app/Livewire/Agency/Clients/` (`ClientsList`, `CreateClient`, `ViewClient`).
+Reference Livewire UI: `app/Livewire/Agency/Clients/` (`ClientsList`, `SaveClient`, `ViewClient`).
 
 ### MilestoneService (Scoped Queries)
 

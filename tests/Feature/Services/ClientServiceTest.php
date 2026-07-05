@@ -1,5 +1,6 @@
 <?php
 
+use App\Data\Clients\SaveClientData;
 use App\Enums\User\AccountRole;
 use App\Models\User;
 use App\Services\ClientService;
@@ -15,10 +16,13 @@ beforeEach(function () {
 });
 
 it('creates a client', function () {
-    $client = $this->service->createClient([
-        'name' => 'Test Client',
-        'email' => 'client@test.com',
-    ], $this->admin);
+    $client = $this->service->createClient(
+        SaveClientData::fromArray([
+            'name' => 'Test Client',
+            'email' => 'client@test.com',
+        ]),
+        $this->admin,
+    );
 
     expect($client)->toBeInstanceOf(User::class)
         ->and($client->role)->toBe(AccountRole::CLIENT)
@@ -83,6 +87,6 @@ it('resends invitation for unverified clients', function () {
 it('rejects resend for verified clients', function () {
     $client = User::factory()->create(['role' => AccountRole::CLIENT]);
 
-    expect(fn () => $this->service->resendInvitation($client, $this->admin))
+    expect(fn() => $this->service->resendInvitation($client, $this->admin))
         ->toThrow(ValidationException::class);
 });

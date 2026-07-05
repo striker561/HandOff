@@ -4,11 +4,9 @@
             <flux:input wire:model.live.debounce.300ms="search" placeholder="{{ __('Search projects…') }}"
                 icon="magnifying-glass" class="w-full sm:max-w-xs" />
 
-            <flux:modal.trigger name="create-project" class="shrink-0">
-                <x-ui.button icon="plus" class="!w-auto">
-                    {{ __('Create') }}
-                </x-ui.button>
-            </flux:modal.trigger>
+            <x-ui.button wire:click="openSaveProject" icon="plus" class="!w-auto shrink-0">
+                {{ __('Create') }}
+            </x-ui.button>
         </x-slot:actions>
     </x-ui.page-header>
 
@@ -83,11 +81,9 @@
     @else
         <x-ui.empty-state icon="folder" :heading="$search || $filterStatus ? __('No projects match your search') : __('No projects yet')" :text="$search || $filterStatus ? __('Try adjusting your search or filters.') : __('Create your first project to start collaborating with clients.')">
             <x-slot:actions>
-                <flux:modal.trigger name="create-project">
-                    <x-ui.button icon="plus">
-                        {{ __('Create Project') }}
-                    </x-ui.button>
-                </flux:modal.trigger>
+                <x-ui.button wire:click="openSaveProject" icon="plus">
+                    {{ __('Create Project') }}
+                </x-ui.button>
             </x-slot:actions>
         </x-ui.empty-state>
     @endif

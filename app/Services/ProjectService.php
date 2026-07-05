@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
-use App\Data\Projects\CreateProjectData;
 use App\Data\Projects\ProjectOverviewData;
 use App\Data\Projects\ProjectOverviewStats;
+use App\Data\Projects\SaveProjectData;
 use App\Enums\Milestone\MilestoneStatus;
 use App\Enums\Project\ProjectAction;
 use App\Enums\Project\ProjectStatus;
@@ -62,14 +62,14 @@ class ProjectService extends BaseCRUDService
             ->first();
     }
 
-    public function createProject(CreateProjectData $data, User $performedBy): Project
+    public function createProject(SaveProjectData $data, User $performedBy): Project
     {
         if ($this->clients->findClient($data->clientUniqueId) === null) {
             $this->fieldError('client_unique_id', __('Selected client was not found.'));
         }
 
         /** @var Project $project */
-        $project = $this->create($data->toAttributes());
+        $project = $this->create($data->toCreateAttributes());
 
         ProjectEvent::dispatch(
             $project,
@@ -79,6 +79,24 @@ class ProjectService extends BaseCRUDService
         );
 
         return $project;
+    }
+
+    public function updateProject(Project $project, SaveProjectData $data, User $performedBy): Project
+    {
+        if ($this->clients->findClient($data->clientUniqueId) === null) {
+            $this->fieldError('client_unique_id', __('Selected client was not found.'));
+        }
+
+        $project->update($data->toUpdateAttributes());
+
+        ProjectEvent::dispatch(
+            $project,
+            ProjectAction::UPDATED,
+            $performedBy,
+            []
+        );
+
+        return $project->fresh();
     }
 
     public function calculateProgress(Project $project): float

@@ -42,6 +42,7 @@ class ProjectsList extends Component
     }
 
     #[On('project-created')]
+    #[On('project-updated')]
     public function refreshProjects(): void
     {
         $this->resetPage();
@@ -65,6 +66,16 @@ class ProjectsList extends Component
             $this->sort = $column;
             $this->direction = 'asc';
         }
+    }
+
+    public function openSaveProject(): void
+    {
+        $this->dispatch('open-save-project')->to(SaveProject::class);
+    }
+
+    public function editProject(string $uniqueId): void
+    {
+        $this->dispatch('open-save-project', uniqueId: $uniqueId)->to(SaveProject::class);
     }
 
     public function viewProject(string $uniqueId): void

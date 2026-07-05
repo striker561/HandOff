@@ -34,7 +34,7 @@
             @endif
 
             <x-ui.modal-footer>
-                <flux:button wire:click="close" variant="filled">{{ __('Close') }}</flux:button>
+                <x-ui.button variant="secondary" class="!w-auto" wire:click="close">{{ __('Close') }}</x-ui.button>
                 @if ($isInvited)
                     <x-ui.button wire:click="resendInvitation" variant="primary" icon="arrow-path">
                         {{ __('Resend invitation') }}

@@ -4,7 +4,7 @@ namespace App\Livewire\Agency\Projects;
 
 use App\Concerns\WithActionRateLimiting;
 use App\Concerns\WithNotifications;
-use App\Data\Projects\CreateProjectData;
+use App\Data\Projects\SaveProjectData;
 use App\Enums\Project\ProjectCurrency;
 use App\Models\Project;
 use App\Models\User;
@@ -14,11 +14,16 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
-class CreateProject extends Component
+class SaveProject extends Component
 {
     use WithActionRateLimiting, WithNotifications;
+
+    #[Locked]
+    public ?string $uniqueId = null;
 
     public string $client_unique_id = '';
 
@@ -49,6 +54,12 @@ class CreateProject extends Component
     }
 
     #[Computed]
+    public function isEditing(): bool
+    {
+        return $this->uniqueId !== null;
+    }
+
+    #[Computed]
     public function selectedClient(): ?User
     {
         if (blank($this->client_unique_id)) {
@@ -68,6 +79,49 @@ class CreateProject extends Component
         }
 
         return $this->clientService->searchClientsForSelect($search);
+    }
+
+    #[On('open-save-project')]
+    public function open(?string $uniqueId = null): void
+    {
+        $this->uniqueId = $uniqueId;
+        $this->reset(
+            'client_unique_id',
+            'clientSearch',
+            'name',
+            'description',
+            'budget',
+            'start_date',
+            'due_date',
+            'color',
+        );
+        $this->currency = ProjectCurrency::USD->value;
+        $this->resetValidation();
+
+        if ($uniqueId !== null) {
+            $project = $this->findProject($uniqueId);
+
+            if ($project === null) {
+                $this->notifyError(__('Project not found.'));
+
+                return;
+            }
+
+            $this->authorize('update', $project);
+
+            $this->client_unique_id = $project->client_unique_id;
+            $this->name = $project->name;
+            $this->description = $project->description ?? '';
+            $this->budget = $project->budget;
+            $this->currency = $project->currency->value;
+            $this->start_date = $project->start_date?->format('Y-m-d');
+            $this->due_date = $project->due_date?->format('Y-m-d');
+            $this->color = $project->color;
+        } else {
+            $this->authorize('create', Project::class);
+        }
+
+        $this->modal('save-project')->show();
     }
 
     public function selectClient(string $uniqueId): void
@@ -95,11 +149,23 @@ class CreateProject extends Component
         }
     }
 
-    public function create(): void
+    public function save(): void
     {
-        $this->authorize('create', Project::class);
+        if ($this->isEditing) {
+            $project = $this->findProject($this->uniqueId);
 
-        if (! $this->attemptRateLimitedAction('create-project', maxAttempts: 10, decaySeconds: 60)) {
+            if ($project === null) {
+                $this->notifyError(__('Project not found.'));
+
+                return;
+            }
+
+            $this->authorize('update', $project);
+        } else {
+            $this->authorize('create', Project::class);
+        }
+
+        if (! $this->attemptRateLimitedAction('save-project', maxAttempts: 10, decaySeconds: 60)) {
             $this->notifyWarning(__('Too many attempts. Please try again in a minute.'), duration: 8000);
 
             return;
@@ -116,34 +182,42 @@ class CreateProject extends Component
             'color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
         ]);
 
-        $this->projectService->createProject(
-            CreateProjectData::fromArray($validated),
-            Auth::user(),
-        );
+        $data = SaveProjectData::fromArray($validated);
+
+        if ($this->isEditing) {
+            $project = $this->findProject($this->uniqueId);
+            $this->projectService->updateProject($project, $data, Auth::user());
+            $this->notifySuccess(__('Project updated.'));
+            $this->dispatch('project-updated');
+        } else {
+            $this->projectService->createProject($data, Auth::user());
+            $this->notifySuccess(__('Project created.'));
+            $this->dispatch('project-created');
+        }
 
         $this->reset(
+            'uniqueId',
             'client_unique_id',
             'clientSearch',
             'name',
             'description',
             'budget',
-            'currency',
             'start_date',
             'due_date',
             'color',
         );
-
         $this->currency = ProjectCurrency::USD->value;
 
-        $this->modal('create-project')->close();
+        $this->modal('save-project')->close();
+    }
 
-        $this->notifySuccess(__('Project created.'));
-
-        $this->dispatch('project-created');
+    private function findProject(string $uniqueId): ?Project
+    {
+        return $this->projectService->findProject($uniqueId);
     }
 
     public function render()
     {
-        return view('livewire.agency.projects.create-project');
+        return view('livewire.agency.projects.save-project');
     }
 }

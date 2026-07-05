@@ -4,11 +4,9 @@
             <flux:input wire:model.live.debounce.300ms="search" placeholder="{{ __('Search clients…') }}"
                 icon="magnifying-glass" class="w-full sm:max-w-xs" />
 
-            <flux:modal.trigger name="create-client" class="shrink-0">
-                <x-ui.button icon="user-plus" class="!w-auto">
-                    {{ __('Create') }}
-                </x-ui.button>
-            </flux:modal.trigger>
+            <x-ui.button wire:click="openSaveClient" icon="user-plus" class="!w-auto shrink-0">
+                {{ __('Create') }}
+            </x-ui.button>
         </x-slot:actions>
     </x-ui.page-header>
 
@@ -79,11 +77,9 @@
                 ? __('Try adjusting your search terms or clear the search field.')
                 : __('Create your first client to get started with project collaboration and deliverables.')">
             <x-slot:actions>
-                <flux:modal.trigger name="create-client">
-                    <x-ui.button icon="user-plus">
-                        {{ __('Create Client') }}
-                    </x-ui.button>
-                </flux:modal.trigger>
+                <x-ui.button wire:click="openSaveClient" icon="user-plus">
+                    {{ __('Create Client') }}
+                </x-ui.button>
             </x-slot:actions>
         </x-ui.empty-state>
     @endif

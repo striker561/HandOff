@@ -1,8 +1,8 @@
 <?php
 
 use App\Enums\User\AccountRole;
-use App\Livewire\Agency\Projects\CreateProject;
 use App\Livewire\Agency\Projects\ProjectsList;
+use App\Livewire\Agency\Projects\SaveProject;
 use App\Livewire\Agency\Projects\ViewProject;
 use App\Models\Project;
 use App\Models\User;
@@ -16,7 +16,7 @@ it('loads the projects page for admins', function () {
         ->assertSuccessful()
         ->assertSee(__('Projects'))
         ->assertSeeLivewire(ProjectsList::class)
-        ->assertSeeLivewire(CreateProject::class)
+        ->assertSeeLivewire(SaveProject::class)
         ->assertSeeLivewire(ViewProject::class);
 });
 
@@ -65,24 +65,43 @@ it('creates a project from the modal', function () {
     $client = User::factory()->create(['role' => AccountRole::CLIENT]);
 
     Livewire::actingAs($admin)
-        ->test(CreateProject::class)
+        ->test(SaveProject::class)
         ->set('client_unique_id', $client->unique_id)
         ->set('name', 'Website Redesign')
         ->set('currency', 'usd')
-        ->call('create')
+        ->call('save')
         ->assertHasNoErrors()
         ->assertDispatched('project-created');
 
     expect(Project::query()->where('name', 'Website Redesign')->exists())->toBeTrue();
 });
 
-it('searches clients when typing in the create modal', function () {
+it('updates a project from the modal', function () {
+    $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
+    $client = User::factory()->create(['role' => AccountRole::CLIENT]);
+    $project = Project::factory()->create([
+        'client_unique_id' => $client->unique_id,
+        'name' => 'Old Name',
+    ]);
+
+    Livewire::actingAs($admin)
+        ->test(SaveProject::class)
+        ->call('open', uniqueId: $project->unique_id)
+        ->set('name', 'Updated Name')
+        ->call('save')
+        ->assertHasNoErrors()
+        ->assertDispatched('project-updated');
+
+    expect($project->fresh()->name)->toBe('Updated Name');
+});
+
+it('searches clients when typing in the save modal', function () {
     $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
     $client = User::factory()->create(['name' => 'Searchable Client', 'role' => AccountRole::CLIENT]);
     User::factory()->create(['name' => 'Other Person', 'role' => AccountRole::CLIENT]);
 
     Livewire::actingAs($admin)
-        ->test(CreateProject::class)
+        ->test(SaveProject::class)
         ->set('clientSearch', 'Searchable')
         ->assertSee('Searchable Client')
         ->assertDontSee('Other Person')
@@ -96,12 +115,12 @@ it('creates a project with a custom hex color', function () {
     $client = User::factory()->create(['role' => AccountRole::CLIENT]);
 
     Livewire::actingAs($admin)
-        ->test(CreateProject::class)
+        ->test(SaveProject::class)
         ->set('client_unique_id', $client->unique_id)
         ->set('name', 'Branded Project')
         ->set('currency', 'usd')
         ->set('color', '#ff00aa')
-        ->call('create')
+        ->call('save')
         ->assertHasNoErrors();
 
     expect(Project::query()->where('name', 'Branded Project')->value('color'))->toBe('#ff00aa');

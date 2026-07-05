@@ -1,7 +1,7 @@
 @props(['heading', 'body' => true])
 
 <section {{ $attributes->class(['handoff-panel']) }}>
-    <header class="project-overview__section-header">
+    <header class="project-hub__section-header">
         <flux:heading size="sm">{{ $heading }}</flux:heading>
         @isset($actions)
             {{ $actions }}

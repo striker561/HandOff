@@ -1,7 +1,7 @@
 <?php
 
 use App\Data\Credentials\SaveCredentialData;
-use App\Data\Projects\CreateProjectData;
+use App\Data\Projects\SaveProjectData;
 use App\Enums\Milestone\MilestoneStatus;
 use App\Enums\Project\ProjectStatus;
 use App\Enums\User\AccountRole;
@@ -24,7 +24,7 @@ beforeEach(function () {
 
 it('creates a project from dto data', function () {
     $project = $this->service->createProject(
-        CreateProjectData::fromArray([
+        SaveProjectData::fromArray([
             'client_unique_id' => $this->client->unique_id,
             'name' => 'Test Project',
             'description' => 'A test project',
@@ -40,13 +40,34 @@ it('creates a project from dto data', function () {
 
 it('rejects project creation for an unknown client', function () {
     expect(fn () => $this->service->createProject(
-        CreateProjectData::fromArray([
+        SaveProjectData::fromArray([
             'client_unique_id' => 'missing-client-id',
             'name' => 'Test Project',
             'currency' => 'usd',
         ]),
         $this->admin,
     ))->toThrow(ValidationException::class);
+});
+
+it('updates a project from dto data', function () {
+    $project = Project::factory()->create([
+        'client_unique_id' => $this->client->unique_id,
+        'name' => 'Original',
+    ]);
+
+    $updated = $this->service->updateProject(
+        $project,
+        SaveProjectData::fromArray([
+            'client_unique_id' => $this->client->unique_id,
+            'name' => 'Renamed Project',
+            'description' => 'Updated description',
+            'currency' => 'usd',
+        ]),
+        $this->admin,
+    );
+
+    expect($updated->name)->toBe('Renamed Project')
+        ->and($updated->description)->toBe('Updated description');
 });
 
 it('finds a project by unique id', function () {

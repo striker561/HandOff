@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Data\Clients\SaveClientData;
 use App\Enums\User\AccountRole;
 use App\Enums\User\ClientAction;
 use App\Events\User\ClientEvent;
@@ -69,14 +70,14 @@ class ClientService extends BaseCRUDService
             ->get(['unique_id', 'name', 'email']);
     }
 
-    public function createClient(array $data, User $performedBy): User
+    public function createClient(SaveClientData $data, User $performedBy): User
     {
         $tempPass = Str::random(12);
 
         /** @var User $client */
         $client = $this->create([
-            'name' => $data['name'],
-            'email' => $data['email'],
+            'name' => $data->name,
+            'email' => $data->email,
             'password' => Hash::make($tempPass),
             'role' => AccountRole::CLIENT,
         ]);

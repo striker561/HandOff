@@ -3,6 +3,6 @@
         <livewire:agency.clients.clients-list />
     </div>
 
-    <livewire:agency.clients.create-client />
+    <livewire:agency.clients.save-client />
     <livewire:agency.clients.view-client />
 </x-layouts::app>

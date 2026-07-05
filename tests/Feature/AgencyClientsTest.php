@@ -2,6 +2,7 @@
 
 use App\Enums\User\AccountRole;
 use App\Livewire\Agency\Clients\ClientsList;
+use App\Livewire\Agency\Clients\SaveClient;
 use App\Livewire\Agency\Clients\ViewClient;
 use App\Models\User;
 use App\Services\ClientService;
@@ -17,6 +18,7 @@ it('loads the clients page for admins', function () {
         ->assertSuccessful()
         ->assertSee(__('Clients'))
         ->assertSeeLivewire(ClientsList::class)
+        ->assertSeeLivewire(SaveClient::class)
         ->assertSeeLivewire(ViewClient::class);
 });
 
@@ -26,6 +28,20 @@ it('forbids client users from the agency clients page', function () {
     $this->actingAs($client)
         ->get(route('agency.clients.index'))
         ->assertForbidden();
+});
+
+it('creates a client from the modal', function () {
+    $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
+
+    Livewire::actingAs($admin)
+        ->test(SaveClient::class)
+        ->set('name', 'New Client')
+        ->set('email', 'newclient@gmail.com')
+        ->call('save')
+        ->assertHasNoErrors()
+        ->assertDispatched('client-created');
+
+    expect(User::query()->where('email', 'newclient@gmail.com')->exists())->toBeTrue();
 });
 
 it('filters clients when search is updated', function () {
@@ -123,6 +139,6 @@ it('throws validation exceptions from the service for invalid resend', function 
     $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
     $client = User::factory()->create(['role' => AccountRole::CLIENT]);
 
-    expect(fn () => app(ClientService::class)->resendInvitation($client, $admin))
+    expect(fn() => app(ClientService::class)->resendInvitation($client, $admin))
         ->toThrow(ValidationException::class);
 });
