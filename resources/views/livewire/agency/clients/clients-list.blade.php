@@ -4,7 +4,7 @@
             <flux:input wire:model.live.debounce.300ms="search" placeholder="{{ __('Search clients…') }}"
                 icon="magnifying-glass" class="w-full sm:max-w-xs" />
 
-            <x-ui.button wire:click="openSaveClient" icon="user-plus" class="!w-auto shrink-0">
+            <x-ui.button wire:click="openSaveClient" icon="user-plus" class="shrink-0 sm:!w-auto">
                 {{ __('Create') }}
             </x-ui.button>
         </x-slot:actions>
@@ -27,25 +27,22 @@
                     class="hidden lg:table-cell">
                     {{ __('Joined') }}
                 </flux:table.column>
-                <flux:table.column class="handoff-data-table__action hidden w-12 sm:table-cell sm:w-16">
-                    <span class="sr-only">{{ __('Actions') }}</span>
-                </flux:table.column>
             </flux:table.columns>
 
             <flux:table.rows>
                 @foreach ($this->clients as $client)
                     <flux:table.row :key="$client->unique_id">
-                        <x-ui.data-table.primary-cell :title="$client->name" :meta="$client->email">
-                            <x-slot:action>
-                                <x-ui.data-table.view-button wire-click="viewClient('{{ $client->unique_id }}')"
-                                    :name="$client->name" />
-                            </x-slot:action>
+                        <x-ui.data-table.primary-cell :title="$client->name"
+                            wire-click="viewClient('{{ $client->unique_id }}')">
                             <x-slot:mobile>
-                                @if ($client->email_verified_at)
-                                    <flux:badge color="lime" size="sm">{{ __('Active') }}</flux:badge>
-                                @else
-                                    <flux:badge color="amber" size="sm">{{ __('Invited') }}</flux:badge>
-                                @endif
+                                <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                    <span class="text-sm font-normal text-zinc-500">{{ $client->email }}</span>
+                                    @if ($client->email_verified_at)
+                                        <flux:badge color="lime" size="sm">{{ __('Active') }}</flux:badge>
+                                    @else
+                                        <flux:badge color="amber" size="sm">{{ __('Invited') }}</flux:badge>
+                                    @endif
+                                </div>
                             </x-slot:mobile>
                         </x-ui.data-table.primary-cell>
 
@@ -62,11 +59,6 @@
                         <flux:table.cell class="hidden lg:table-cell">
                             {{ $client->created_at->format('M j, Y') }}
                         </flux:table.cell>
-
-                        <x-ui.data-table.action-cell>
-                            <x-ui.data-table.view-button wire-click="viewClient('{{ $client->unique_id }}')"
-                                :name="$client->name" />
-                        </x-ui.data-table.action-cell>
                     </flux:table.row>
                 @endforeach
             </flux:table.rows>

@@ -3,9 +3,7 @@
     'name' => null,
 ])
 
-<button type="button" wire:click="{{ $wireClick }}"
-    {{ $attributes->class(['handoff-btn', 'handoff-btn-primary', 'handoff-btn-action', 'px-3']) }}
-    aria-label="{{ __('View :name', ['name' => $name]) }}">
-    <flux:icon.eye variant="mini" class="size-4 shrink-0" />
-    <span class="sr-only">{{ __('View details') }}</span>
-</button>
+<x-ui.button type="button" wire:click="{{ $wireClick }}" icon="eye" icon-only
+    :aria-label="__('View :name', ['name' => $name])" {{ $attributes }}>
+    {{ __('View details') }}
+</x-ui.button>

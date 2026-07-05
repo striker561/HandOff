@@ -3,7 +3,6 @@
 namespace App\Policies;
 
 use App\Models\Deliverable;
-use App\Models\DeliverableFile;
 use App\Models\Project;
 use App\Models\User;
 
@@ -11,7 +10,14 @@ class DeliverablePolicy
 {
     public function before(User $user, string $ability): ?bool
     {
-        return $user->isAdmin() ? true : null;
+        if (! $user->isAdmin()) {
+            return null;
+        }
+
+        return match ($ability) {
+            'approve', 'reject', 'changeStatus' => false,
+            default => null,
+        };
     }
 
     public function viewAny(User $user): bool
@@ -21,22 +27,22 @@ class DeliverablePolicy
 
     public function view(User $user, Deliverable $deliverable): bool
     {
-        return $this->canAccessProject($user, $deliverable->project);
+        return $user->isAdmin() || $this->canAccessProject($user, $deliverable->project);
     }
 
     public function create(User $user, Project $project): bool
     {
-        return false;
+        return $user->isAdmin();
     }
 
     public function update(User $user, Deliverable $deliverable): bool
     {
-        return false;
+        return $user->isAdmin() && $deliverable->status->isAgencyEditable();
     }
 
     public function delete(User $user, Deliverable $deliverable): bool
     {
-        return false;
+        return $user->isAdmin() && $deliverable->status->isAgencyEditable();
     }
 
     public function changeStatus(User $user, Deliverable $deliverable): bool
@@ -44,29 +50,28 @@ class DeliverablePolicy
         return false;
     }
 
+    public function submitForReview(User $user, Deliverable $deliverable): bool
+    {
+        return $user->isAdmin() && $deliverable->status->isAgencyEditable();
+    }
+
     public function approve(User $user, Deliverable $deliverable): bool
     {
-        return $this->canAccessProject($user, $deliverable->project);
+        return $user->isClient()
+            && $deliverable->status->isClientReviewable()
+            && $this->canAccessProject($user, $deliverable->project);
     }
 
     public function reject(User $user, Deliverable $deliverable): bool
     {
-        return $this->canAccessProject($user, $deliverable->project);
+        return $user->isClient()
+            && $deliverable->status->isClientReviewable()
+            && $this->canAccessProject($user, $deliverable->project);
     }
 
     public function uploadFile(User $user, Deliverable $deliverable): bool
     {
-        return false;
-    }
-
-    public function downloadFile(User $user, DeliverableFile $file): bool
-    {
-        return $this->canAccessProject($user, $file->deliverable?->project);
-    }
-
-    public function deleteFile(User $user, DeliverableFile $file): bool
-    {
-        return false;
+        return $user->isAdmin() && $deliverable->status->isAgencyEditable();
     }
 
     private function canAccessProject(User $user, ?Project $project): bool

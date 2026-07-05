@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Agency\Projects\Credentials;
 
+use App\Concerns\AuthorizesProjectHubResources;
 use App\Concerns\WithNotifications;
 use App\Models\Credential;
 use App\Services\CredentialService;
@@ -12,7 +13,7 @@ use Livewire\Component;
 
 class ViewCredential extends Component
 {
-    use WithNotifications;
+    use AuthorizesProjectHubResources, WithNotifications;
 
     #[Locked]
     public ?string $uniqueId = null;
@@ -29,6 +30,8 @@ class ViewCredential extends Component
     #[Locked]
     public string $typeBadgeColor = 'gray';
 
+    public bool $detailsRevealed = false;
+
     #[Locked]
     public ?string $username = null;
 
@@ -37,8 +40,6 @@ class ViewCredential extends Component
 
     #[Locked]
     public ?string $notes = null;
-
-    public bool $passwordRevealed = false;
 
     #[Locked]
     public ?string $revealedPassword = null;
@@ -53,49 +54,53 @@ class ViewCredential extends Component
     #[On('open-credential-view')]
     public function open(string $uniqueId, string $projectUniqueId): void
     {
-        $credential = $this->findCredential($uniqueId, $projectUniqueId);
+        $credential = $this->viewHubResource(
+            $uniqueId,
+            $projectUniqueId,
+            $this->credentialService->findCredentialForProject(...),
+        );
 
-        if ($credential === null) {
+        if (! $credential instanceof Credential) {
             $this->notifyError(__('Credential not found.'));
 
             return;
         }
-
-        $this->authorize('view', $credential);
 
         $this->uniqueId = $credential->unique_id;
         $this->projectUniqueId = $projectUniqueId;
         $this->name = $credential->name;
         $this->typeLabel = $credential->type->label();
         $this->typeBadgeColor = $credential->type->badgeColor();
-        $this->username = $credential->username;
-        $this->url = $credential->url;
-        $this->notes = $credential->notes;
-        $this->passwordRevealed = false;
-        $this->revealedPassword = null;
+        $this->resetSensitiveDetails();
 
         $this->modal('view-credential')->show();
     }
 
-    public function revealPassword(): void
+    public function revealDetails(): void
     {
         if ($this->uniqueId === null || $this->projectUniqueId === null) {
             return;
         }
 
-        $credential = $this->findCredential($this->uniqueId, $this->projectUniqueId);
+        $credential = $this->authorizeHubResource(
+            'reveal',
+            $this->uniqueId,
+            $this->projectUniqueId,
+            $this->credentialService->findCredentialForProject(...),
+        );
 
-        if ($credential === null) {
+        if (! $credential instanceof Credential) {
             $this->notifyError(__('Credential not found.'));
 
             return;
         }
 
-        $this->authorize('view', $credential);
-
         $data = $this->credentialService->revealCredential($credential, Auth::user());
 
-        $this->passwordRevealed = true;
+        $this->detailsRevealed = true;
+        $this->username = $data['username'];
+        $this->url = $data['url'];
+        $this->notes = $data['notes'];
         $this->revealedPassword = $data['password'];
     }
 
@@ -105,9 +110,12 @@ class ViewCredential extends Component
             return;
         }
 
+        $uniqueId = $this->uniqueId;
+        $projectUniqueId = $this->projectUniqueId;
+
         $this->close();
 
-        $this->dispatch('open-save-credential', projectUniqueId: $this->projectUniqueId, uniqueId: $this->uniqueId)
+        $this->dispatch('open-save-credential', projectUniqueId: $projectUniqueId, uniqueId: $uniqueId)
             ->to(SaveCredential::class);
     }
 
@@ -118,21 +126,18 @@ class ViewCredential extends Component
         $this->name = '';
         $this->typeLabel = '';
         $this->typeBadgeColor = 'gray';
-        $this->username = null;
-        $this->url = null;
-        $this->notes = null;
-        $this->passwordRevealed = false;
-        $this->revealedPassword = null;
+        $this->resetSensitiveDetails();
 
         $this->modal('view-credential')->close();
     }
 
-    private function findCredential(string $uniqueId, string $projectUniqueId): ?Credential
+    private function resetSensitiveDetails(): void
     {
-        return Credential::query()
-            ->where('unique_id', $uniqueId)
-            ->where('project_unique_id', $projectUniqueId)
-            ->first();
+        $this->detailsRevealed = false;
+        $this->username = null;
+        $this->url = null;
+        $this->notes = null;
+        $this->revealedPassword = null;
     }
 
     public function render()

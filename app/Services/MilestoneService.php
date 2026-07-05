@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Data\Milestones\SaveMilestoneData;
+use App\Enums\Deliverable\DeliverableStatus;
 use App\Enums\Milestone\MilestoneAction;
 use App\Enums\Milestone\MilestoneStatus;
 use App\Events\Milestone\MilestoneEvent;
@@ -32,6 +33,14 @@ class MilestoneService extends BaseCRUDService
         return ['name', 'order', 'due_date', 'created_at', 'updated_at', 'completed_at'];
     }
 
+    public function findMilestoneForProject(string $uniqueId, string $projectUniqueId): ?Milestone
+    {
+        return Milestone::query()
+            ->where('unique_id', $uniqueId)
+            ->where('project_unique_id', $projectUniqueId)
+            ->first();
+    }
+
     public function createOrderedMilestone(SaveMilestoneData $data, User $performedBy): Milestone
     {
         /** @var Milestone $milestone */
@@ -51,7 +60,17 @@ class MilestoneService extends BaseCRUDService
 
     public function updateMilestone(Milestone $milestone, SaveMilestoneData $data, User $performedBy): Milestone
     {
-        $milestone->update($data->toUpdateAttributes());
+        $attributes = $data->toUpdateAttributes();
+
+        if ($milestone->isDueDateLocked()) {
+            unset($attributes['due_date']);
+        }
+
+        $milestone->update($attributes);
+
+        if ($data->status !== null && $data->status !== $milestone->status) {
+            return $this->updateStatus($milestone, $data->status, $performedBy);
+        }
 
         MilestoneEvent::dispatch(
             $milestone,
@@ -76,9 +95,15 @@ class MilestoneService extends BaseCRUDService
     public function updateStatus(
         Milestone $milestone,
         MilestoneStatus $status,
-        User $performedBy
+        User $performedBy,
+        array $metadata = [],
     ): Milestone {
         $fromStatus = $milestone->status;
+
+        if ($fromStatus === $status) {
+            return $milestone;
+        }
+
         $completedAt = $status === MilestoneStatus::COMPLETED ? now() : null;
         $milestone->update([
             'status' => $status,
@@ -90,16 +115,64 @@ class MilestoneService extends BaseCRUDService
             : MilestoneAction::STATUS_CHANGED;
 
         MilestoneEvent::dispatch(
-            $milestone,
+            $milestone->fresh(),
             $action,
             $performedBy,
-            [
-                'from_status' => $fromStatus instanceof MilestoneStatus ? $fromStatus->value : $fromStatus,
+            array_merge([
+                'from_status' => $fromStatus->value,
                 'to_status' => $status->value,
-            ]
+            ], $metadata),
         );
 
         return $milestone->fresh();
+    }
+
+    /**
+     * Reconcile milestone completion from its deliverables (auto-complete / auto-reopen).
+     */
+    public function syncFromDeliverables(Milestone $milestone, User $performedBy): void
+    {
+        $milestone = $milestone->fresh();
+
+        $hasDeliverables = $milestone->deliverables()->exists();
+
+        $allApproved = $hasDeliverables && $milestone->deliverables()
+            ->where('status', '!=', DeliverableStatus::APPROVED)
+            ->doesntExist();
+
+        if ($allApproved && ! $milestone->is_completed) {
+            $this->updateStatus($milestone, MilestoneStatus::COMPLETED, $performedBy, [
+                'auto_completed' => true,
+            ]);
+
+            return;
+        }
+
+        if (! $allApproved && $milestone->is_completed) {
+            $this->updateStatus($milestone, MilestoneStatus::IN_PROGRESS, $performedBy, [
+                'auto_uncompleted' => true,
+            ]);
+        }
+    }
+
+    public function deleteMilestone(Milestone $milestone, User $performedBy): bool
+    {
+        if (! $milestone->isDeletable()) {
+            return false;
+        }
+
+        $deleted = (bool) $milestone->delete();
+
+        if ($deleted) {
+            MilestoneEvent::dispatch(
+                $milestone,
+                MilestoneAction::DELETED,
+                $performedBy,
+                []
+            );
+        }
+
+        return $deleted;
     }
 
     public function reorder(

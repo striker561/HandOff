@@ -8,9 +8,11 @@ use Database\Factories\CredentialFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Carbon;
 
 /**
  * @property CredentialType $type
+ * @property Carbon|null $last_accessed_at
  * @property-read Project|null $project
  *
  * @method static \Illuminate\Database\Eloquent\Builder<static> forProject(string $projectUniqueId)
@@ -33,13 +35,20 @@ class Credential extends BaseModel
     ];
 
     protected $hidden = [
+        'username',
         'password',
+        'url',
+        'notes',
     ];
 
     protected function casts(): array
     {
         return [
             'type' => CredentialType::class,
+            'username' => 'encrypted',
+            'password' => 'encrypted',
+            'url' => 'encrypted',
+            'notes' => 'encrypted',
             'last_accessed_at' => 'datetime',
             'metadata' => 'array',
         ];

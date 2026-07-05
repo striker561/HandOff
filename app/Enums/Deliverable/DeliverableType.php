@@ -26,4 +26,42 @@ enum DeliverableType: string
             self::RESEARCH => __('Research'),
         };
     }
+
+    public function icon(): string
+    {
+        return match ($this) {
+            self::FILE => 'document',
+            self::LINK => 'link',
+            self::TEXT => 'document-text',
+            self::CODE => 'code-bracket',
+            self::SCOPE => 'clipboard-document-list',
+            self::OTHER => 'cube',
+            self::DESIGN => 'paint-brush',
+            self::RESEARCH => 'magnifying-glass',
+        };
+    }
+
+    public function isFileBased(): bool
+    {
+        return in_array($this, [
+            self::FILE,
+            self::DESIGN,
+            self::CODE,
+            self::OTHER,
+        ], true);
+    }
+
+    public function isLink(): bool
+    {
+        return $this === self::LINK;
+    }
+
+    public function isTextBased(): bool
+    {
+        return in_array($this, [
+            self::TEXT,
+            self::SCOPE,
+            self::RESEARCH,
+        ], true);
+    }
 }

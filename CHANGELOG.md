@@ -16,19 +16,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Agency project hub with middleware-guarded sections
 - UUID-based route keys to prevent enumeration attacks
 - `BaseCRUDService` with standardized filtering, search, and pagination
+- `AuthorizesProjectHubResources` trait for project hub Save\* modals and section list row actions
+- Scoped service finders (`findDeliverableForProject`, `findCredentialForProject`, etc.)
+- Policy tests under `tests/Feature/Policies/` and per-domain project hub authorization tests (`tests/Feature/Agency/ProjectHub/*HubAuthorizationTest.php`)
 - `composer setup` one-command install
 - `composer dev` concurrent development server
-- Pest test suite (113 tests, all passing)
+- Pest test suite with policy and project hub authorization coverage
 - Laravel Pint code style enforcement
 - PHPStan static analysis
 - CI pipeline (GitHub Actions)
+
+### Changed
+
+- **Deliverable review workflow:** agency submits deliverables for review (`draft`/`rejected` → `in_review`); only the project's client can approve or reject while `in_review`. Admins cannot approve or reject.
+- **Agency edit lock:** deliverables in `in_review` or `approved` cannot be edited or receive file uploads by agency users.
+- **Authorization at the edge:** policies enforce who can act; services perform state transitions only (no duplicate auth guards in services).
+- **Project hub Livewire pattern:** section lists dispatch modals or handle row actions directly (e.g. `DeliverablesList::submitForReview()`); Save\* modals authorize on open (`view`, edit only) and save (`create`/`update`).
+- **Deliverable file uploads:** multiple files per deliverable (configurable limit), 100 MB default per file, preview/remove in save modal; S3 when `AWS_BUCKET` is set; `DeliverableFilePolicy` for file delete/download.
+- **Milestone completion:** all milestone status writes go through `MilestoneService::updateStatus()`; deliverable changes trigger `syncFromDeliverables()` synchronously (not via listeners).
 
 ### Planned
 
 - Redesign for UX and UI consistency
 - Multiple clients for one project
-- Client portal (client-facing views and routes)
-- File upload / approval workflows for deliverables
+- Client portal (client-facing views and routes, including approve/reject UI)
 - Email notifications
 - Invoice and Receipt Future
 - Expenses and Break Down

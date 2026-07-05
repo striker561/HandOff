@@ -8,29 +8,24 @@ use App\Models\User;
 
 class CredentialPolicy
 {
-    public function before(User $user, string $ability): ?bool
-    {
-        return $user->isAdmin() ? true : null;
-    }
-
     public function viewAny(User $user): bool
     {
-        return $user->isClient();
+        return $user->isAdmin() || $user->isClient();
     }
 
     public function view(User $user, Credential $credential): bool
     {
-        return $this->canAccessProject($user, $credential->project);
+        return $user->isAdmin() || $this->canAccessProject($user, $credential->project);
     }
 
     public function create(User $user, Project $project): bool
     {
-        return false;
+        return $user->isAdmin();
     }
 
     public function update(User $user, Credential $credential): bool
     {
-        return false;
+        return $user->isAdmin();
     }
 
     public function delete(User $user, Credential $credential): bool
@@ -40,7 +35,7 @@ class CredentialPolicy
 
     public function reveal(User $user, Credential $credential): bool
     {
-        return false;
+        return $user->isAdmin();
     }
 
     private function canAccessProject(User $user, ?Project $project): bool

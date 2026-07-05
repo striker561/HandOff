@@ -107,7 +107,7 @@ class SaveProject extends Component
                 return;
             }
 
-            $this->authorize('update', $project);
+            $this->authorize('view', $project);
 
             $this->client_unique_id = $project->client_unique_id;
             $this->name = $project->name;
@@ -117,8 +117,6 @@ class SaveProject extends Component
             $this->start_date = $project->start_date?->format('Y-m-d');
             $this->due_date = $project->due_date?->format('Y-m-d');
             $this->color = $project->color;
-        } else {
-            $this->authorize('create', Project::class);
         }
 
         $this->modal('save-project')->show();

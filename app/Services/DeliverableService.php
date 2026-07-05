@@ -9,21 +9,14 @@ use App\Events\Deliverable\DeliverableEvent;
 use App\Models\Deliverable;
 use App\Models\DeliverableFile;
 use App\Models\User;
-use App\Services\Storage\StorageService;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DeliverableService extends BaseCRUDService
 {
-    private StorageService $storage;
-
-    public function __construct()
-    {
-        $this->storage = new StorageService('filesystems.deliverables_disk');
-    }
+    public function __construct(
+        private MilestoneService $milestoneService,
+        private DeliverableFileService $deliverableFileService,
+    ) {}
 
     protected function getModel(): string
     {
@@ -45,6 +38,14 @@ class DeliverableService extends BaseCRUDService
         return ['name', 'status', 'type', 'order', 'version', 'due_date', 'created_at', 'updated_at', 'approved_at'];
     }
 
+    public function findDeliverableForProject(string $uniqueId, string $projectUniqueId): ?Deliverable
+    {
+        return Deliverable::query()
+            ->where('unique_id', $uniqueId)
+            ->where('project_unique_id', $projectUniqueId)
+            ->first();
+    }
+
     public function createDeliverable(SaveDeliverableData $data, User $performedBy): Deliverable
     {
         $nextOrder = $this->getNextOrder(
@@ -58,6 +59,8 @@ class DeliverableService extends BaseCRUDService
             'version' => 1,
         ]));
 
+        $this->syncMilestoneForDeliverable($deliverable, $performedBy);
+
         DeliverableEvent::dispatch(
             $deliverable,
             DeliverableAction::CREATED,
@@ -70,7 +73,26 @@ class DeliverableService extends BaseCRUDService
 
     public function updateDeliverable(Deliverable $deliverable, SaveDeliverableData $data, User $performedBy): Deliverable
     {
+        $previousMilestoneUniqueId = $deliverable->milestone_unique_id;
+
         $deliverable->update($data->toUpdateAttributes());
+
+        $deliverable = $deliverable->fresh();
+
+        if ($previousMilestoneUniqueId !== $deliverable->milestone_unique_id) {
+            if ($previousMilestoneUniqueId !== null) {
+                $previousMilestone = $this->milestoneService->findMilestoneForProject(
+                    $previousMilestoneUniqueId,
+                    $deliverable->project_unique_id,
+                );
+
+                if ($previousMilestone !== null) {
+                    $this->milestoneService->syncFromDeliverables($previousMilestone, $performedBy);
+                }
+            }
+
+            $this->syncMilestoneForDeliverable($deliverable, $performedBy);
+        }
 
         DeliverableEvent::dispatch(
             $deliverable,
@@ -79,7 +101,7 @@ class DeliverableService extends BaseCRUDService
             []
         );
 
-        return $deliverable->fresh();
+        return $deliverable;
     }
 
     public function getDeliverablesForProject(string $projectUniqueId, array $filters = []): LengthAwarePaginator
@@ -100,62 +122,11 @@ class DeliverableService extends BaseCRUDService
         return $this->paginateQuery($query, $filters);
     }
 
-    public function uploadFile(
-        Deliverable $deliverable,
-        UploadedFile $file,
-        User $uploadedBy
-    ): DeliverableFile {
-        return DB::transaction(function () use ($deliverable, $file, $uploadedBy) {
-            // Mark previous files as not latest
-            DeliverableFile::where('deliverable_unique_id', $deliverable->unique_id)
-                ->update(['is_latest' => false]);
-
-            // Generate unique filename
-            $filename = Str::uuid().'.'.$file->getClientOriginalExtension();
-            $directory = "deliverables/{$deliverable->project_unique_id}";
-
-            // Store file using configured disk
-            $path = $this->storage->putFileAs($directory, $file, $filename);
-
-            // Get next version
-            $nextVersion = $this->getNextFileVersion($deliverable->unique_id);
-
-            // Create file record
-            $deliverableFile = DeliverableFile::create([
-                'deliverable_unique_id' => $deliverable->unique_id,
-                'uploaded_by_unique_id' => $uploadedBy->unique_id,
-                'filename' => $filename,
-                'original_filename' => $file->getClientOriginalName(),
-                'file_path' => $path,
-                'file_size' => $file->getSize(),
-                'mime_type' => $file->getMimeType(),
-                'version' => $nextVersion,
-                'is_latest' => true,
-                'download_count' => 0,
-            ]);
-
-            // Update deliverable version
-            $deliverable->update(['version' => $nextVersion]);
-
-            DeliverableEvent::dispatch(
-                $deliverable,
-                DeliverableAction::FILE_UPLOADED,
-                $uploadedBy,
-                [
-                    'file_unique_id' => $deliverableFile->unique_id,
-                    'original_filename' => $deliverableFile->original_filename,
-                    'version' => $deliverableFile->version,
-                ]
-            );
-
-            return $deliverableFile;
-        });
-    }
-
     public function changeStatus(
         Deliverable $deliverable,
         DeliverableStatus $status,
-        ?User $approvedBy = null
+        User $performedBy,
+        ?User $approvedBy = null,
     ): Deliverable {
         $updateData = ['status' => $status];
 
@@ -166,12 +137,16 @@ class DeliverableService extends BaseCRUDService
 
         $deliverable->update($updateData);
 
-        return $deliverable->fresh();
+        $deliverable = $deliverable->fresh();
+
+        $this->syncMilestoneForDeliverable($deliverable, $performedBy);
+
+        return $deliverable;
     }
 
     public function approveDeliverable(Deliverable $deliverable, User $approver): Deliverable
     {
-        $updated = $this->changeStatus($deliverable, DeliverableStatus::APPROVED, $approver);
+        $updated = $this->changeStatus($deliverable, DeliverableStatus::APPROVED, $approver, $approver);
 
         DeliverableEvent::dispatch(
             $updated,
@@ -185,7 +160,7 @@ class DeliverableService extends BaseCRUDService
 
     public function rejectDeliverable(Deliverable $deliverable, User $rejectedBy, ?string $feedback = null): Deliverable
     {
-        $updated = $this->changeStatus($deliverable, DeliverableStatus::REJECTED);
+        $updated = $this->changeStatus($deliverable, DeliverableStatus::REJECTED, $rejectedBy);
 
         DeliverableEvent::dispatch(
             $updated,
@@ -199,76 +174,57 @@ class DeliverableService extends BaseCRUDService
         return $updated;
     }
 
-    public function trackDownload(DeliverableFile $file): void
+    public function submitForReview(Deliverable $deliverable, User $performedBy): Deliverable
     {
-        $file->increment('download_count');
+        $fromStatus = $deliverable->status;
+
+        $updated = $this->changeStatus($deliverable, DeliverableStatus::IN_REVIEW, $performedBy);
+
+        DeliverableEvent::dispatch(
+            $updated,
+            DeliverableAction::STATUS_CHANGED,
+            $performedBy,
+            [
+                'from_status' => $fromStatus->value,
+                'to_status' => DeliverableStatus::IN_REVIEW->value,
+            ]
+        );
+
+        return $updated;
     }
 
-    public function getLatestFile(string $deliverableUniqueId): ?DeliverableFile
+    public function deleteDeliverable(Deliverable $deliverable, User $performedBy): bool
     {
-        return DeliverableFile::where('deliverable_unique_id', $deliverableUniqueId)
-            ->where('is_latest', true)
-            ->first();
-    }
-
-    public function getFileVersions(string $deliverableUniqueId): array
-    {
-        return DeliverableFile::where('deliverable_unique_id', $deliverableUniqueId)
-            ->orderByDesc('version')
-            ->get()
-            ->toArray();
-    }
-
-    public function downloadFile(DeliverableFile $file, User $downloadedBy): ?StreamedResponse
-    {
-        if (! $this->storage->exists($file->file_path)) {
-            return null;
+        /** @var DeliverableFile $file */
+        foreach ($deliverable->files as $file) {
+            $this->deliverableFileService->deleteFile($file, $performedBy);
         }
 
-        $this->trackDownload($file);
-
-        /** @var Deliverable|null $deliverable */
-        $deliverable = $file->deliverable;
-        if ($deliverable) {
-            DeliverableEvent::dispatch(
-                $deliverable,
-                DeliverableAction::FILE_DOWNLOADED,
-                $downloadedBy,
-                [
-                    'file_unique_id' => $file->unique_id,
-                    'download_count' => $file->download_count,
-                ]
-            );
-        }
-
-        return $this->storage->download($file->file_path, $file->original_filename);
-    }
-
-    public function deleteFile(DeliverableFile $file, User $deletedBy): bool
-    {
-        if ($this->storage->exists($file->file_path)) {
-            $this->storage->delete($file->file_path);
-        }
-
-        $deleted = $file->delete();
+        $deleted = (bool) $deliverable->delete();
 
         if ($deleted) {
-            /** @var Deliverable|null $deliverable */
-            $deliverable = $file->deliverable;
-            if ($deliverable) {
-                DeliverableEvent::dispatch(
-                    $deliverable,
-                    DeliverableAction::FILE_DELETED,
-                    $deletedBy,
-                    [
-                        'file_unique_id' => $file->unique_id,
-                        'original_filename' => $file->original_filename,
-                    ]
-                );
-            }
+            DeliverableEvent::dispatch(
+                $deliverable,
+                DeliverableAction::DELETED,
+                $performedBy,
+                []
+            );
+
+            $this->syncMilestoneForDeliverable($deliverable, $performedBy);
         }
 
         return $deleted;
+    }
+
+    private function syncMilestoneForDeliverable(Deliverable $deliverable, User $performedBy): void
+    {
+        $milestone = $deliverable->milestone;
+
+        if ($milestone === null) {
+            return;
+        }
+
+        $this->milestoneService->syncFromDeliverables($milestone, $performedBy);
     }
 
     private function getNextOrder(string $projectUniqueId, ?string $milestoneUniqueId): int
@@ -280,12 +236,5 @@ class DeliverableService extends BaseCRUDService
         }
 
         return (int) $query->lockForUpdate()->max('order') + 1;
-    }
-
-    private function getNextFileVersion(string $deliverableUniqueId): int
-    {
-        return (int) DeliverableFile::where('deliverable_unique_id', $deliverableUniqueId)
-            ->lockForUpdate()
-            ->max('version') + 1;
     }
 }

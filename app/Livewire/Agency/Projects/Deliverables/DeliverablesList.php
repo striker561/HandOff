@@ -2,7 +2,10 @@
 
 namespace App\Livewire\Agency\Projects\Deliverables;
 
+use App\Concerns\AuthorizesProjectHubResources;
+use App\Concerns\WithNotifications;
 use App\Models\Deliverable;
+use App\Models\Milestone;
 use App\Services\DeliverableService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
@@ -14,12 +17,16 @@ use Livewire\WithPagination;
 
 class DeliverablesList extends Component
 {
-    use WithPagination;
+    use AuthorizesProjectHubResources, WithNotifications, WithPagination;
 
     #[Locked]
     public string $projectUniqueId;
 
     public ?string $milestoneUniqueId = null;
+
+    public ?string $submittingUniqueId = null;
+
+    public ?string $deletingUniqueId = null;
 
     private DeliverableService $deliverableService;
 
@@ -34,7 +41,7 @@ class DeliverablesList extends Component
         $this->resetPage();
     }
 
-    public function openCreateDeliverable(): void
+    public function openSaveDeliverable(): void
     {
         $this->dispatch('open-save-deliverable', projectUniqueId: $this->projectUniqueId, milestoneUniqueId: $this->milestoneUniqueId)
             ->to(SaveDeliverable::class);
@@ -46,34 +53,100 @@ class DeliverablesList extends Component
             ->to(SaveDeliverable::class);
     }
 
-    public function approve(string $uniqueId): void
+    public function viewDeliverable(string $uniqueId): void
     {
-        $deliverable = $this->findDeliverable($uniqueId);
-
-        if ($deliverable === null) {
-            return;
-        }
-
-        $this->authorize('update', $deliverable);
-
-        $this->deliverableService->approveDeliverable($deliverable, Auth::user());
-
-        $this->dispatch('deliverable-created');
+        $this->dispatch('open-save-deliverable', projectUniqueId: $this->projectUniqueId, uniqueId: $uniqueId)
+            ->to(SaveDeliverable::class);
     }
 
-    public function reject(string $uniqueId): void
+    public function confirmSubmitForReview(string $uniqueId): void
     {
-        $deliverable = $this->findDeliverable($uniqueId);
+        $this->submittingUniqueId = $uniqueId;
+        $this->modal('confirm-submit-deliverable')->show();
+    }
 
-        if ($deliverable === null) {
+    public function cancelSubmitForReview(): void
+    {
+        $this->submittingUniqueId = null;
+    }
+
+    public function confirmDeleteDeliverable(string $uniqueId): void
+    {
+        $this->deletingUniqueId = $uniqueId;
+        $this->modal('confirm-delete-deliverable')->show();
+    }
+
+    public function cancelDeleteDeliverable(): void
+    {
+        $this->deletingUniqueId = null;
+    }
+
+    public function submitForReview(?string $uniqueId = null): void
+    {
+        $uniqueId ??= $this->submittingUniqueId;
+        $this->submittingUniqueId = null;
+        $this->modal('confirm-submit-deliverable')->close();
+
+        if ($uniqueId === null) {
             return;
         }
 
-        $this->authorize('update', $deliverable);
+        $deliverable = $this->authorizeHubResource(
+            'submitForReview',
+            $uniqueId,
+            $this->projectUniqueId,
+            $this->deliverableService->findDeliverableForProject(...),
+        );
 
-        $this->deliverableService->rejectDeliverable($deliverable, Auth::user());
+        if (! $deliverable instanceof Deliverable) {
+            $this->notifyError(__('Deliverable not found.'));
 
-        $this->dispatch('deliverable-created');
+            return;
+        }
+
+        $this->deliverableService->submitForReview($deliverable, Auth::user());
+
+        $this->notifySuccess(__('Deliverable submitted for client review.'));
+
+        $this->resetPage();
+    }
+
+    public function deleteDeliverable(?string $uniqueId = null): void
+    {
+        $uniqueId ??= $this->deletingUniqueId;
+        $this->deletingUniqueId = null;
+        $this->modal('confirm-delete-deliverable')->close();
+
+        if ($uniqueId === null) {
+            return;
+        }
+
+        $deliverable = $this->authorizeHubResource(
+            'delete',
+            $uniqueId,
+            $this->projectUniqueId,
+            $this->deliverableService->findDeliverableForProject(...),
+        );
+
+        if (! $deliverable instanceof Deliverable) {
+            $this->notifyError(__('Deliverable not found.'));
+
+            return;
+        }
+
+        $this->deliverableService->deleteDeliverable($deliverable, Auth::user());
+
+        $this->notifySuccess(__('Deliverable deleted.'));
+
+        $this->resetPage();
+    }
+
+    #[Computed]
+    public function hasMilestones(): bool
+    {
+        return Milestone::query()
+            ->where('project_unique_id', $this->projectUniqueId)
+            ->exists();
     }
 
     #[Computed]
@@ -90,14 +163,6 @@ class DeliverablesList extends Component
         }
 
         return $this->deliverableService->getDeliverablesForProject($this->projectUniqueId, $filters);
-    }
-
-    private function findDeliverable(string $uniqueId): ?Deliverable
-    {
-        return Deliverable::query()
-            ->where('unique_id', $uniqueId)
-            ->where('project_unique_id', $this->projectUniqueId)
-            ->first();
     }
 
     public function render()

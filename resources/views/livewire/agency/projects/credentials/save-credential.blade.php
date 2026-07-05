@@ -6,8 +6,8 @@
             </flux:heading>
             <flux:text class="mt-2">
                 {{ $this->isEditing
-                    ? __('Update credential details. Leave password blank to keep the current password.')
-                    : __('Store encrypted credentials for this project. Passwords are never shown in lists.') }}
+    ? __('Update credential details. Leave password blank to keep the current password.')
+    : __('Store encrypted credentials for this project. Username, URL, notes, and password are encrypted at rest and only shown after reveal.') }}
             </flux:text>
         </div>
 

@@ -2,8 +2,12 @@
 
 namespace App\Livewire\Agency\Projects\Milestones;
 
+use App\Concerns\AuthorizesProjectHubResources;
+use App\Concerns\WithNotifications;
+use App\Models\Milestone;
 use App\Services\MilestoneService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
@@ -12,10 +16,12 @@ use Livewire\WithPagination;
 
 class MilestonesList extends Component
 {
-    use WithPagination;
+    use AuthorizesProjectHubResources, WithNotifications, WithPagination;
 
     #[Locked]
     public string $projectUniqueId;
+
+    public ?string $deletingUniqueId = null;
 
     private MilestoneService $milestoneService;
 
@@ -30,7 +36,7 @@ class MilestonesList extends Component
         $this->resetPage();
     }
 
-    public function openCreateMilestone(): void
+    public function openSaveMilestone(): void
     {
         $this->dispatch('open-save-milestone', projectUniqueId: $this->projectUniqueId)
             ->to(SaveMilestone::class);
@@ -40,6 +46,51 @@ class MilestonesList extends Component
     {
         $this->dispatch('open-save-milestone', projectUniqueId: $this->projectUniqueId, uniqueId: $uniqueId)
             ->to(SaveMilestone::class);
+    }
+
+    public function confirmDeleteMilestone(string $uniqueId): void
+    {
+        $this->deletingUniqueId = $uniqueId;
+        $this->modal('confirm-delete-milestone')->show();
+    }
+
+    public function cancelDeleteMilestone(): void
+    {
+        $this->deletingUniqueId = null;
+    }
+
+    public function deleteMilestone(?string $uniqueId = null): void
+    {
+        $uniqueId ??= $this->deletingUniqueId;
+        $this->deletingUniqueId = null;
+        $this->modal('confirm-delete-milestone')->close();
+
+        if ($uniqueId === null) {
+            return;
+        }
+
+        $milestone = $this->authorizeHubResource(
+            'delete',
+            $uniqueId,
+            $this->projectUniqueId,
+            $this->milestoneService->findMilestoneForProject(...),
+        );
+
+        if (! $milestone instanceof Milestone) {
+            $this->notifyError(__('Milestone not found.'));
+
+            return;
+        }
+
+        if (! $this->milestoneService->deleteMilestone($milestone, Auth::user())) {
+            $this->notifyError(__('This milestone cannot be deleted.'));
+
+            return;
+        }
+
+        $this->notifySuccess(__('Milestone deleted.'));
+
+        $this->resetPage();
     }
 
     #[Computed]

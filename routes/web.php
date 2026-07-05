@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Agency\Projects\ProjectHubController;
+use App\Http\Controllers\Projects\DeliverableFileController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
@@ -12,6 +13,12 @@ Route::get('/register', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');
+
+    Route::prefix('projects/{projectUniqueId}')->whereUuid('projectUniqueId')->middleware('ensureProjectAccess')->group(function () {
+        Route::get('/deliverables/{deliverableUniqueId}/files/{fileUniqueId}', [DeliverableFileController::class, 'show'])
+            ->whereUuid(['deliverableUniqueId', 'fileUniqueId'])
+            ->name('projects.deliverables.files.show');
+    });
 });
 
 Route::middleware(['auth', 'verified', 'ensureAdmin'])

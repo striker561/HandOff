@@ -6,7 +6,6 @@ use App\Enums\Credential\CredentialType;
 use App\Models\Credential;
 use App\Models\Project;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Facades\Crypt;
 
 /**
  * @extends Factory<Credential>
@@ -20,7 +19,7 @@ class CredentialFactory extends Factory
             'name' => fake()->words(3, true),
             'type' => fake()->randomElement(CredentialType::cases()),
             'username' => fake()->userName(),
-            'password' => Crypt::encryptString(fake()->password()),
+            'password' => fake()->password(),
             'url' => fake()->url(),
             'notes' => fake()->optional()->paragraph(),
             'metadata' => [

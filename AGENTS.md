@@ -201,6 +201,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 ### Components
 
 - Form primitives: `x-ui.button`, `x-ui.input`, `x-ui.checkbox`, `x-ui.modal-footer`, `x-ui.page-header`, `x-ui.data-table`, `x-ui.empty-state`
+- Project hub row actions: `x-ui.button icon-only` (primary clip-path). Project hub empties: `x-ui.empty-state compact`
 - Modals: `flux:modal` + `x-ui.modal-footer` (NOT `x-slot name="footer"`)
 - Shell: `flux:sidebar`, `flux:header`, `flux:toast` — use raw Flux, don't rebuild
 - Feature UI: `components/{dashboard,marketing,settings}/` or `livewire/{domain}/`
@@ -211,10 +212,10 @@ Livewire `Save{Domain}` → validate → `Save{Domain}Data::fromArray()` → `{D
 
 ### Critical Patterns
 
-- Hub Livewire receives `projectUniqueId` only — never `mount(Project $project)`
+- Project hub Livewire receives `projectUniqueId` only — never `mount(Project $project)`
 - Admin Livewire under `app/Livewire/Agency/`; Blade tags use `agency.*` namespace
 - DTOs: `readonly` class, `fromArray()`, `toAttributes()`. Location: `app/Data/{Domain}/`
-- Authorization: `$this->authorize()` in `Save*::open()` and `Save*::save()`
+- Authorization: project hub Save\* use `AuthorizesProjectHubResources` — `viewHubResource()` on open (edit only), `authorizeHubResource('update', ...)` / `authorizeHubResourceCreate()` on save; section list row actions call `authorizeHubResource()` at the action. Services do not authorize.
 - CSS: brand tokens in `resources/css/app.css`; clip corners via `--handoff-clip-path-*`
 
 </laravel-boost-guidelines>

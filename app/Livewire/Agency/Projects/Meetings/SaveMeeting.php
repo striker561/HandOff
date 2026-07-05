@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Agency\Projects\Meetings;
 
+use App\Concerns\AuthorizesProjectHubResources;
 use App\Concerns\WithActionRateLimiting;
 use App\Concerns\WithNotifications;
 use App\Data\Meetings\SaveMeetingData;
@@ -10,6 +11,7 @@ use App\Enums\Meeting\MeetingStatus;
 use App\Models\Meeting;
 use App\Services\DeliverableService;
 use App\Services\MeetingService;
+use App\Services\ProjectService;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -22,7 +24,7 @@ use Livewire\Component;
 
 class SaveMeeting extends Component
 {
-    use WithActionRateLimiting, WithNotifications;
+    use AuthorizesProjectHubResources, WithActionRateLimiting, WithNotifications;
 
     #[Locked]
     public ?string $projectUniqueId = null;
@@ -49,10 +51,16 @@ class SaveMeeting extends Component
 
     private DeliverableService $deliverableService;
 
-    public function boot(MeetingService $meetingService, DeliverableService $deliverableService): void
-    {
+    private ProjectService $projectService;
+
+    public function boot(
+        MeetingService $meetingService,
+        DeliverableService $deliverableService,
+        ProjectService $projectService,
+    ): void {
         $this->meetingService = $meetingService;
         $this->deliverableService = $deliverableService;
+        $this->projectService = $projectService;
     }
 
     #[Computed]
@@ -72,22 +80,24 @@ class SaveMeeting extends Component
         $this->location = MeetingLocation::MEET->value;
         $this->resetValidation();
 
-        if ($uniqueId !== null) {
-            $meeting = $this->findMeeting($uniqueId, $projectUniqueId);
+        $meeting = $this->viewHubResource(
+            $uniqueId,
+            $projectUniqueId,
+            $this->meetingService->findMeetingForProject(...),
+        );
 
-            if ($meeting === null) {
-                $this->notifyError(__('Meeting not found.'));
+        if ($uniqueId !== null && $meeting === null) {
+            $this->notifyError(__('Meeting not found.'));
 
-                return;
-            }
+            return;
+        }
 
+        if ($meeting instanceof Meeting) {
             if ($meeting->status !== MeetingStatus::SCHEDULED) {
                 $this->notifyError(__('Only scheduled meetings can be edited.'));
 
                 return;
             }
-
-            $this->authorize('update', $meeting);
 
             $this->title = $meeting->title;
             $this->description = $meeting->description ?? '';
@@ -96,8 +106,6 @@ class SaveMeeting extends Component
             $this->duration_minutes = $meeting->duration_minutes;
             $this->location = $meeting->location->value;
             $this->deliverable_unique_id = $meeting->deliverable_unique_id ?? '';
-        } else {
-            $this->authorize('create', Meeting::class);
         }
 
         $this->modal('save-meeting')->show();
@@ -129,18 +137,23 @@ class SaveMeeting extends Component
             return;
         }
 
+        $meeting = null;
+
         if ($this->isEditing()) {
-            $meeting = $this->findMeeting($this->uniqueId, $this->projectUniqueId);
+            $meeting = $this->authorizeHubResource(
+                'update',
+                $this->uniqueId,
+                $this->projectUniqueId,
+                $this->meetingService->findMeetingForProject(...),
+            );
 
             if ($meeting === null) {
                 $this->notifyError(__('Meeting not found.'));
 
                 return;
             }
-
-            $this->authorize('update', $meeting);
-        } else {
-            $this->authorize('create', Meeting::class);
+        } elseif (! $this->authorizeHubResourceCreate(Meeting::class, $this->projectUniqueId, $this->projectService)) {
+            return;
         }
 
         if (! $this->attemptRateLimitedAction('save-meeting', maxAttempts: 10, decaySeconds: 60)) {
@@ -177,7 +190,6 @@ class SaveMeeting extends Component
         ]);
 
         if ($this->isEditing()) {
-            $meeting = $this->findMeeting($this->uniqueId, $this->projectUniqueId);
             $this->meetingService->updateMeeting($meeting, $data, Auth::user());
             $this->notifySuccess(__('Meeting updated.'));
             $this->dispatch('meeting-updated');
@@ -192,14 +204,6 @@ class SaveMeeting extends Component
         $this->location = MeetingLocation::MEET->value;
 
         $this->modal('save-meeting')->close();
-    }
-
-    private function findMeeting(string $uniqueId, string $projectUniqueId): ?Meeting
-    {
-        return Meeting::query()
-            ->where('unique_id', $uniqueId)
-            ->where('project_unique_id', $projectUniqueId)
-            ->first();
     }
 
     public function render()

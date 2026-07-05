@@ -58,6 +58,28 @@ class Milestone extends BaseModel
         return $this->status === MilestoneStatus::COMPLETED;
     }
 
+    public function isDeletable(): bool
+    {
+        if ($this->status === MilestoneStatus::COMPLETED) {
+            return false;
+        }
+
+        if ($this->relationLoaded('deliverables_count')) {
+            return ($this->deliverables_count ?? 0) === 0;
+        }
+
+        return ! $this->deliverables()->exists();
+    }
+
+    public function isDueDateLocked(): bool
+    {
+        if ($this->relationLoaded('deliverables_count')) {
+            return ($this->deliverables_count ?? 0) > 0;
+        }
+
+        return $this->deliverables()->exists();
+    }
+
     public function deliverables(): HasMany
     {
         return $this->hasMany(Deliverable::class, 'milestone_unique_id', 'unique_id');

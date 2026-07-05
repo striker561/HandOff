@@ -31,7 +31,7 @@ class MeetingsList extends Component
         $this->resetPage();
     }
 
-    public function openScheduleMeeting(): void
+    public function openSaveMeeting(): void
     {
         $this->dispatch('open-save-meeting', projectUniqueId: $this->projectUniqueId)
             ->to(SaveMeeting::class);

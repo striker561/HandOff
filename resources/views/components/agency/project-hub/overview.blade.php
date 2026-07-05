@@ -121,8 +121,7 @@
             </flux:card>
         </a>
 
-        <a href="{{ $projectRoutes('agency.projects.credentials') }}" wire:navigate
-            class="project-overview__stat-link">
+        <a href="{{ $projectRoutes('agency.projects.credentials') }}" wire:navigate class="project-overview__stat-link">
             <flux:card class="handoff-stat-card h-full">
                 <div class="flex items-center gap-4">
                     <div class="handoff-stat-card__icon">
@@ -160,7 +159,7 @@
         <section class="project-overview__pipeline handoff-panel">
             <header class="project-overview__section-header">
                 <flux:heading size="sm">{{ __('Milestone pipeline') }}</flux:heading>
-                <x-ui.button :href="$projectRoutes('agency.projects.milestones')" variant="outline" wire:navigate
+                <x-ui.button :href="$projectRoutes('agency.projects.milestones')" wire:navigate
                     class="!w-auto px-3 py-1.5 text-xs sm:text-sm">
                     {{ __('View all') }}
                 </x-ui.button>
@@ -205,18 +204,20 @@
                         </div>
 
                         @if ($milestone->progress_percentage > 0)
-                            <flux:progress :value="$milestone->progress_percentage"
-                                class="project-overview__mini-progress" />
+                            <flux:progress :value="$milestone->progress_percentage" class="project-overview__mini-progress" />
                         @endif
                     </div>
                 </article>
             @empty
-                <div class="project-overview__empty">
-                    <flux:text>{{ __('No milestones yet. Add the first phase to track progress.') }}</flux:text>
-                    <x-ui.button :href="$projectRoutes('agency.projects.milestones')" wire:navigate class="mt-4 !w-auto">
-                        {{ __('Add milestone') }}
-                    </x-ui.button>
-                </div>
+                <x-ui.empty-state compact icon="flag" :heading="__('No milestones yet')"
+                    :text="__('Add the first phase to track progress and attach deliverables.')">
+                    <x-slot:actions>
+                        <x-ui.button :href="$projectRoutes('agency.projects.milestones')" wire:navigate icon="plus"
+                            class="!w-auto">
+                            {{ __('Add milestone') }}
+                        </x-ui.button>
+                    </x-slot:actions>
+                </x-ui.empty-state>
             @endforelse
         </section>
 
@@ -224,7 +225,7 @@
             <section class="handoff-panel">
                 <header class="project-overview__section-header">
                     <flux:heading size="sm">{{ __('Recent deliverables') }}</flux:heading>
-                    <x-ui.button :href="$projectRoutes('agency.projects.deliverables')" variant="outline" wire:navigate
+                    <x-ui.button :href="$projectRoutes('agency.projects.deliverables')" wire:navigate
                         class="!w-auto px-3 py-1.5 text-xs sm:text-sm">
                         {{ __('View all') }}
                     </x-ui.button>
@@ -244,16 +245,15 @@
                         </flux:badge>
                     </article>
                 @empty
-                    <div class="project-overview__empty project-overview__empty--compact">
-                        <flux:text>{{ __('Deliverables will appear here as you upload work.') }}</flux:text>
-                    </div>
+                    <x-ui.empty-state compact icon="document-text" :heading="__('No deliverables yet')"
+                        :text="__('Deliverables will appear here as you upload work for each milestone.')" />
                 @endforelse
             </section>
 
             <section class="handoff-panel">
                 <header class="project-overview__section-header">
                     <flux:heading size="sm">{{ __('Next meeting') }}</flux:heading>
-                    <x-ui.button :href="$projectRoutes('agency.projects.meetings')" variant="outline" wire:navigate
+                    <x-ui.button :href="$projectRoutes('agency.projects.meetings')" wire:navigate
                         class="!w-auto px-3 py-1.5 text-xs sm:text-sm">
                         {{ __('Schedule') }}
                     </x-ui.button>
@@ -272,9 +272,8 @@
                         @endif
                     </div>
                 @else
-                    <div class="project-overview__empty project-overview__empty--compact">
-                        <flux:text>{{ __('No upcoming meetings scheduled.') }}</flux:text>
-                    </div>
+                    <x-ui.empty-state compact icon="calendar-days" :heading="__('No upcoming meetings')"
+                        :text="__('Schedule a kickoff or review when you are ready.')" />
                 @endif
             </section>
         </div>

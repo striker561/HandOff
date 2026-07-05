@@ -217,6 +217,49 @@ return $query->get();  // No pagination
 return $query->paginate(15);  // Duplicates logic
 ```
 
+### 6. Add Scoped Finder Methods
+
+Project-scoped resources live under `/agency/projects/{projectUniqueId}/…`. Each service provides a scoped finder that scopes queries to a project:
+
+```php
+public function findCredentialForProject(string $uniqueId, string $projectUniqueId): ?Credential
+{
+    return Credential::query()
+        ->where('unique_id', $uniqueId)
+        ->where('project_unique_id', $projectUniqueId)
+        ->first();
+}
+```
+
+These are passed as callables to the `AuthorizesProjectHubResources` trait in project hub Save\* Livewire components and section list row actions:
+
+```php
+// In SaveCredential::save() (edit path):
+$credential = $this->authorizeHubResource(
+    'update',
+    $this->uniqueId,
+    $this->projectUniqueId,
+    $this->credentialService->findCredentialForProject(...),
+);
+
+// In SaveCredential::save() (create path):
+if (! $this->authorizeHubResourceCreate(Credential::class, $this->projectUniqueId, $this->projectService)) {
+    return;
+}
+
+// In DeliverablesList::submitForReview() (list row action):
+$deliverable = $this->authorizeHubResource(
+    'submitForReview',
+    $uniqueId,
+    $this->projectUniqueId,
+    $this->deliverableService->findDeliverableForProject(...),
+);
+```
+
+**Do not authorize in services.** Policies run at the Livewire (or HTTP) edge; services trust the caller and enforce business rules (status transitions, validation) only.
+
+When changing deliverable behavior, use the status matrix in [ARCHITECTURE.md — Deliverable status matrix](ARCHITECTURE.md#deliverable-status-matrix) as the source of truth. Enum helpers: `isAgencyEditable()` (`draft`, `rejected`), `isClientReviewable()` (`in_review` only).
+
 ## Real-World Examples
 
 ### ClientService (Standard CRUD with Events)
@@ -275,6 +318,8 @@ public function updateStatus(Milestone $milestone, MilestoneStatus $status, User
 }
 ```
 
+Deliverable approval state can auto-complete or reopen milestones via `syncFromDeliverables()` — call it from `DeliverableService` after status changes; do not update milestone status directly from deliverable code.
+
 ### DeliverableService (File Operations + Events)
 
 ```php
@@ -297,31 +342,25 @@ public function uploadFile(Deliverable $deliverable, UploadedFile $file, User $u
 }
 ```
 
-## Storage Abstraction
+## File storage
 
-Use `StorageService` instead of `Storage::disk()` directly:
+Deliverable files use the `deliverables` disk (`config/filesystems.php`).
+
+| Environment       | Storage                       | What to set              |
+| ----------------- | ----------------------------- | ------------------------ |
+| Local dev / tests | Local (`storage/app/private`) | Leave `AWS_BUCKET` empty |
+| Production        | S3                            | Set `AWS_*` env vars     |
+
+When `AWS_BUCKET` is set, the deliverables disk uses S3 and Livewire routes temp uploads to the same disk (browser → S3, no PHP bottleneck). Run `php artisan livewire:configure-s3-upload-cleanup` once in production.
 
 ```php
-use App\Services\Storage\StorageService;
+use Illuminate\Support\Facades\Storage;
 
-class DeliverableService extends BaseCRUDService
-{
-    private StorageService $storage;
-
-    public function __construct()
-    {
-        $this->storage = new StorageService('filesystems.deliverables_disk');
-    }
-
-    public function uploadFile(Deliverable $deliverable, UploadedFile $file, User $uploadedBy): DeliverableFile
-    {
-        $path = $this->storage->putFileAs("deliverables/{$deliverable->project_unique_id}", $file, $filename);
-        // Store path in database...
-    }
-}
+$disk = Storage::disk('deliverables');
+$path = $disk->putFileAs("deliverables/{$projectUniqueId}", $file, $filename);
 ```
 
-**Why:** Swap storage backends via `.env` without code changes (local/S3/DigitalOcean Spaces).
+See `DeliverableFileService` for the full upload/download/delete flow.
 
 ## Type Safety & Enums
 
@@ -455,6 +494,32 @@ public function createProject(array $data, User $performedBy): Project
 }
 ```
 
+### Don't Authorize in Services
+
+```php
+// Bad - duplicates policy logic and hides it from Livewire tests
+public function submitForReview(Deliverable $deliverable, User $performedBy): Deliverable
+{
+    if (! $performedBy->isAdmin()) {
+        throw new AuthorizationException;
+    }
+    // ...
+}
+```
+
+```php
+// Good - Livewire authorizes, service transitions state
+public function submitForReview(Deliverable $deliverable, User $performedBy): Deliverable
+{
+    $deliverable->update(['status' => DeliverableStatus::IN_REVIEW]);
+    DeliverableEvent::dispatch($deliverable, DeliverableAction::SUBMITTED_FOR_REVIEW, $performedBy, []);
+
+    return $deliverable;
+}
+```
+
+Add policy tests in `tests/Feature/Policies/` and project hub authorization tests in `tests/Feature/Agency/ProjectHub/*HubAuthorizationTest.php` when adding new abilities or section list actions.
+
 ## Reference Files
 
 When in doubt, read the code:
@@ -462,6 +527,9 @@ When in doubt, read the code:
 - **`ClientService`** - cleanest implementation with events and `findClient()`
 - **`app/Livewire/Agency/Clients/`** - Livewire list, create modal, view flyout pattern
 - **`MilestoneService`** - scoped queries and status updates
-- **`DeliverableService`** - file operations + transactions
+- **`DeliverableService`** - file operations, deliverable lifecycle, milestone sync via `MilestoneService::syncFromDeliverables()`
+- **`AuthorizesProjectHubResources`** - project-scoped modal and section list authorization helpers
+- **`tests/Feature/Policies/`** - policy unit coverage per domain
+- **`tests/Feature/Agency/ProjectHub/`** — per-domain hub Livewire tests (`*HubTest.php`) and Livewire policy enforcement (`*HubAuthorizationTest.php`)
 - **`BaseCRUDService`** - filtering and pagination patterns
 - **`NotifyOnDomainEvent`** - consolidated listener routing

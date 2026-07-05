@@ -75,6 +75,7 @@ class Security extends Component
     {
         $disable(Auth::user());
         $this->twoFactorEnabled = false;
+        $this->modal('confirm-disable-2fa')->close();
     }
 
     public function render()
