@@ -68,6 +68,28 @@ return [
             'report' => false,
         ],
 
+        // Deliverable attachments — S3 when AWS_BUCKET is set, local otherwise.
+        'deliverables' => filled(env('AWS_BUCKET'))
+            ? [
+                'driver' => 's3',
+                'key' => env('AWS_ACCESS_KEY_ID'),
+                'secret' => env('AWS_SECRET_ACCESS_KEY'),
+                'region' => env('AWS_DEFAULT_REGION'),
+                'bucket' => env('AWS_BUCKET'),
+                'url' => env('AWS_URL'),
+                'endpoint' => env('AWS_ENDPOINT'),
+                'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+                'throw' => false,
+                'report' => false,
+            ]
+            : [
+                'driver' => 'local',
+                'root' => storage_path('app/private'),
+                'serve' => false,
+                'throw' => true,
+                'report' => true,
+            ],
+
     ],
 
     /*
@@ -84,17 +106,5 @@ return [
     'links' => [
         public_path('storage') => storage_path('app/public'),
     ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Application-Specific Disks
-    |--------------------------------------------------------------------------
-    |
-    | Configure which disk to use for specific application features.
-    | This makes it easy to swap storage backends without touching code.
-    |
-    */
-
-    'deliverables_disk' => env('DELIVERABLES_DISK', 'private'),
 
 ];

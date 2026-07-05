@@ -6,7 +6,7 @@
             </flux:heading>
             <flux:text class="mt-2">
                 {{ $this->isEditing
-    ? __('Update deliverable details. File uploads are managed separately.')
+    ? __('Update deliverable details or manage attached files.')
     : __('Create a deliverable and link it to a milestone.') }}
             </flux:text>
         </div>
@@ -53,12 +53,14 @@
 
         @php $currentType = $this->currentType; @endphp
 
-        @if (!$this->isEditing && $currentType?->isFileBased())
-            <flux:field>
-                <flux:label>{{ __('File') }}</flux:label>
-                <flux:input type="file" wire:model="file" />
-                <flux:error name="file" />
-            </flux:field>
+        @if ($this->showFileUploader)
+            <livewire:ui.file-uploader wire:key="file-uploader-{{ $fileUploaderKey }}" :state="$fileUploaderState"
+                :max-files="$this->deliverableMaxFiles" :can-upload="$this->canUploadDeliverableFile"
+                :description="$this->isEditing
+                ? __('Add or remove files before saving.')
+                : __('Attach one or more files now or add them later before submitting for review.')"
+                :locked-message="__('File uploads are locked while this deliverable is in review or approved.')"
+                :empty-text="__('Choose one or more files to attach to this deliverable.')" />
         @endif
 
         @if ($currentType?->isLink())

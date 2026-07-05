@@ -339,6 +339,7 @@ Project detail uses **controller-guarded pages** under `/agency/projects/{projec
 - **Admin clients** — `ClientsList`, `SaveClient` (invite), `ViewClient` under `app/Livewire/Agency/Clients/`.
 - **Volt** (`livewire/settings/profile.blade.php`): simple CRUD pages with little state.
 - **Class-based** (`app/Livewire/Settings/`): modals, `#[Locked]`, Fortify actions, security flows.
+- **Reusable UI** (`app/Livewire/Ui/`): generic components not tied to a domain — `FileUploader`, etc. Blade tags use the `ui.*` namespace.
 - Avoid anonymous `new class extends Component` in Blade unless the UI is truly throwaway.
 
 ### CSS Conventions

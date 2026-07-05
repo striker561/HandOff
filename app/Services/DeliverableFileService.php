@@ -7,19 +7,29 @@ use App\Events\Deliverable\DeliverableEvent;
 use App\Models\Deliverable;
 use App\Models\DeliverableFile;
 use App\Models\User;
-use App\Services\Storage\StorageService;
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DeliverableFileService
 {
-    private StorageService $storage;
-
-    public function __construct()
+    /**
+     * @param  list<UploadedFile>  $files
+     * @return list<DeliverableFile>
+     */
+    public function uploadFiles(Deliverable $deliverable, array $files, User $uploadedBy): array
     {
-        $this->storage = new StorageService('filesystems.deliverables_disk');
+        $uploaded = [];
+
+        foreach ($files as $file) {
+            $uploaded[] = $this->uploadFile($deliverable, $file, $uploadedBy);
+        }
+
+        return $uploaded;
     }
 
     public function uploadFile(
@@ -28,13 +38,10 @@ class DeliverableFileService
         User $uploadedBy
     ): DeliverableFile {
         return DB::transaction(function () use ($deliverable, $file, $uploadedBy) {
-            DeliverableFile::where('deliverable_unique_id', $deliverable->unique_id)
-                ->update(['is_latest' => false]);
-
             $filename = Str::uuid().'.'.$file->getClientOriginalExtension();
             $directory = "deliverables/{$deliverable->project_unique_id}";
 
-            $path = $this->storage->putFileAs($directory, $file, $filename);
+            $path = $this->disk()->putFileAs($directory, $file, $filename);
 
             $nextVersion = $this->getNextFileVersion($deliverable->unique_id);
 
@@ -73,11 +80,21 @@ class DeliverableFileService
         $file->increment('download_count');
     }
 
+    /**
+     * @return Collection<int, DeliverableFile>
+     */
+    public function getActiveFiles(string $deliverableUniqueId): Collection
+    {
+        return DeliverableFile::query()
+            ->where('deliverable_unique_id', $deliverableUniqueId)
+            ->where('is_latest', true)
+            ->orderBy('created_at')
+            ->get();
+    }
+
     public function getLatestFile(string $deliverableUniqueId): ?DeliverableFile
     {
-        return DeliverableFile::where('deliverable_unique_id', $deliverableUniqueId)
-            ->where('is_latest', true)
-            ->first();
+        return $this->getActiveFiles($deliverableUniqueId)->last();
     }
 
     public function getFileVersions(string $deliverableUniqueId): array
@@ -90,7 +107,7 @@ class DeliverableFileService
 
     public function downloadFile(DeliverableFile $file, User $downloadedBy): ?StreamedResponse
     {
-        if (! $this->storage->exists($file->file_path)) {
+        if (! $this->disk()->exists($file->file_path)) {
             return null;
         }
 
@@ -110,13 +127,13 @@ class DeliverableFileService
             );
         }
 
-        return $this->storage->download($file->file_path, $file->original_filename);
+        return $this->disk()->download($file->file_path, $file->original_filename);
     }
 
     public function deleteFile(DeliverableFile $file, User $deletedBy): bool
     {
-        if ($this->storage->exists($file->file_path)) {
-            $this->storage->delete($file->file_path);
+        if ($this->disk()->exists($file->file_path)) {
+            $this->disk()->delete($file->file_path);
         }
 
         $deleted = $file->delete();
@@ -138,6 +155,11 @@ class DeliverableFileService
         }
 
         return $deleted;
+    }
+
+    private function disk(): Filesystem
+    {
+        return Storage::disk('deliverables');
     }
 
     private function getNextFileVersion(string $deliverableUniqueId): int

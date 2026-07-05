@@ -7,7 +7,9 @@ use App\Concerns\WithActionRateLimiting;
 use App\Concerns\WithNotifications;
 use App\Data\Deliverables\SaveDeliverableData;
 use App\Enums\Deliverable\DeliverableType;
+use App\Livewire\Ui\FileUploader;
 use App\Models\Deliverable;
+use App\Models\DeliverableFile;
 use App\Services\DeliverableFileService;
 use App\Services\DeliverableService;
 use App\Services\MilestoneService;
@@ -42,7 +44,20 @@ class SaveDeliverable extends Component
 
     public ?string $due_date = null;
 
-    public $file = null;
+    /**
+     * @var array{
+     *     existing: list<array{id: string, label: string, size?: int}>,
+     *     pending: list<mixed>,
+     *     removed_ids: list<string>
+     * }
+     */
+    public array $fileUploaderState = [
+        'existing' => [],
+        'pending' => [],
+        'removed_ids' => [],
+    ];
+
+    public int $fileUploaderKey = 0;
 
     public string $link = '';
 
@@ -79,7 +94,9 @@ class SaveDeliverable extends Component
     {
         $this->projectUniqueId = $projectUniqueId;
         $this->uniqueId = $uniqueId;
-        $this->reset('name', 'description', 'due_date', 'file', 'link', 'content');
+        $this->reset('name', 'description', 'due_date', 'link', 'content');
+        $this->fileUploaderState = $this->emptyFileUploaderState();
+        $this->fileUploaderKey++;
         $this->milestone_unique_id = $milestoneUniqueId ?? '';
         $this->type = DeliverableType::FILE->value;
         $this->resetValidation();
@@ -104,9 +121,59 @@ class SaveDeliverable extends Component
             $this->due_date = $deliverable->due_date?->format('Y-m-d');
             $this->link = $deliverable->metadata['link'] ?? '';
             $this->content = $deliverable->metadata['content'] ?? '';
+            $this->loadExistingFiles($deliverable);
         }
 
         $this->modal('save-deliverable')->show();
+    }
+
+    #[On('file-uploader-updated')]
+    public function syncFileUploaderState(array $state): void
+    {
+        $this->fileUploaderState = $state;
+    }
+
+    public function updatedType(): void
+    {
+        if (! $this->currentType()?->isFileBased()) {
+            $this->fileUploaderState = $this->emptyFileUploaderState();
+            $this->fileUploaderKey++;
+        }
+    }
+
+    #[Computed]
+    public function showFileUploader(): bool
+    {
+        return $this->currentType()?->isFileBased() ?? false;
+    }
+
+    #[Computed]
+    public function canUploadDeliverableFile(): bool
+    {
+        if (! $this->showFileUploader) {
+            return false;
+        }
+
+        if (! $this->isEditing()) {
+            return true;
+        }
+
+        if ($this->projectUniqueId === null || $this->uniqueId === null) {
+            return false;
+        }
+
+        $deliverable = $this->deliverableService->findDeliverableForProject(
+            $this->uniqueId,
+            $this->projectUniqueId,
+        );
+
+        return $deliverable !== null && $deliverable->status->isAgencyEditable();
+    }
+
+    #[Computed]
+    public function deliverableMaxFiles(): int
+    {
+        return (int) config('handoff.deliverables.max_files', FileUploader::defaultMaxFiles());
     }
 
     #[Computed]
@@ -176,8 +243,15 @@ class SaveDeliverable extends Component
 
         $currentType = $this->currentType();
 
-        if ($currentType?->isFileBased() && ! $this->isEditing()) {
-            $rules['file'] = ['nullable', 'file', 'max:10240'];
+        if ($currentType?->isFileBased() && $this->fileUploaderState['pending'] !== []) {
+            $rules = array_merge(
+                $rules,
+                FileUploader::rulesForState(
+                    $this->fileUploaderState,
+                    'fileUploaderState',
+                    maxFiles: $this->deliverableMaxFiles,
+                ),
+            );
         }
 
         if ($currentType?->isLink()) {
@@ -192,7 +266,12 @@ class SaveDeliverable extends Component
                 : ['required', 'string', 'max:50000'];
         }
 
-        $validated = $this->validate($rules);
+        $validated = $this->validate(
+            $rules,
+            $currentType?->isFileBased()
+            ? FileUploader::messagesForState('fileUploaderState', maxFiles: $this->deliverableMaxFiles)
+            : [],
+        );
 
         $metadata = [];
 
@@ -216,25 +295,89 @@ class SaveDeliverable extends Component
         ]);
 
         if ($this->isEditing()) {
-            $this->deliverableService->updateDeliverable($deliverable, $data, Auth::user());
+            $deliverable = $this->deliverableService->updateDeliverable($deliverable, $data, Auth::user());
+            $this->syncDeliverableFiles($deliverable);
             $this->notifySuccess(__('Deliverable updated.'));
         } else {
             $deliverable = $this->deliverableService->createDeliverable($data, Auth::user());
-
-            if ($this->file !== null) {
-                $this->authorize('uploadFile', $deliverable);
-                $this->deliverableFileService->uploadFile($deliverable, $this->file, Auth::user());
-            }
-
+            $this->syncDeliverableFiles($deliverable);
             $this->notifySuccess(__('Deliverable created.'));
         }
 
-        $this->reset('name', 'description', 'milestone_unique_id', 'due_date', 'file', 'link', 'content', 'uniqueId');
+        $this->reset('name', 'description', 'milestone_unique_id', 'due_date', 'link', 'content', 'uniqueId');
+        $this->fileUploaderState = $this->emptyFileUploaderState();
         $this->type = DeliverableType::FILE->value;
 
-        $this->modal('save-deliverable')->close();
-
         $this->dispatch('deliverable-created');
+
+        $this->modal('save-deliverable')->close();
+    }
+
+    private function syncDeliverableFiles(Deliverable $deliverable): void
+    {
+        if (! $deliverable->type->isFileBased()) {
+            return;
+        }
+
+        foreach ($this->fileUploaderState['removed_ids'] as $fileUniqueId) {
+            $file = DeliverableFile::query()
+                ->where('unique_id', $fileUniqueId)
+                ->where('deliverable_unique_id', $deliverable->unique_id)
+                ->first();
+
+            if ($file === null) {
+                continue;
+            }
+
+            $this->authorize('delete', $file);
+            $this->deliverableFileService->deleteFile($file, Auth::user());
+        }
+
+        if ($this->fileUploaderState['pending'] === []) {
+            return;
+        }
+
+        $this->authorize('uploadFile', $deliverable);
+        $this->deliverableFileService->uploadFiles(
+            $deliverable,
+            $this->fileUploaderState['pending'],
+            Auth::user(),
+        );
+    }
+
+    private function loadExistingFiles(Deliverable $deliverable): void
+    {
+        $this->fileUploaderState = $this->emptyFileUploaderState();
+
+        if (! $deliverable->type->isFileBased()) {
+            return;
+        }
+
+        $this->fileUploaderState['existing'] = $this->deliverableFileService
+            ->getActiveFiles($deliverable->unique_id)
+            ->map(fn (DeliverableFile $file): array => [
+                'id' => $file->unique_id,
+                'label' => $file->original_filename,
+                'size' => $file->file_size,
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array{
+     *     existing: list<array>,
+     *     pending: list<mixed>,
+     *     removed_ids: list<string>
+     * }
+     */
+    private function emptyFileUploaderState(): array
+    {
+        return [
+            'existing' => [],
+            'pending' => [],
+            'removed_ids' => [],
+        ];
     }
 
     public function render()

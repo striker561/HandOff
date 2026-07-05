@@ -3,6 +3,7 @@
 use App\Enums\Deliverable\DeliverableStatus;
 use App\Enums\User\AccountRole;
 use App\Models\Deliverable;
+use App\Models\DeliverableFile;
 use App\Models\Project;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -134,6 +135,29 @@ it('denies manual status changes for everyone including admins', function () {
 
     expect(Gate::forUser($this->admin)->allows('changeStatus', $deliverable))->toBeFalse()
         ->and(Gate::forUser($this->client)->allows('changeStatus', $deliverable))->toBeFalse();
+});
+
+it('denies deleting deliverable files while in review', function (DeliverableStatus $status) {
+    $deliverable = deliverableForProject($this->project, $status);
+    $file = DeliverableFile::factory()->create([
+        'deliverable_unique_id' => $deliverable->unique_id,
+        'uploaded_by_unique_id' => $this->admin->unique_id,
+    ]);
+
+    expect(Gate::forUser($this->admin)->allows('delete', $file))->toBeFalse();
+})->with([
+    DeliverableStatus::IN_REVIEW,
+    DeliverableStatus::APPROVED,
+]);
+
+it('allows admins to delete files on draft deliverables', function () {
+    $deliverable = deliverableForProject($this->project, DeliverableStatus::DRAFT);
+    $file = DeliverableFile::factory()->create([
+        'deliverable_unique_id' => $deliverable->unique_id,
+        'uploaded_by_unique_id' => $this->admin->unique_id,
+    ]);
+
+    expect(Gate::forUser($this->admin)->allows('delete', $file))->toBeTrue();
 });
 
 it('denies clients from submitting deliverables for review', function () {

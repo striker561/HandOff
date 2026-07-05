@@ -13,13 +13,18 @@ use App\Livewire\Agency\Projects\Meetings\SaveMeeting;
 use App\Livewire\Agency\Projects\Milestones\MilestonesList;
 use App\Livewire\Agency\Projects\Milestones\SaveMilestone;
 use App\Livewire\Agency\Projects\ViewProject;
+use App\Livewire\Ui\FileUploader;
 use App\Models\Credential;
 use App\Models\Deliverable;
+use App\Models\DeliverableFile;
 use App\Models\Meeting;
 use App\Models\Milestone;
 use App\Models\Project;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
 
@@ -452,6 +457,156 @@ it('updates a deliverable from the save modal', function () {
         ->assertDispatched('deliverable-created');
 
     expect($deliverable->fresh()->name)->toBe('Updated Deliverable');
+});
+
+it('uploads files when creating a file-based deliverable', function () {
+    Storage::fake('deliverables');
+
+    $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
+    $client = User::factory()->create(['role' => AccountRole::CLIENT]);
+    $project = Project::factory()->create(['client_unique_id' => $client->unique_id]);
+    $milestone = Milestone::factory()->create(['project_unique_id' => $project->unique_id, 'order' => 1]);
+    $file = UploadedFile::fake()->create('wireframes.pdf', 512, 'application/pdf');
+
+    Livewire::actingAs($admin)
+        ->test(SaveDeliverable::class)
+        ->call('open', projectUniqueId: $project->unique_id, milestoneUniqueId: $milestone->unique_id)
+        ->set('name', 'Wireframes PDF')
+        ->set('type', DeliverableType::DESIGN->value)
+        ->set('milestone_unique_id', $milestone->unique_id)
+        ->set('fileUploaderState.pending', [$file])
+        ->call('save')
+        ->assertHasNoErrors()
+        ->assertDispatched('deliverable-created');
+
+    $deliverable = Deliverable::query()->where('name', 'Wireframes PDF')->first();
+
+    expect($deliverable)->not->toBeNull();
+
+    expect(DeliverableFile::query()->where('deliverable_unique_id', $deliverable->unique_id)->count())->toBe(1);
+
+    $latestFile = DeliverableFile::query()
+        ->where('deliverable_unique_id', $deliverable->unique_id)
+        ->where('is_latest', true)
+        ->first();
+
+    expect($latestFile)->not->toBeNull()
+        ->and($latestFile->original_filename)->toBe('wireframes.pdf')
+        ->and((int) $latestFile->version)->toBe(1);
+
+    Storage::disk('deliverables')->assertExists($latestFile->file_path);
+});
+
+it('uploads multiple files for one deliverable', function () {
+    Storage::fake('deliverables');
+
+    $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
+    $client = User::factory()->create(['role' => AccountRole::CLIENT]);
+    $project = Project::factory()->create(['client_unique_id' => $client->unique_id]);
+    $milestone = Milestone::factory()->create(['project_unique_id' => $project->unique_id, 'order' => 1]);
+
+    Livewire::actingAs($admin)
+        ->test(SaveDeliverable::class)
+        ->call('open', projectUniqueId: $project->unique_id, milestoneUniqueId: $milestone->unique_id)
+        ->set('name', 'Asset Pack')
+        ->set('type', DeliverableType::FILE->value)
+        ->set('milestone_unique_id', $milestone->unique_id)
+        ->set('fileUploaderState.pending', [
+            UploadedFile::fake()->create('spec.pdf', 256, 'application/pdf'),
+            UploadedFile::fake()->image('preview.png'),
+        ])
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $deliverable = Deliverable::query()->where('name', 'Asset Pack')->first();
+
+    expect(DeliverableFile::query()->where('deliverable_unique_id', $deliverable->unique_id)->count())->toBe(2);
+});
+
+it('adds another file when editing a draft deliverable', function () {
+    Storage::fake('deliverables');
+
+    $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
+    $client = User::factory()->create(['role' => AccountRole::CLIENT]);
+    $project = Project::factory()->create(['client_unique_id' => $client->unique_id]);
+    $milestone = Milestone::factory()->create(['project_unique_id' => $project->unique_id, 'order' => 1]);
+    $deliverable = Deliverable::factory()->create([
+        'project_unique_id' => $project->unique_id,
+        'milestone_unique_id' => $milestone->unique_id,
+        'created_by_unique_id' => $admin->unique_id,
+        'name' => 'Versioned Deliverable',
+        'type' => DeliverableType::FILE,
+        'status' => DeliverableStatus::DRAFT,
+        'version' => 1,
+    ]);
+
+    DeliverableFile::factory()->create([
+        'deliverable_unique_id' => $deliverable->unique_id,
+        'uploaded_by_unique_id' => $admin->unique_id,
+        'original_filename' => 'v1.pdf',
+        'version' => 1,
+        'is_latest' => true,
+    ]);
+
+    Livewire::actingAs($admin)
+        ->test(SaveDeliverable::class)
+        ->call('open', projectUniqueId: $project->unique_id, uniqueId: $deliverable->unique_id)
+        ->assertSet('fileUploaderState.existing', fn (array $files): bool => count($files) === 1)
+        ->set('fileUploaderState.pending', [UploadedFile::fake()->create('v2.pdf', 256, 'application/pdf')])
+        ->call('save')
+        ->assertHasNoErrors()
+        ->assertDispatched('deliverable-created');
+
+    expect(DeliverableFile::query()->where('deliverable_unique_id', $deliverable->unique_id)->count())->toBe(2);
+});
+
+it('allows admins to delete deliverable files on draft deliverables', function () {
+    Storage::fake('deliverables');
+
+    $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
+    $client = User::factory()->create(['role' => AccountRole::CLIENT]);
+    $project = Project::factory()->create(['client_unique_id' => $client->unique_id]);
+    $milestone = Milestone::factory()->create(['project_unique_id' => $project->unique_id, 'order' => 1]);
+    $deliverable = Deliverable::factory()->create([
+        'project_unique_id' => $project->unique_id,
+        'milestone_unique_id' => $milestone->unique_id,
+        'created_by_unique_id' => $admin->unique_id,
+        'type' => DeliverableType::FILE,
+        'status' => DeliverableStatus::DRAFT,
+    ]);
+
+    $existing = DeliverableFile::factory()->create([
+        'deliverable_unique_id' => $deliverable->unique_id,
+        'uploaded_by_unique_id' => $admin->unique_id,
+        'original_filename' => 'v1.pdf',
+        'version' => 1,
+        'is_latest' => true,
+    ]);
+
+    expect(Gate::forUser($admin)->allows('delete', $existing))->toBeTrue();
+
+    Livewire::actingAs($admin)
+        ->test(SaveDeliverable::class)
+        ->call('open', projectUniqueId: $project->unique_id, uniqueId: $deliverable->unique_id)
+        ->set('fileUploaderState', [
+            'existing' => [],
+            'pending' => [],
+            'removed_ids' => [$existing->unique_id],
+        ])
+        ->call('save')
+        ->assertHasNoErrors()
+        ->assertDispatched('deliverable-created');
+
+    expect(DeliverableFile::query()->where('unique_id', $existing->unique_id)->exists())->toBeFalse();
+});
+
+it('clears a pending file upload from the uploader', function () {
+    $file = UploadedFile::fake()->create('draft.pdf', 128, 'application/pdf');
+
+    Livewire::test(FileUploader::class)
+        ->set('state.pending', [$file])
+        ->call('removePending', index: 0)
+        ->assertSet('state.pending', []);
 });
 
 it('allows opening but forbids saving an in-review deliverable', function () {

@@ -3,7 +3,6 @@
 namespace App\Policies;
 
 use App\Models\Deliverable;
-use App\Models\DeliverableFile;
 use App\Models\Project;
 use App\Models\User;
 
@@ -73,16 +72,6 @@ class DeliverablePolicy
     public function uploadFile(User $user, Deliverable $deliverable): bool
     {
         return $user->isAdmin() && $deliverable->status->isAgencyEditable();
-    }
-
-    public function downloadFile(User $user, DeliverableFile $file): bool
-    {
-        return $user->isAdmin() || $this->canAccessProject($user, $file->deliverable?->project);
-    }
-
-    public function deleteFile(User $user, DeliverableFile $file): bool
-    {
-        return false;
     }
 
     private function canAccessProject(User $user, ?Project $project): bool

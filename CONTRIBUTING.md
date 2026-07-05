@@ -342,31 +342,25 @@ public function uploadFile(Deliverable $deliverable, UploadedFile $file, User $u
 }
 ```
 
-## Storage Abstraction
+## File storage
 
-Use `StorageService` instead of `Storage::disk()` directly:
+Deliverable files use the `deliverables` disk (`config/filesystems.php`).
+
+| Environment       | Storage                       | What to set              |
+| ----------------- | ----------------------------- | ------------------------ |
+| Local dev / tests | Local (`storage/app/private`) | Leave `AWS_BUCKET` empty |
+| Production        | S3                            | Set `AWS_*` env vars     |
+
+When `AWS_BUCKET` is set, the deliverables disk uses S3 and Livewire routes temp uploads to the same disk (browser → S3, no PHP bottleneck). Run `php artisan livewire:configure-s3-upload-cleanup` once in production.
 
 ```php
-use App\Services\Storage\StorageService;
+use Illuminate\Support\Facades\Storage;
 
-class DeliverableService extends BaseCRUDService
-{
-    private StorageService $storage;
-
-    public function __construct()
-    {
-        $this->storage = new StorageService('filesystems.deliverables_disk');
-    }
-
-    public function uploadFile(Deliverable $deliverable, UploadedFile $file, User $uploadedBy): DeliverableFile
-    {
-        $path = $this->storage->putFileAs("deliverables/{$deliverable->project_unique_id}", $file, $filename);
-        // Store path in database...
-    }
-}
+$disk = Storage::disk('deliverables');
+$path = $disk->putFileAs("deliverables/{$projectUniqueId}", $file, $filename);
 ```
 
-**Why:** Swap storage backends via `.env` without code changes (local/S3/DigitalOcean Spaces).
+See `DeliverableFileService` for the full upload/download/delete flow.
 
 ## Type Safety & Enums
 
