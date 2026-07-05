@@ -24,7 +24,7 @@ Agency ──▶ Project ──▶ Milestones (sequential) ──▶ Deliverable
                 └── Activity Log (complete audit trail)
 ```
 
-The **agency** (admin) creates projects, invites **clients**, and manages all project data. Clients get a portal to view progress, download deliverables, and access shared credentials. Every action is logged and auditable.
+The **agency** (admin) creates projects, invites **clients**, and manages all project data. A **client portal** (view progress, download deliverables, approve/reject submissions) is planned — see [CONTRIBUTING.md](CONTRIBUTING.md) to help build it.
 
 > **Status:** HandOff is under active development. The admin workspace is functional; the client portal is upcoming. See [CONTRIBUTING.md](CONTRIBUTING.md) to help build it.
 
@@ -32,7 +32,7 @@ The **agency** (admin) creates projects, invites **clients**, and manages all pr
 
 - **Projects & Milestones** — Organize work with sequential milestones and trackable deliverables
 - **Credential Storage** — Securely store login credentials, API keys, SSH keys, and database passwords
-- **File Management** — Version-controlled file uploads with approval workflows
+- **File Management** — Version-controlled file uploads with agency submit-for-review workflow (client approve/reject in upcoming portal)
 - **Collaboration** — Comment on projects, milestones, and deliverables (internal/external visibility)
 - **Meeting Scheduling** — Track meetings with notes and recording links
 - **Activity Tracking** — Complete audit trail of all project activities

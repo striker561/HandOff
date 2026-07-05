@@ -121,7 +121,7 @@ This keeps the listener count low but uses a `match(true)` pattern that differs 
 Every create/update flow follows the same pipeline (except **client invite** — create-only; clients edit their own profile):
 
 1. **List or hub page** mounts a `Save{Domain}` modal and dispatches `open-save-{domain}` (optionally with `uniqueId` for edit).
-2. **`Save{Domain}::open()`** resets form state, loads existing record when editing, `$this->authorize()`, shows the Flux modal.
+2. **`Save{Domain}::open()`** resets form state, loads existing record when editing. Hub Save\* use `viewHubResource()` on edit open (`view` policy); create open relies on `EnsureProjectAccess`. Shows the Flux modal.
 3. **`Save{Domain}::save()`** validates, builds `Save{Domain}Data::fromArray()`, calls the service, notifies, closes modal, dispatches `{domain}-created` or `{domain}-updated`.
 4. **Service** accepts **only DTOs** — never raw arrays.
 5. **Domain event** fires; listeners handle cache busting, audit trails, etc.
@@ -170,9 +170,26 @@ Every create/update flow follows the same pipeline (except **client invite** —
 ## Authorization
 
 - **Route level:** `ensureAdmin` on all `/agency/*` routes; hub adds project access middleware
-- **Save\* modals** can use `$this->authorize()` directly (standard Livewire). For hub resources, the [`AuthorizesProjectHubResources`](app/Concerns/AuthorizesProjectHubResources.php) trait wraps the common "find + authorize + return null" pattern — `viewHubResource()` on open, `authorizeHubResource('update', ...)` / `authorizeHubResourceCreate()` on save. Finders are passed as first-class callables from each service (`$this->credentialService->findCredentialForProject(...)`).
-- **List components** that only dispatch `open-save-*` rely on the modal to re-check — no duplicate authorize call needed.
-- **Policies** use explicit checks per ability (no `before()` gate) — admins and clients have distinct permissions, especially on deliverable workflows (admins submit for review, clients approve/reject).
+- **Save\* modals** can use `$this->authorize()` directly (standard Livewire). For hub resources, the [`AuthorizesProjectHubResources`](app/Concerns/AuthorizesProjectHubResources.php) trait wraps the common "find + authorize + return null" pattern — `viewHubResource()` on edit open, `authorizeHubResource('update', ...)` / `authorizeHubResourceCreate()` on save. Finders are passed as callables from each service (`$this->credentialService->findCredentialForProject(...)`).
+- **List components** dispatch `open-save-*` for modals (modal re-checks on open/save). Row actions that mutate in place (e.g. `DeliverablesList::submitForReview()`) authorize via `authorizeHubResource()` on the list component.
+- **Policies** define ability checks per role. `DeliverablePolicy::before()` blocks admins from `approve`/`reject`; `ProjectPolicy` and `CommentPolicy` grant admins broad access via `before()`. Deliverable workflow: admins submit for review and edit while `draft`/`rejected`; clients approve/reject while `in_review` (client UI upcoming).
+- **Services** perform state transitions only — no `AuthorizationException` in services; callers (Livewire, future HTTP) must authorize first.
+
+### Deliverable status matrix
+
+Policy abilities and UI gates follow [`DeliverableStatus`](app/Enums/Deliverable/DeliverableStatus.php) helpers (`isAgencyEditable()`, `isClientReviewable()`) and [`DeliverablePolicy`](app/Policies/DeliverablePolicy.php).
+
+| Status      | Agency edit / upload | Agency submit for review | Client approve / reject                      |
+| ----------- | -------------------- | ------------------------ | -------------------------------------------- |
+| `draft`     | Yes                  | Yes                      | No                                           |
+| `rejected`  | Yes                  | Yes                      | No                                           |
+| `in_review` | No                   | No                       | Yes (policy only; client portal UI upcoming) |
+| `approved`  | No                   | No                       | No                                           |
+| `final`     | No                   | No                       | No                                           |
+
+**Transitions:** `draft`/`rejected` → `in_review` (agency `submitForReview`); `in_review` → `approved` or `rejected` (client `approve`/`reject`). Milestone auto-complete/reopen runs via `MilestoneService::syncFromDeliverables()` after deliverable status changes.
+
+**Other abilities:** `create` — admin only. `view` / `downloadFile` — admin or client on the project. `delete` / `deleteFile` — denied for all roles (not implemented).
 
 ## UI components
 
@@ -215,8 +232,9 @@ Hub list components follow the same `{domain}-created` / `{domain}-updated` patt
 3. Dispatch `{Thing}Event` on mutation
 4. Add `Save{Thing}` Livewire with `open-save-{thing}` + `save()`
 5. Wire list empty states and edit actions to dispatch the open event
-6. Add Pest feature tests for Livewire save flows and service DTO tests
-7. Register cache/event listeners if the domain affects project overview stats
+6. Add policy tests in `tests/Feature/Policies/` and hub authorization coverage in `ProjectHubAuthorizationTest`
+7. Add Pest feature tests for Livewire save flows and service DTO tests
+8. Register cache/event listeners if the domain affects project overview stats
 
 ---
 
@@ -289,9 +307,9 @@ Typed input objects live under `app/Data/{Domain}/`.
 ### Authorization (Admin)
 
 - **Page access:** `ensureAdmin` on `/agency/*` routes; hub adds `EnsureProjectAccess` (`ProjectPolicy::view` on the project).
-- **Save\* modals** can use `$this->authorize()` directly (standard Livewire). For hub resources, the [`AuthorizesProjectHubResources`](app/Concerns/AuthorizesProjectHubResources.php) trait wraps the common "find + authorize + return null" pattern — `viewHubResource()` on open, `authorizeHubResource('update', ...)` / `authorizeHubResourceCreate()` on save.
-- **List components** that only dispatch `open-save-*` rely on the modal to re-check — no duplicate authorize call needed.
-- **Policies** use explicit checks per ability (no `before()` gate) — admins and clients have distinct permissions, especially on deliverable workflows (admins submit for review, clients approve/reject).
+- **Save\* modals** can use `$this->authorize()` directly (standard Livewire). For hub resources, the [`AuthorizesProjectHubResources`](app/Concerns/AuthorizesProjectHubResources.php) trait wraps the common "find + authorize + return null" pattern — `viewHubResource()` on edit open, `authorizeHubResource('update', ...)` / `authorizeHubResourceCreate()` on save.
+- **List components** dispatch `open-save-*` for modals (modal re-checks on open/save). Row actions that mutate in place authorize via `authorizeHubResource()` on the list component.
+- **Policies** define ability checks per role. `DeliverablePolicy::before()` blocks admins from `approve`/`reject`; deliverable workflow splits agency submit vs client approve/reject. Services do not authorize. See [Deliverable status matrix](#deliverable-status-matrix) above.
 
 ### Admin Project Hub (Full Detail)
 
@@ -305,7 +323,7 @@ Project detail uses **controller-guarded pages** under `/agency/projects/{projec
 - **Overview:** [`ProjectService::getProjectOverview()`](app/Services/ProjectService.php) — scalar stats cached 5 minutes (`ProjectOverviewStats`); milestone pipeline, recent deliverables, and next meeting load fresh. Cache bust via [`ForgetProjectOverviewCache`](app/Listeners/Projects/ForgetProjectOverviewCache.php) on deliverable/credential/meeting/milestone domain events. Progress is computed from completed milestones (`calculateProgress()`), not the `projects.progress_percentage` column.
 - **Modals:** unified `Save*` Livewire components per domain (`SaveProject`, `SaveMilestone`, …) opened via `open-save-*` events. `SaveClient` invites only. Credentials keep separate `ViewCredential` for reveal UX.
 - **Navigation:** `ProjectsList` → flyout glance (`ViewProject`) → Open project → hub overview page.
-- **Livewire** list/modal components receive `projectUniqueId` only — no `mount(Project)`. Mutations authorize on the action (`approve`, `create`, etc.).
+- **Livewire** list/modal components receive `projectUniqueId` only — no `mount(Project)`. Mutations authorize at the call site (Save\* save, list row actions such as submit-for-review).
 - Milestone → deliverables: link to `agency.projects.deliverables?milestone={id}`.
 
 ### Livewire Component Style

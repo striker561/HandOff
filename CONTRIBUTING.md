@@ -231,17 +231,34 @@ public function findCredentialForProject(string $uniqueId, string $projectUnique
 }
 ```
 
-These are passed as callables to the `AuthorizesProjectHubResources` trait in Save\* Livewire components:
+These are passed as callables to the `AuthorizesProjectHubResources` trait in Save\* Livewire components and hub list row actions:
 
 ```php
-// In SaveCredential::save():
+// In SaveCredential::save() (edit path):
 $credential = $this->authorizeHubResource(
     'update',
     $this->uniqueId,
     $this->projectUniqueId,
     $this->credentialService->findCredentialForProject(...),
 );
+
+// In SaveCredential::save() (create path):
+if (! $this->authorizeHubResourceCreate(Credential::class, $this->projectUniqueId, $this->projectService)) {
+    return;
+}
+
+// In DeliverablesList::submitForReview() (list row action):
+$deliverable = $this->authorizeHubResource(
+    'submitForReview',
+    $uniqueId,
+    $this->projectUniqueId,
+    $this->deliverableService->findDeliverableForProject(...),
+);
 ```
+
+**Do not authorize in services.** Policies run at the Livewire (or HTTP) edge; services trust the caller and enforce business rules (status transitions, validation) only.
+
+When changing deliverable behavior, use the status matrix in [ARCHITECTURE.md — Deliverable status matrix](ARCHITECTURE.md#deliverable-status-matrix) as the source of truth. Enum helpers: `isAgencyEditable()` (`draft`, `rejected`), `isClientReviewable()` (`in_review` only).
 
 ## Real-World Examples
 
@@ -300,6 +317,8 @@ public function updateStatus(Milestone $milestone, MilestoneStatus $status, User
     return $milestone->fresh();
 }
 ```
+
+Deliverable approval state can auto-complete or reopen milestones via `syncFromDeliverables()` — call it from `DeliverableService` after status changes; do not update milestone status directly from deliverable code.
 
 ### DeliverableService (File Operations + Events)
 
@@ -481,6 +500,32 @@ public function createProject(array $data, User $performedBy): Project
 }
 ```
 
+### Don't Authorize in Services
+
+```php
+// Bad - duplicates policy logic and hides it from Livewire tests
+public function submitForReview(Deliverable $deliverable, User $performedBy): Deliverable
+{
+    if (! $performedBy->isAdmin()) {
+        throw new AuthorizationException;
+    }
+    // ...
+}
+```
+
+```php
+// Good - Livewire authorizes, service transitions state
+public function submitForReview(Deliverable $deliverable, User $performedBy): Deliverable
+{
+    $deliverable->update(['status' => DeliverableStatus::IN_REVIEW]);
+    DeliverableEvent::dispatch($deliverable, DeliverableAction::SUBMITTED_FOR_REVIEW, $performedBy, []);
+
+    return $deliverable;
+}
+```
+
+Add policy tests in `tests/Feature/Policies/` and hub Livewire authorization tests in `tests/Feature/Agency/ProjectHubAuthorizationTest.php` when adding new abilities or hub actions.
+
 ## Reference Files
 
 When in doubt, read the code:
@@ -488,6 +533,9 @@ When in doubt, read the code:
 - **`ClientService`** - cleanest implementation with events and `findClient()`
 - **`app/Livewire/Agency/Clients/`** - Livewire list, create modal, view flyout pattern
 - **`MilestoneService`** - scoped queries and status updates
-- **`DeliverableService`** - file operations + transactions
+- **`DeliverableService`** - file operations, deliverable lifecycle, milestone sync via `MilestoneService::syncFromDeliverables()`
+- **`AuthorizesProjectHubResources`** - hub modal and list authorization helpers
+- **`tests/Feature/Policies/`** - policy unit coverage per domain
+- **`tests/Feature/Agency/ProjectHubAuthorizationTest.php`** - Livewire enforces policies end-to-end
 - **`BaseCRUDService`** - filtering and pagination patterns
 - **`NotifyOnDomainEvent`** - consolidated listener routing

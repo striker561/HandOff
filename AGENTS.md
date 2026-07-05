@@ -215,6 +215,7 @@ Livewire `Save{Domain}` → validate → `Save{Domain}Data::fromArray()` → `{D
 - Hub Livewire receives `projectUniqueId` only — never `mount(Project $project)`
 - Admin Livewire under `app/Livewire/Agency/`; Blade tags use `agency.*` namespace
 - DTOs: `readonly` class, `fromArray()`, `toAttributes()`. Location: `app/Data/{Domain}/`
+- Authorization: hub Save\* use `AuthorizesProjectHubResources` — `viewHubResource()` on open (edit only), `authorizeHubResource('update', ...)` / `authorizeHubResourceCreate()` on save; list row actions call `authorizeHubResource()` at the action. Services do not authorize.
 - Authorization: `$this->authorize()` in `Save*::open()` and `Save*::save()`
 - CSS: brand tokens in `resources/css/app.css`; clip corners via `--handoff-clip-path-*`
 
