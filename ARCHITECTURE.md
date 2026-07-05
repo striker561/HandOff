@@ -27,7 +27,7 @@ app/
 ├── Listeners/                # Event listeners (ActivityLog, Notifications, cache busting)
 ├── Livewire/
 │   ├── Actions/              # Reusable Livewire action classes
-│   ├── Agency/               # Admin workspace components (projects, clients, hub)
+│   ├── Agency/               # Admin workspace components (projects, clients, project hub)
 │   └── Settings/             # User/account settings components
 ├── Models/                   # Eloquent models (Project, Milestone, Deliverable, …)
 ├── Policies/                 # Authorization policies
@@ -61,11 +61,15 @@ routes/
 
 | Term                   | In code                                                 | Meaning                                                                                                      |
 | ---------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| **Admin**              | `AccountRole::ADMIN`, `ensureAdmin`, `$user->isAdmin()` | The agency operator — owns clients, projects, and hub data.                                                  |
+| **Admin**              | `AccountRole::ADMIN`, `ensureAdmin`, `$user->isAdmin()` | The agency operator — owns clients, projects, and project-scoped data.                                       |
 | **Agency (routes/UI)** | `agency.*` routes, `App\Livewire\Agency`, `x-agency.*`  | Same admin workspace in product naming — URLs and Blade namespaces use “agency”; auth and roles use “admin”. |
 | **Client**             | `AccountRole::CLIENT`, portal routes (future)           | End customer; updates their own profile via settings, not admin modals.                                      |
+| **Project hub**        | `ProjectHubController`, `x-agency.project-hub.*`        | Tabbed project detail under `/agency/projects/{projectUniqueId}/…` — not the projects index.                 |
+| **Section**            | `x-agency.project-hub.section`, hub tab routes          | One panel inside the project hub (overview, milestones, deliverables, credentials, meetings).                |
+| **Section list**       | `DeliverablesList`, `MilestonesList`, …                 | Livewire list inside a project hub section. Contrast with **index lists** (`ProjectsList`, `ClientsList`).   |
+| **Project-scoped**     | `find*ForProject()`, `AuthorizesProjectHubResources`    | Resource or auth concern tied to a project via `projectUniqueId`.                                            |
 
-When docs say **admin workspace**, that is the same surface as `/agency/…` in the app.
+When docs say **admin workspace**, that is the same surface as `/agency/…` in the app. **Project hub** is the product name for the shell; **project-scoped** is the technical name for resources and authorization inside it.
 
 ## Layers
 
@@ -120,8 +124,8 @@ This keeps the listener count low but uses a `match(true)` pattern that differs 
 
 Every create/update flow follows the same pipeline (except **client invite** — create-only; clients edit their own profile):
 
-1. **List or hub page** mounts a `Save{Domain}` modal and dispatches `open-save-{domain}` (optionally with `uniqueId` for edit).
-2. **`Save{Domain}::open()`** resets form state, loads existing record when editing. Hub Save\* use `viewHubResource()` on edit open (`view` policy); create open relies on `EnsureProjectAccess`. Shows the Flux modal.
+1. **Index list or project hub section** mounts a `Save{Domain}` modal and dispatches `open-save-{domain}` (optionally with `uniqueId` for edit).
+2. **`Save{Domain}::open()`** resets form state, loads existing record when editing. Project hub Save\* use `viewHubResource()` on edit open (`view` policy); create open relies on `EnsureProjectAccess`. Shows the Flux modal.
 3. **`Save{Domain}::save()`** validates, builds `Save{Domain}Data::fromArray()`, calls the service, notifies, closes modal, dispatches `{domain}-created` or `{domain}-updated`.
 4. **Service** accepts **only DTOs** — never raw arrays.
 5. **Domain event** fires; listeners handle cache busting, audit trails, etc.
@@ -162,16 +166,16 @@ Every create/update flow follows the same pipeline (except **client invite** —
 - **Middleware:** `EnsureProjectAccess` loads the project, enforces `ProjectPolicy::view`, attaches it to the request
 - **Shell:** `x-agency.project-hub.shell` — tabs, breadcrumbs, open content (no clip-path card)
 - **Sections:** `x-agency.project-hub.section` wraps list panels — optional `description` slot (domain lede), `actions` slot (primary CTA, right-aligned), `flush` prop removes vertical body padding while keeping horizontal inset aligned with the section header (`px-4 sm:px-5`)
-- **Hub empty states:** `x-ui.empty-state` with `compact` inside hub sections — icon, heading, text, optional `actions` CTA
+- **Section empty states:** `x-ui.empty-state` with `compact` inside project hub sections — icon, heading, text, optional `actions` CTA
 - **Contextual empty:** deliverables tab links to milestones when no phases exist yet
-- **Hub Livewire** receives `projectUniqueId` only — never `mount(Project $project)` — keeps components portable and testable
+- **Section Livewire** receives `projectUniqueId` only — never `mount(Project $project)` — keeps components portable and testable
 - **Overview cache:** scalar stats cached 5 minutes; busted by `ForgetProjectOverviewCache` on milestone/deliverable/credential/meeting events
 
 ## Authorization
 
-- **Route level:** `ensureAdmin` on all `/agency/*` routes; hub adds project access middleware
-- **Save\* modals** can use `$this->authorize()` directly (standard Livewire). For hub resources, the [`AuthorizesProjectHubResources`](app/Concerns/AuthorizesProjectHubResources.php) trait wraps the common "find + authorize + return null" pattern — `viewHubResource()` on edit open, `authorizeHubResource('update', ...)` / `authorizeHubResourceCreate()` on save. Finders are passed as callables from each service (`$this->credentialService->findCredentialForProject(...)`).
-- **List components** dispatch `open-save-*` for modals (modal re-checks on open/save). Row actions that mutate in place (e.g. `DeliverablesList::submitForReview()`) authorize via `authorizeHubResource()` on the list component.
+- **Route level:** `ensureAdmin` on all `/agency/*` routes; project hub routes add `EnsureProjectAccess`
+- **Save\* modals** can use `$this->authorize()` directly (standard Livewire). For project-scoped resources, the [`AuthorizesProjectHubResources`](app/Concerns/AuthorizesProjectHubResources.php) trait wraps the common "find + authorize + return null" pattern — `viewHubResource()` on edit open, `authorizeHubResource('update', ...)` / `authorizeHubResourceCreate()` on save. Finders are passed as callables from each service (`$this->credentialService->findCredentialForProject(...)`).
+- **Section lists** dispatch `open-save-*` for modals (modal re-checks on open/save). Row actions that mutate in place (e.g. `DeliverablesList::submitForReview()`) authorize via `authorizeHubResource()` on the section list.
 - **Policies** define ability checks per role. `DeliverablePolicy::before()` blocks admins from `approve`/`reject`; `ProjectPolicy` and `CommentPolicy` grant admins broad access via `before()`. Deliverable workflow: admins submit for review and edit while `draft`/`rejected`; clients approve/reject while `in_review` (client UI upcoming).
 - **Services** perform state transitions only — no `AuthorizationException` in services; callers (Livewire, future HTTP) must authorize first.
 
@@ -193,16 +197,16 @@ Policy abilities and UI gates follow [`DeliverableStatus`](app/Enums/Deliverable
 
 ## UI components
 
-| Purpose               | Component                                                                                                             |
-| --------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Branded form controls | `x-ui.*` (button, input, checkbox, modal-footer)                                                                      |
-| App chrome            | `flux:*` sidebar, header, modal, toast                                                                                |
-| Hub sections          | `x-agency.project-hub.section`, `x-agency.project-hub.shell`                                                          |
-| Data tables           | `x-ui.data-table` (`flush` in hub sections) + `x-ui.data-table.view-button` / `x-ui.button icon-only` for row actions |
+| Purpose               | Component                                                                                                                     |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Branded form controls | `x-ui.*` (button, input, checkbox, modal-footer)                                                                              |
+| App chrome            | `flux:*` sidebar, header, modal, toast                                                                                        |
+| Project hub sections  | `x-agency.project-hub.section`, `x-agency.project-hub.shell`                                                                  |
+| Data tables           | `x-ui.data-table` (`flush` in project hub sections) + `x-ui.data-table.view-button` / `x-ui.button icon-only` for row actions |
 
 Modals use `flux:modal` + `x-ui.modal-footer` + `x-ui.button`. Primary actions call `wire:click="save"`.
 
-**Hub row actions:** use `x-ui.button` with `icon-only` (always primary + clip-path). Do not use `outline`/`secondary` variants on hub table row buttons. Index page row views may use `x-ui.data-table.view-button` (delegates to `icon-only`).
+**Project hub row actions:** use `x-ui.button` with `icon-only` (always primary + clip-path). Do not use `outline`/`secondary` variants on project hub table row buttons. Index page row views may use `x-ui.data-table.view-button` (delegates to `icon-only`).
 
 ## Events and list refresh
 
@@ -215,15 +219,15 @@ Modals use `flux:modal` + `x-ui.modal-footer` + `x-ui.button`. Primary actions c
 | `open-save-milestone`                 | `MilestonesList` | `SaveMilestone` |
 | …                                     | …                | …               |
 
-Hub list components follow the same `{domain}-created` / `{domain}-updated` pattern.
+Section list components follow the same `{domain}-created` / `{domain}-updated` pattern.
 
 ## What we avoid
 
 - **Create* vs Save* split** — one modal per domain, edit-ready from day one
 - **Arrays in service method signatures** — always DTOs at the boundary
-- **“Until migrated” exceptions** — index and hub use the same pipeline
-- **Models in Livewire mount** on hub components — use `projectUniqueId` string + service lookup
-- **Clip-path panels in the hub shell** — reserved for auth, landing, settings cards
+- **“Until migrated” exceptions** — index lists and project hub sections use the same pipeline
+- **Models in Livewire mount** on project hub components — use `projectUniqueId` string + service lookup
+- **Clip-path panels in the project hub shell** — reserved for auth, landing, settings cards
 
 ## Adding a new admin domain
 
@@ -232,7 +236,7 @@ Hub list components follow the same `{domain}-created` / `{domain}-updated` patt
 3. Dispatch `{Thing}Event` on mutation
 4. Add `Save{Thing}` Livewire with `open-save-{thing}` + `save()`
 5. Wire list empty states and edit actions to dispatch the open event
-6. Add policy tests in `tests/Feature/Policies/` and hub authorization coverage in `ProjectHubAuthorizationTest`
+6. Add policy tests in `tests/Feature/Policies/` and project hub authorization coverage in `ProjectHubAuthorizationTest`
 7. Add Pest feature tests for Livewire save flows and service DTO tests
 8. Register cache/event listeners if the domain affects project overview stats
 
@@ -253,17 +257,17 @@ Hub list components follow the same `{domain}-created` / `{domain}-updated` patt
 
 Branded HandOff controls — use these instead of raw HTML:
 
-| Component           | Purpose                                                            | Key Props                                            |
-| ------------------- | ------------------------------------------------------------------ | ---------------------------------------------------- |
-| `x-ui.button`       | Primary/secondary/outline buttons; hub row actions use `icon-only` | `variant`, `icon`, `iconOnly`, `wire:click`, `href`  |
-| `x-ui.input`        | Text inputs, textareas, selects                                    | `label`, `wire:model`, `type`, `error`               |
-| `x-ui.checkbox`     | Single checkbox with label                                         | `wire:model`, `label`                                |
-| `x-ui.divider`      | Horizontal rule with optional label                                | `label`                                              |
-| `x-ui.logo-mark`    | HandOff brand mark                                                 | —                                                    |
-| `x-ui.page-header`  | Page title + subtitle + actions bar                                | `heading`, `subheading`, `actions` slot              |
-| `x-ui.modal-footer` | Modal action buttons (use instead of Flux slot)                    | `align` (start/center/end, default: end)             |
-| `x-ui.empty-state`  | Empty collection placeholder (add `compact` in hub panels)         | `icon`, `heading`, `text`, `compact`, `actions` slot |
-| `x-ui.data-table`   | Panel-wrapped `flux:table` with pagination                         | `:paginate`, `:panel`, `:flush`                      |
+| Component           | Purpose                                                                    | Key Props                                            |
+| ------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `x-ui.button`       | Primary/secondary/outline buttons; project hub row actions use `icon-only` | `variant`, `icon`, `iconOnly`, `wire:click`, `href`  |
+| `x-ui.input`        | Text inputs, textareas, selects                                            | `label`, `wire:model`, `type`, `error`               |
+| `x-ui.checkbox`     | Single checkbox with label                                                 | `wire:model`, `label`                                |
+| `x-ui.divider`      | Horizontal rule with optional label                                        | `label`                                              |
+| `x-ui.logo-mark`    | HandOff brand mark                                                         | —                                                    |
+| `x-ui.page-header`  | Page title + subtitle + actions bar                                        | `heading`, `subheading`, `actions` slot              |
+| `x-ui.modal-footer` | Modal action buttons (use instead of Flux slot)                            | `align` (start/center/end, default: end)             |
+| `x-ui.empty-state`  | Empty collection placeholder (add `compact` in project hub panels)         | `icon`, `heading`, `text`, `compact`, `actions` slot |
+| `x-ui.data-table`   | Panel-wrapped `flux:table` with pagination                                 | `:paginate`, `:panel`, `:flush`                      |
 
 **Modal pattern:** `flux:modal` + `x-ui.modal-footer` + `x-ui.button`. Do NOT use `x-slot name="footer"` — it doesn't render in Flux free edition.
 
@@ -278,7 +282,7 @@ Branded HandOff controls — use these instead of raw HTML:
 Admin index tables (clients, projects) live under `livewire/agency/` and `/agency/*` routes.
 
 - **`x-ui.data-table.primary-cell`** — props: `title`, `meta` (mobile-only subline). Slots: `action` (row actions, mobile-only, inline with title), `mobile` (badge under meta on mobile).
-- **`x-ui.data-table.action-cell`** — view/action column; visible from `sm` up only. Duplicate the same buttons as `action` for hub/index rows with mutations.
+- **`x-ui.data-table.action-cell`** — view/action column; visible from `sm` up only. Duplicate the same buttons as `action` for project hub / index rows with mutations.
 - **`x-ui.data-table.view-button`** — icon-only primary view action. Props: `wireClick`, `name`. Wraps `x-ui.button icon-only`.
 - **`x-ui.data-table.empty`** — muted “Not set” for empty **cell** values inside a table row.
 
@@ -287,11 +291,11 @@ Admin index tables (clients, projects) live under `livewire/agency/` and `/agenc
 - **Mobile:** one column — tappable title area (`href` or `wireClick` on `primary-cell`, class `handoff-data-table__row-target`), `meta` subline for hidden columns, `mobile` slot for badges/icons, full-width stacked buttons in `action` slot (`.handoff-data-table__mobile-actions`). No horizontal scroll.
 - **Desktop:** tappable rows show a chevron in the primary cell, pointer cursor, and row hover highlight — no separate view column on index tables.
 - **Desktop:** extra columns at `sm` (status, action), `md` (email/client, budget), `lg` (date). Icon-only buttons in `action-cell`.
-- **Hub row actions:** mutation controls go in `action` (mobile, full-width) and `action-cell` (desktop, icon-only). Use a Blade partial when the action set is duplicated. Navigable rows (milestones → deliverables, projects/clients → view flyout) use `href` / `wireClick` on `primary-cell` instead of a mobile view button.
+- **Project hub row actions:** mutation controls go in `action` (mobile, full-width) and `action-cell` (desktop, icon-only). Use a Blade partial when the action set is duplicated. Navigable rows (milestones → deliverables, projects/clients → view flyout) use `href` / `wireClick` on `primary-cell` instead of a mobile view button.
 
-**Empty collection:** `x-ui.page-header` + `x-ui.empty-state` everywhere (index pages and hub sections). Hub panels pass `compact` for in-panel spacing. Tables inside hub sections use `:panel="false" flush` on `x-ui.data-table`.
+**Empty collection:** `x-ui.page-header` + `x-ui.empty-state` everywhere (index pages and project hub sections). Project hub panels pass `compact` for in-panel spacing. Tables inside project hub sections use `:panel="false" flush` on `x-ui.data-table`.
 
-**Flush padding (hub):** `flush` on `x-agency.project-hub.section` applies `handoff-panel__body--flush` (`py-0`, horizontal `px-4 sm:px-5` matching the section header). `flush` on `x-ui.data-table` removes the default scroll-area horizontal padding so the table does not double-inset inside a flush section body. Index pages use default `panel=true` without `flush`.
+**Flush padding (project hub):** `flush` on `x-agency.project-hub.section` applies `handoff-panel__body--flush` (`py-0`, horizontal `px-4 sm:px-5` matching the section header). `flush` on `x-ui.data-table` removes the default scroll-area horizontal padding so the table does not double-inset inside a flush section body. Index pages use default `panel=true` without `flush`.
 
 ### Mutation Data (DTOs)
 
@@ -306,9 +310,9 @@ Typed input objects live under `app/Data/{Domain}/`.
 
 ### Authorization (Admin)
 
-- **Page access:** `ensureAdmin` on `/agency/*` routes; hub adds `EnsureProjectAccess` (`ProjectPolicy::view` on the project).
-- **Save\* modals** can use `$this->authorize()` directly (standard Livewire). For hub resources, the [`AuthorizesProjectHubResources`](app/Concerns/AuthorizesProjectHubResources.php) trait wraps the common "find + authorize + return null" pattern — `viewHubResource()` on edit open, `authorizeHubResource('update', ...)` / `authorizeHubResourceCreate()` on save.
-- **List components** dispatch `open-save-*` for modals (modal re-checks on open/save). Row actions that mutate in place authorize via `authorizeHubResource()` on the list component.
+- **Page access:** `ensureAdmin` on `/agency/*` routes; project hub routes add `EnsureProjectAccess` (`ProjectPolicy::view` on the project).
+- **Save\* modals** can use `$this->authorize()` directly (standard Livewire). For project-scoped resources, the [`AuthorizesProjectHubResources`](app/Concerns/AuthorizesProjectHubResources.php) trait wraps the common "find + authorize + return null" pattern — `viewHubResource()` on edit open, `authorizeHubResource('update', ...)` / `authorizeHubResourceCreate()` on save.
+- **Section lists** dispatch `open-save-*` for modals (modal re-checks on open/save). Row actions that mutate in place authorize via `authorizeHubResource()` on the section list.
 - **Policies** define ability checks per role. `DeliverablePolicy::before()` blocks admins from `approve`/`reject`; deliverable workflow splits agency submit vs client approve/reject. Services do not authorize. See [Deliverable status matrix](#deliverable-status-matrix) above.
 
 ### Admin Project Hub (Full Detail)
@@ -322,7 +326,7 @@ Project detail uses **controller-guarded pages** under `/agency/projects/{projec
 - **Shell:** [`x-agency.project-hub.shell`](resources/views/components/agency/project-hub/shell.blade.php) — breadcrumbs, title, status badge inline with client meta, tab links (`wire:navigate`), open content slot (no clip-path card). Chrome only — no modals. Section pages use [`x-agency.project-hub.section`](resources/views/components/agency/project-hub/section.blade.php) (`handoff-panel` + `project-hub__section-header`; overview blocks reuse the same header styles via `project-overview__section-header`).
 - **Overview:** [`ProjectService::getProjectOverview()`](app/Services/ProjectService.php) — scalar stats cached 5 minutes (`ProjectOverviewStats`); milestone pipeline, recent deliverables, and next meeting load fresh. Cache bust via [`ForgetProjectOverviewCache`](app/Listeners/Projects/ForgetProjectOverviewCache.php) on deliverable/credential/meeting/milestone domain events. Progress is computed from completed milestones (`calculateProgress()`), not the `projects.progress_percentage` column.
 - **Modals:** unified `Save*` Livewire components per domain (`SaveProject`, `SaveMilestone`, …) opened via `open-save-*` events. `SaveClient` invites only. Credentials keep separate `ViewCredential` for reveal UX.
-- **Navigation:** `ProjectsList` → flyout glance (`ViewProject`) → Open project → hub overview page.
+- **Navigation:** `ProjectsList` → flyout glance (`ViewProject`) → Open project → project hub overview page.
 - **Livewire** list/modal components receive `projectUniqueId` only — no `mount(Project)`. Mutations authorize at the call site (Save\* save, list row actions such as submit-for-review).
 - Milestone → deliverables: link to `agency.projects.deliverables?milestone={id}`.
 

@@ -219,7 +219,7 @@ return $query->paginate(15);  // Duplicates logic
 
 ### 6. Add Scoped Finder Methods
 
-Hub resources live under `/agency/projects/{projectUniqueId}/…`. Each service provides a scoped finder that scopes queries to a project:
+Project-scoped resources live under `/agency/projects/{projectUniqueId}/…`. Each service provides a scoped finder that scopes queries to a project:
 
 ```php
 public function findCredentialForProject(string $uniqueId, string $projectUniqueId): ?Credential
@@ -231,7 +231,7 @@ public function findCredentialForProject(string $uniqueId, string $projectUnique
 }
 ```
 
-These are passed as callables to the `AuthorizesProjectHubResources` trait in Save\* Livewire components and hub list row actions:
+These are passed as callables to the `AuthorizesProjectHubResources` trait in project hub Save\* Livewire components and section list row actions:
 
 ```php
 // In SaveCredential::save() (edit path):
@@ -524,7 +524,7 @@ public function submitForReview(Deliverable $deliverable, User $performedBy): De
 }
 ```
 
-Add policy tests in `tests/Feature/Policies/` and hub Livewire authorization tests in `tests/Feature/Agency/ProjectHubAuthorizationTest.php` when adding new abilities or hub actions.
+Add policy tests in `tests/Feature/Policies/` and project hub authorization tests in `tests/Feature/Agency/ProjectHubAuthorizationTest.php` when adding new abilities or section list actions.
 
 ## Reference Files
 
@@ -534,7 +534,7 @@ When in doubt, read the code:
 - **`app/Livewire/Agency/Clients/`** - Livewire list, create modal, view flyout pattern
 - **`MilestoneService`** - scoped queries and status updates
 - **`DeliverableService`** - file operations, deliverable lifecycle, milestone sync via `MilestoneService::syncFromDeliverables()`
-- **`AuthorizesProjectHubResources`** - hub modal and list authorization helpers
+- **`AuthorizesProjectHubResources`** - project-scoped modal and section list authorization helpers
 - **`tests/Feature/Policies/`** - policy unit coverage per domain
 - **`tests/Feature/Agency/ProjectHubAuthorizationTest.php`** - Livewire enforces policies end-to-end
 - **`BaseCRUDService`** - filtering and pagination patterns
