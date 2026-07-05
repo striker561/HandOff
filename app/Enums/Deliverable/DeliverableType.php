@@ -40,4 +40,28 @@ enum DeliverableType: string
             self::RESEARCH => 'magnifying-glass',
         };
     }
+
+    public function isFileBased(): bool
+    {
+        return in_array($this, [
+            self::FILE,
+            self::DESIGN,
+            self::CODE,
+            self::OTHER,
+        ], true);
+    }
+
+    public function isLink(): bool
+    {
+        return $this === self::LINK;
+    }
+
+    public function isTextBased(): bool
+    {
+        return in_array($this, [
+            self::TEXT,
+            self::SCOPE,
+            self::RESEARCH,
+        ], true);
+    }
 }

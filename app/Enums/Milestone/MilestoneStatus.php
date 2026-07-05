@@ -25,4 +25,15 @@ enum MilestoneStatus: string
             self::COMPLETED => 'lime',
         };
     }
+
+    /**
+     * @return array<int, self>
+     */
+    public static function selectable(): array
+    {
+        return [
+            self::PENDING,
+            self::IN_PROGRESS,
+        ];
+    }
 }

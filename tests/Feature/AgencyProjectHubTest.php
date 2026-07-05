@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\Deliverable\DeliverableStatus;
+use App\Enums\Deliverable\DeliverableType;
 use App\Enums\Meeting\MeetingStatus;
 use App\Enums\Milestone\MilestoneStatus;
 use App\Enums\User\AccountRole;
@@ -393,6 +394,41 @@ it('updates a milestone from the save modal', function () {
     expect($milestone->fresh()->name)->toBe('Updated Name');
 });
 
+it('shows a read-only status when editing a completed milestone', function () {
+    $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
+    $client = User::factory()->create(['role' => AccountRole::CLIENT]);
+    $project = Project::factory()->create(['client_unique_id' => $client->unique_id]);
+    $milestone = Milestone::factory()->completed()->create([
+        'project_unique_id' => $project->unique_id,
+        'name' => 'Done Phase',
+        'order' => 1,
+    ]);
+
+    Livewire::actingAs($admin)
+        ->test(SaveMilestone::class)
+        ->call('open', projectUniqueId: $project->unique_id, uniqueId: $milestone->unique_id)
+        ->assertSee(__('Completed'))
+        ->assertSee(__('Completed automatically when all deliverables in this milestone are approved.'))
+        ->assertDontSee('wire:model="status"', false);
+});
+
+it('creates a milestone with the selected status', function () {
+    $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
+    $client = User::factory()->create(['role' => AccountRole::CLIENT]);
+    $project = Project::factory()->create(['client_unique_id' => $client->unique_id]);
+
+    Livewire::actingAs($admin)
+        ->test(SaveMilestone::class)
+        ->call('open', projectUniqueId: $project->unique_id)
+        ->set('name', 'Build Phase')
+        ->set('status', MilestoneStatus::IN_PROGRESS->value)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(Milestone::query()->where('name', 'Build Phase')->first()->status)
+        ->toBe(MilestoneStatus::IN_PROGRESS);
+});
+
 it('updates a deliverable from the save modal', function () {
     $admin = User::factory()->create(['role' => AccountRole::ADMIN]);
     $client = User::factory()->create(['role' => AccountRole::CLIENT]);
@@ -403,6 +439,7 @@ it('updates a deliverable from the save modal', function () {
         'milestone_unique_id' => $milestone->unique_id,
         'created_by_unique_id' => $admin->unique_id,
         'name' => 'Old Deliverable',
+        'type' => DeliverableType::FILE,
     ]);
 
     Livewire::actingAs($admin)

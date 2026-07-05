@@ -5,9 +5,13 @@ namespace App\Services;
 use App\Data\Deliverables\SaveDeliverableData;
 use App\Enums\Deliverable\DeliverableAction;
 use App\Enums\Deliverable\DeliverableStatus;
+use App\Enums\Milestone\MilestoneAction;
+use App\Enums\Milestone\MilestoneStatus;
 use App\Events\Deliverable\DeliverableEvent;
+use App\Events\Milestone\MilestoneEvent;
 use App\Models\Deliverable;
 use App\Models\DeliverableFile;
+use App\Models\Milestone;
 use App\Models\User;
 use App\Services\Storage\StorageService;
 use Illuminate\Http\UploadedFile;
@@ -20,9 +24,12 @@ class DeliverableService extends BaseCRUDService
 {
     private StorageService $storage;
 
-    public function __construct()
+    private MilestoneService $milestoneService;
+
+    public function __construct(MilestoneService $milestoneService)
     {
         $this->storage = new StorageService('filesystems.deliverables_disk');
+        $this->milestoneService = $milestoneService;
     }
 
     protected function getModel(): string
@@ -58,6 +65,8 @@ class DeliverableService extends BaseCRUDService
             'version' => 1,
         ]));
 
+        $this->updateMilestoneOnDeliverableChange($deliverable, $performedBy);
+
         DeliverableEvent::dispatch(
             $deliverable,
             DeliverableAction::CREATED,
@@ -70,7 +79,25 @@ class DeliverableService extends BaseCRUDService
 
     public function updateDeliverable(Deliverable $deliverable, SaveDeliverableData $data, User $performedBy): Deliverable
     {
+        $previousMilestoneUniqueId = $deliverable->milestone_unique_id;
+
         $deliverable->update($data->toUpdateAttributes());
+
+        $deliverable = $deliverable->fresh();
+
+        if ($previousMilestoneUniqueId !== $deliverable->milestone_unique_id) {
+            if ($previousMilestoneUniqueId !== null) {
+                $previousMilestone = Milestone::query()
+                    ->where('unique_id', $previousMilestoneUniqueId)
+                    ->first();
+
+                if ($previousMilestone !== null) {
+                    $this->syncMilestoneStatus($previousMilestone, $performedBy);
+                }
+            }
+
+            $this->updateMilestoneOnDeliverableChange($deliverable, $performedBy);
+        }
 
         DeliverableEvent::dispatch(
             $deliverable,
@@ -79,7 +106,7 @@ class DeliverableService extends BaseCRUDService
             []
         );
 
-        return $deliverable->fresh();
+        return $deliverable;
     }
 
     public function getDeliverablesForProject(string $projectUniqueId, array $filters = []): LengthAwarePaginator
@@ -155,7 +182,8 @@ class DeliverableService extends BaseCRUDService
     public function changeStatus(
         Deliverable $deliverable,
         DeliverableStatus $status,
-        ?User $approvedBy = null
+        User $performedBy,
+        ?User $approvedBy = null,
     ): Deliverable {
         $updateData = ['status' => $status];
 
@@ -166,12 +194,16 @@ class DeliverableService extends BaseCRUDService
 
         $deliverable->update($updateData);
 
-        return $deliverable->fresh();
+        $deliverable = $deliverable->fresh();
+
+        $this->updateMilestoneOnDeliverableChange($deliverable, $performedBy);
+
+        return $deliverable;
     }
 
     public function approveDeliverable(Deliverable $deliverable, User $approver): Deliverable
     {
-        $updated = $this->changeStatus($deliverable, DeliverableStatus::APPROVED, $approver);
+        $updated = $this->changeStatus($deliverable, DeliverableStatus::APPROVED, $approver, $approver);
 
         DeliverableEvent::dispatch(
             $updated,
@@ -185,7 +217,7 @@ class DeliverableService extends BaseCRUDService
 
     public function rejectDeliverable(Deliverable $deliverable, User $rejectedBy, ?string $feedback = null): Deliverable
     {
-        $updated = $this->changeStatus($deliverable, DeliverableStatus::REJECTED);
+        $updated = $this->changeStatus($deliverable, DeliverableStatus::REJECTED, $rejectedBy);
 
         DeliverableEvent::dispatch(
             $updated,
@@ -269,6 +301,53 @@ class DeliverableService extends BaseCRUDService
         }
 
         return $deleted;
+    }
+
+    private function updateMilestoneOnDeliverableChange(Deliverable $deliverable, User $performedBy): void
+    {
+        /** @var Milestone|null $milestone */
+        $milestone = $deliverable->milestone;
+
+        if ($milestone === null) {
+            return;
+        }
+
+        $this->syncMilestoneStatus($milestone, $performedBy);
+    }
+
+    private function syncMilestoneStatus(Milestone $milestone, User $performedBy): void
+    {
+        $hasDeliverables = $milestone->deliverables()->exists();
+
+        $allApproved = $hasDeliverables && $milestone->deliverables()
+            ->where('status', '!=', DeliverableStatus::APPROVED)
+            ->doesntExist();
+
+        if ($allApproved && ! $milestone->is_completed) {
+            $milestone->update([
+                'status' => MilestoneStatus::COMPLETED,
+                'completed_at' => now(),
+            ]);
+
+            MilestoneEvent::dispatch(
+                $milestone->fresh(),
+                MilestoneAction::COMPLETED,
+                $performedBy,
+                ['auto_completed' => true],
+            );
+        } elseif (! $allApproved && $milestone->is_completed) {
+            $milestone->update([
+                'status' => MilestoneStatus::IN_PROGRESS,
+                'completed_at' => null,
+            ]);
+
+            MilestoneEvent::dispatch(
+                $milestone->fresh(),
+                MilestoneAction::STATUS_CHANGED,
+                $performedBy,
+                ['auto_uncompleted' => true],
+            );
+        }
     }
 
     private function getNextOrder(string $projectUniqueId, ?string $milestoneUniqueId): int

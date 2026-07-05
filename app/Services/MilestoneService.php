@@ -53,6 +53,10 @@ class MilestoneService extends BaseCRUDService
     {
         $milestone->update($data->toUpdateAttributes());
 
+        if ($data->status !== null && $data->status !== $milestone->status) {
+            return $this->updateStatus($milestone, $data->status, $performedBy);
+        }
+
         MilestoneEvent::dispatch(
             $milestone,
             MilestoneAction::UPDATED,

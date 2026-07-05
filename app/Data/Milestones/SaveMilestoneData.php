@@ -2,6 +2,8 @@
 
 namespace App\Data\Milestones;
 
+use App\Enums\Milestone\MilestoneStatus;
+
 readonly class SaveMilestoneData
 {
     public function __construct(
@@ -9,6 +11,7 @@ readonly class SaveMilestoneData
         public string $name,
         public ?string $description,
         public ?string $dueDate,
+        public ?MilestoneStatus $status = null,
     ) {}
 
     /**
@@ -21,6 +24,7 @@ readonly class SaveMilestoneData
             name: $data['name'],
             description: $data['description'] ?? null,
             dueDate: $data['due_date'] ?? null,
+            status: isset($data['status']) ? MilestoneStatus::tryFrom($data['status']) : null,
         );
     }
 
@@ -35,6 +39,7 @@ readonly class SaveMilestoneData
             'project_unique_id' => $this->projectUniqueId,
             'due_date' => $this->dueDate,
             'order' => $order,
+            'status' => ($this->status ?? MilestoneStatus::PENDING)->value,
         ];
     }
 

@@ -6,8 +6,8 @@
             </flux:heading>
             <flux:text class="mt-2">
                 {{ $this->isEditing
-                    ? __('Update deliverable details. File uploads are managed separately.')
-                    : __('Create a deliverable and link it to a milestone.') }}
+    ? __('Update deliverable details. File uploads are managed separately.')
+    : __('Create a deliverable and link it to a milestone.') }}
             </flux:text>
         </div>
 
@@ -51,11 +51,29 @@
             <flux:error name="due_date" />
         </flux:field>
 
-        @if (!$this->isEditing)
+        @php $currentType = $this->currentType; @endphp
+
+        @if (!$this->isEditing && $currentType?->isFileBased())
             <flux:field>
                 <flux:label>{{ __('File') }}</flux:label>
                 <flux:input type="file" wire:model="file" />
                 <flux:error name="file" />
+            </flux:field>
+        @endif
+
+        @if ($currentType?->isLink())
+            <flux:field>
+                <flux:label>{{ __('URL') }}</flux:label>
+                <flux:input type="url" wire:model="link" placeholder="https://example.com/file.pdf" />
+                <flux:error name="link" />
+            </flux:field>
+        @endif
+
+        @if ($currentType?->isTextBased())
+            <flux:field>
+                <flux:label>{{ __('Content') }}</flux:label>
+                <flux:textarea wire:model="content" rows="6" />
+                <flux:error name="content" />
             </flux:field>
         @endif
 

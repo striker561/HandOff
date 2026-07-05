@@ -5,9 +5,11 @@ namespace App\Livewire\Agency\Projects\Milestones;
 use App\Concerns\WithActionRateLimiting;
 use App\Concerns\WithNotifications;
 use App\Data\Milestones\SaveMilestoneData;
+use App\Enums\Milestone\MilestoneStatus;
 use App\Models\Milestone;
 use App\Services\MilestoneService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
@@ -29,6 +31,8 @@ class SaveMilestone extends Component
 
     public ?string $due_date = null;
 
+    public string $status = '';
+
     private MilestoneService $milestoneService;
 
     public function boot(MilestoneService $milestoneService): void
@@ -42,12 +46,19 @@ class SaveMilestone extends Component
         return $this->uniqueId !== null;
     }
 
+    #[Computed]
+    public function isStatusLocked(): bool
+    {
+        return $this->isEditing()
+            && MilestoneStatus::tryFrom($this->status) === MilestoneStatus::COMPLETED;
+    }
+
     #[On('open-save-milestone')]
     public function open(string $projectUniqueId, ?string $uniqueId = null): void
     {
         $this->projectUniqueId = $projectUniqueId;
         $this->uniqueId = $uniqueId;
-        $this->reset('name', 'description', 'due_date');
+        $this->reset('name', 'description', 'due_date', 'status');
         $this->resetValidation();
 
         if ($uniqueId !== null) {
@@ -64,8 +75,11 @@ class SaveMilestone extends Component
             $this->name = $milestone->name;
             $this->description = $milestone->description ?? '';
             $this->due_date = $milestone->due_date?->format('Y-m-d');
+            $this->status = $milestone->status->value;
         } else {
             $this->authorize('create', Milestone::class);
+
+            $this->status = MilestoneStatus::PENDING->value;
         }
 
         $this->modal('save-milestone')->show();
@@ -97,17 +111,28 @@ class SaveMilestone extends Component
             return;
         }
 
-        $validated = $this->validate([
+        $rules = [
             'name' => ['required', 'string', 'min:2', 'max:255'],
             'description' => ['nullable', 'string', 'max:5000'],
             'due_date' => ['nullable', 'date'],
-        ]);
+        ];
+
+        if (! $this->isStatusLocked) {
+            $rules['status'] = [
+                'required',
+                'string',
+                Rule::in(collect(MilestoneStatus::selectable())->map->value->all()),
+            ];
+        }
+
+        $validated = $this->validate($rules);
 
         $data = SaveMilestoneData::fromArray([
             'project_unique_id' => $this->projectUniqueId,
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
             'due_date' => $validated['due_date'] ?? null,
+            'status' => $this->isStatusLocked ? null : $validated['status'],
         ]);
 
         if ($this->isEditing()) {
@@ -119,7 +144,7 @@ class SaveMilestone extends Component
             $this->notifySuccess(__('Milestone created.'));
         }
 
-        $this->reset('name', 'description', 'due_date', 'uniqueId');
+        $this->reset('name', 'description', 'due_date', 'status', 'uniqueId');
 
         $this->modal('save-milestone')->close();
 

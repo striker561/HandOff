@@ -4,8 +4,11 @@ use App\Data\Deliverables\SaveDeliverableData;
 use App\Enums\Deliverable\DeliverableAction;
 use App\Enums\Deliverable\DeliverableStatus;
 use App\Enums\Deliverable\DeliverableType;
+use App\Enums\Milestone\MilestoneAction;
+use App\Enums\Milestone\MilestoneStatus;
 use App\Enums\User\AccountRole;
 use App\Events\Deliverable\DeliverableEvent;
+use App\Events\Milestone\MilestoneEvent;
 use App\Models\Deliverable;
 use App\Models\Milestone;
 use App\Models\Project;
@@ -95,4 +98,141 @@ it('gets deliverables for a project', function () {
     $result = $this->service->getDeliverablesForProject($this->project->unique_id);
 
     expect($result->total())->toBe(3);
+});
+
+it('auto-completes a milestone when all deliverables are approved', function () {
+    Event::fake([MilestoneEvent::class]);
+
+    $milestone = Milestone::factory()->create([
+        'project_unique_id' => $this->project->unique_id,
+        'status' => MilestoneStatus::IN_PROGRESS,
+    ]);
+
+    $deliverable = Deliverable::factory()->create([
+        'project_unique_id' => $this->project->unique_id,
+        'milestone_unique_id' => $milestone->unique_id,
+        'status' => DeliverableStatus::APPROVED,
+    ]);
+
+    $pending = Deliverable::factory()->create([
+        'project_unique_id' => $this->project->unique_id,
+        'milestone_unique_id' => $milestone->unique_id,
+        'status' => DeliverableStatus::IN_REVIEW,
+    ]);
+
+    expect($milestone->fresh()->status)->toBe(MilestoneStatus::IN_PROGRESS);
+
+    $this->service->approveDeliverable($pending, $this->admin);
+
+    expect($milestone->fresh()->status)->toBe(MilestoneStatus::COMPLETED)
+        ->and($milestone->fresh()->completed_at)->not->toBeNull();
+
+    Event::assertDispatched(MilestoneEvent::class, function (MilestoneEvent $event) use ($milestone) {
+        return $event->action === MilestoneAction::COMPLETED
+            && $event->milestone->is($milestone)
+            && ($event->metadata['auto_completed'] ?? false) === true;
+    });
+});
+
+it('reopens a completed milestone when a new deliverable is added', function () {
+    Event::fake([MilestoneEvent::class, DeliverableEvent::class]);
+
+    $milestone = Milestone::factory()->completed()->create([
+        'project_unique_id' => $this->project->unique_id,
+    ]);
+
+    Deliverable::factory()->create([
+        'project_unique_id' => $this->project->unique_id,
+        'milestone_unique_id' => $milestone->unique_id,
+        'status' => DeliverableStatus::APPROVED,
+    ]);
+
+    $this->service->createDeliverable(SaveDeliverableData::fromArray([
+        'project_unique_id' => $this->project->unique_id,
+        'milestone_unique_id' => $milestone->unique_id,
+        'created_by_unique_id' => $this->admin->unique_id,
+        'name' => 'New Deliverable',
+        'type' => DeliverableType::FILE->value,
+    ]), $this->admin);
+
+    expect($milestone->fresh()->status)->toBe(MilestoneStatus::IN_PROGRESS)
+        ->and($milestone->fresh()->completed_at)->toBeNull();
+
+    Event::assertDispatched(MilestoneEvent::class, function (MilestoneEvent $event) use ($milestone) {
+        return $event->action === MilestoneAction::STATUS_CHANGED
+            && $event->milestone->is($milestone)
+            && ($event->metadata['auto_uncompleted'] ?? false) === true;
+    });
+});
+
+it('reopens a completed milestone when a deliverable is rejected', function () {
+    Event::fake([MilestoneEvent::class, DeliverableEvent::class]);
+
+    $milestone = Milestone::factory()->completed()->create([
+        'project_unique_id' => $this->project->unique_id,
+    ]);
+
+    $deliverable = Deliverable::factory()->create([
+        'project_unique_id' => $this->project->unique_id,
+        'milestone_unique_id' => $milestone->unique_id,
+        'status' => DeliverableStatus::IN_REVIEW,
+    ]);
+
+    $this->service->approveDeliverable($deliverable, $this->admin);
+
+    expect($milestone->fresh()->status)->toBe(MilestoneStatus::COMPLETED);
+
+    $this->service->rejectDeliverable($deliverable->fresh(), $this->admin, 'Needs changes');
+
+    expect($milestone->fresh()->status)->toBe(MilestoneStatus::IN_PROGRESS);
+
+    Event::assertDispatched(MilestoneEvent::class, function (MilestoneEvent $event) use ($milestone) {
+        return $event->action === MilestoneAction::STATUS_CHANGED
+            && $event->milestone->is($milestone)
+            && ($event->metadata['auto_uncompleted'] ?? false) === true;
+    });
+});
+
+it('does not auto-complete a milestone with no deliverables', function () {
+    Event::fake([MilestoneEvent::class]);
+
+    $milestone = Milestone::factory()->create([
+        'project_unique_id' => $this->project->unique_id,
+        'status' => MilestoneStatus::IN_PROGRESS,
+    ]);
+
+    $method = new ReflectionMethod(DeliverableService::class, 'syncMilestoneStatus');
+    $method->setAccessible(true);
+    $method->invoke($this->service, $milestone, $this->admin);
+
+    expect($milestone->fresh()->status)->toBe(MilestoneStatus::IN_PROGRESS);
+    Event::assertNotDispatched(MilestoneEvent::class);
+});
+
+it('syncs milestone status when a deliverable is reassigned', function () {
+    Event::fake([MilestoneEvent::class, DeliverableEvent::class]);
+
+    $sourceMilestone = Milestone::factory()->completed()->create([
+        'project_unique_id' => $this->project->unique_id,
+    ]);
+    $targetMilestone = Milestone::factory()->create([
+        'project_unique_id' => $this->project->unique_id,
+        'status' => MilestoneStatus::IN_PROGRESS,
+    ]);
+
+    $deliverable = Deliverable::factory()->create([
+        'project_unique_id' => $this->project->unique_id,
+        'milestone_unique_id' => $sourceMilestone->unique_id,
+        'status' => DeliverableStatus::APPROVED,
+    ]);
+
+    $this->service->updateDeliverable($deliverable, SaveDeliverableData::fromArray([
+        'project_unique_id' => $this->project->unique_id,
+        'milestone_unique_id' => $targetMilestone->unique_id,
+        'name' => $deliverable->name,
+        'type' => DeliverableType::FILE->value,
+    ]), $this->admin);
+
+    expect($sourceMilestone->fresh()->status)->toBe(MilestoneStatus::IN_PROGRESS)
+        ->and($targetMilestone->fresh()->status)->toBe(MilestoneStatus::COMPLETED);
 });

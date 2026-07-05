@@ -6,8 +6,8 @@
             </flux:heading>
             <flux:text class="mt-2">
                 {{ $this->isEditing
-                    ? __('Update this project phase.')
-                    : __('Create a project phase. Deliverables can be linked to this milestone later.') }}
+    ? __('Update this project phase.')
+    : __('Create a project phase. Deliverables can be linked to this milestone later.') }}
             </flux:text>
         </div>
 
@@ -21,6 +21,37 @@
             <flux:label>{{ __('Description') }}</flux:label>
             <flux:textarea wire:model="description" rows="3" />
             <flux:error name="description" />
+        </flux:field>
+
+        @php
+            $statuses = \App\Enums\Milestone\MilestoneStatus::selectable();
+            $currentStatus = \App\Enums\Milestone\MilestoneStatus::tryFrom($status);
+        @endphp
+
+        <flux:field>
+            <flux:label>{{ __('Status') }}</flux:label>
+            @if ($this->isStatusLocked && $currentStatus)
+                <div class="space-y-2">
+                    <flux:badge :color="$currentStatus->badgeColor()" size="sm">
+                        {{ $currentStatus->label() }}
+                    </flux:badge>
+                    <flux:text variant="subtle" class="text-sm">
+                        {{ __('Completed automatically when all deliverables in this milestone are approved.') }}
+                    </flux:text>
+                </div>
+            @else
+                <flux:select wire:model="status">
+                    @foreach ($statuses as $milestoneStatus)
+                        <flux:select.option value="{{ $milestoneStatus->value }}">
+                            {{ $milestoneStatus->label() }}
+                        </flux:select.option>
+                    @endforeach
+                </flux:select>
+                <flux:text variant="subtle" class="mt-1 text-sm">
+                    {{ __('When all deliverables are approved, the milestone completes automatically.') }}
+                </flux:text>
+                <flux:error name="status" />
+            @endif
         </flux:field>
 
         <flux:field>

@@ -42,6 +42,10 @@ class SaveDeliverable extends Component
 
     public $file = null;
 
+    public string $link = '';
+
+    public string $content = '';
+
     private DeliverableService $deliverableService;
 
     private MilestoneService $milestoneService;
@@ -63,7 +67,7 @@ class SaveDeliverable extends Component
     {
         $this->projectUniqueId = $projectUniqueId;
         $this->uniqueId = $uniqueId;
-        $this->reset('name', 'description', 'due_date', 'file');
+        $this->reset('name', 'description', 'due_date', 'file', 'link', 'content');
         $this->milestone_unique_id = $milestoneUniqueId ?? '';
         $this->type = DeliverableType::FILE->value;
         $this->resetValidation();
@@ -90,6 +94,8 @@ class SaveDeliverable extends Component
             $this->type = $deliverable->type->value;
             $this->milestone_unique_id = $deliverable->milestone_unique_id ?? '';
             $this->due_date = $deliverable->due_date?->format('Y-m-d');
+            $this->link = $deliverable->metadata['link'] ?? '';
+            $this->content = $deliverable->metadata['content'] ?? '';
         } else {
             $this->authorize('create', Deliverable::class);
         }
@@ -115,6 +121,12 @@ class SaveDeliverable extends Component
     public function deliverableTypes(): Collection
     {
         return collect(DeliverableType::cases());
+    }
+
+    #[Computed]
+    public function currentType(): ?DeliverableType
+    {
+        return DeliverableType::tryFrom($this->type);
     }
 
     public function save(): void
@@ -151,11 +163,35 @@ class SaveDeliverable extends Component
             'due_date' => ['nullable', 'date'],
         ];
 
-        if (! $this->isEditing()) {
+        $currentType = $this->currentType;
+
+        if ($currentType?->isFileBased() && ! $this->isEditing()) {
             $rules['file'] = ['nullable', 'file', 'max:10240'];
         }
 
+        if ($currentType?->isLink()) {
+            $rules['link'] = $this->isEditing()
+                ? ['nullable', 'url', 'max:2048']
+                : ['required', 'url', 'max:2048'];
+        }
+
+        if ($currentType?->isTextBased()) {
+            $rules['content'] = $this->isEditing()
+                ? ['nullable', 'string', 'max:50000']
+                : ['required', 'string', 'max:50000'];
+        }
+
         $validated = $this->validate($rules);
+
+        $metadata = [];
+
+        if ($currentType?->isLink() && ! empty($validated['link'])) {
+            $metadata['link'] = $validated['link'];
+        }
+
+        if ($currentType?->isTextBased() && ! empty($validated['content'])) {
+            $metadata['content'] = $validated['content'];
+        }
 
         $data = SaveDeliverableData::fromArray([
             'project_unique_id' => $this->projectUniqueId,
@@ -165,6 +201,7 @@ class SaveDeliverable extends Component
             'description' => $validated['description'] ?? null,
             'type' => $validated['type'],
             'due_date' => $validated['due_date'] ?? null,
+            'metadata' => $metadata,
         ]);
 
         if ($this->isEditing()) {
@@ -181,7 +218,7 @@ class SaveDeliverable extends Component
             $this->notifySuccess(__('Deliverable created.'));
         }
 
-        $this->reset('name', 'description', 'milestone_unique_id', 'due_date', 'file', 'uniqueId');
+        $this->reset('name', 'description', 'milestone_unique_id', 'due_date', 'file', 'link', 'content', 'uniqueId');
         $this->type = DeliverableType::FILE->value;
 
         $this->modal('save-deliverable')->close();
